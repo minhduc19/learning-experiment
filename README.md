@@ -27,3 +27,20 @@ npm run build
 ```
 
 Commit `package-lock.json` and `apps/backend/uv.lock` for reproducible installs. After changing dependencies, run `npm install` or `uv lock --project apps/backend` as appropriate. Do not commit secrets or virtual environments.
+
+## Docker
+
+With Docker Engine and the Compose plugin installed, run from the repository root:
+
+```sh
+docker compose up --build -d
+```
+
+Open http://localhost:8080. Nginx serves the built Vue app and proxies `/api/` to the backend container. API docs remain available at http://localhost:8000/docs (the backend port is bound to localhost). The frontend port 8080 is exposed on all host interfaces.
+
+```sh
+docker compose logs -f
+docker compose down
+```
+
+These containers run the built application without development reload. Rebuild after source changes. Dependencies are installed from the npm and uv lockfiles; the backend runs as a non-root user and Compose waits for its health check before starting the frontend. No local Node.js, Python, or uv installation is needed.
