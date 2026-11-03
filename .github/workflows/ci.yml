@@ -22,8 +22,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker compose build
-      - run: docker compose up -d --wait
-      - run: curl --fail --retry 5 --retry-connrefused --retry-delay 2 http://localhost:8080/api/health
+      - run: docker build -t learning-experiment .
+      - run: docker run -d --name app -p 8080:8000 learning-experiment
+      - run: |
+          curl --fail --retry 10 --retry-connrefused --retry-delay 2 http://localhost:8080/api/health
+          curl --fail http://localhost:8080/
+          curl --fail http://localhost:8080/docs
       - if: always()
-        run: docker compose logs && docker compose down
+        run: docker logs app; docker rm -f app

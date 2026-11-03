@@ -30,17 +30,19 @@ Commit `package-lock.json` and `apps/backend/uv.lock` for reproducible installs.
 
 ## Docker
 
-With Docker Engine and the Compose plugin installed, run from the repository root:
+One root Dockerfile builds Vue and installs the FastAPI backend in a single image. FastAPI serves both the built frontend and API on port 8000. Docker is the only local prerequisite.
 
 ```sh
-docker compose up --build -d
+docker build -t learning-experiment .
+docker run -d --name learning-experiment -p 8080:8000 learning-experiment
 ```
 
-Open http://localhost:8080. Nginx serves the built Vue app and proxies `/api/` to the backend container. API docs remain available at http://localhost:8000/docs (the backend port is bound to localhost). The frontend port 8080 is exposed on all host interfaces.
+Open http://localhost:8080 and http://localhost:8080/docs for API documentation.
 
 ```sh
-docker compose logs -f
-docker compose down
+docker logs -f learning-experiment
+docker stop learning-experiment
+docker rm learning-experiment
 ```
 
-These containers run the built application without development reload. Rebuild after source changes. Dependencies are installed from the npm and uv lockfiles; the backend runs as a non-root user and Compose waits for its health check before starting the frontend. No local Node.js, Python, or uv installation is needed.
+The container runs as a non-root user and includes a health check. Rebuild and recreate the container after source changes. Compose and Nginx are no longer needed. Local development still uses `npm run dev` for hot reload.

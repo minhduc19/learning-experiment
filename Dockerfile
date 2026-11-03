@@ -1,4 +1,15 @@
 # syntax=docker/dockerfile:1
+FROM node:24-bookworm-slim AS build
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY apps/frontend/package.json ./apps/frontend/package.json
+RUN --mount=type=secret,id=proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/proxy_ca; fi; \
+    npm ci
+COPY apps/frontend ./apps/frontend
+RUN npm run build
+
+
 FROM ghcr.io/astral-sh/uv:0.9.5 AS uv
 FROM python:3.12-slim
 COPY --from=uv /uv /usr/local/bin/uv
@@ -9,6 +20,8 @@ RUN --mount=type=secret,id=proxy_ca \
     if [ -f /run/secrets/proxy_ca ]; then export SSL_CERT_FILE=/run/secrets/proxy_ca; fi; \
     uv sync --locked --no-dev
 COPY --chown=10001:10001 apps/backend/app ./app
+COPY --from=build /app/apps/frontend/dist ./static
+ENV STATIC_DIR=/app/static
 USER 10001:10001
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \

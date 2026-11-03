@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 const status = ref('Checking…')
+const docsUrl = import.meta.env.DEV ? 'http://localhost:8000/docs' : '/docs'
 async function checkHealth() {
   status.value = 'Checking…'
   try {
@@ -22,7 +23,7 @@ onMounted(checkHealth)
     <p>A Python API and a Vue 3 frontend, working together.</p>
     <p role="status">Backend: {{ status }}</p>
     <button @click="checkHealth">Check connection</button>
-    <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer">API documentation</a>
+    <a :href="docsUrl" target="_blank" rel="noreferrer">API documentation</a>
   </main>
 </template>
 
