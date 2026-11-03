@@ -18,3 +18,12 @@ jobs:
       - run: npm run setup
       - run: npm test
       - run: npm run build
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose build
+      - run: docker compose up -d --wait
+      - run: curl --fail --retry 5 --retry-connrefused --retry-delay 2 http://localhost:8080/api/health
+      - if: always()
+        run: docker compose logs && docker compose down
