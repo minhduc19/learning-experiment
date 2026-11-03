@@ -1,0 +1,21 @@
+{
+  "name": "fastapi-vue-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/frontend"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n api,web \"npm run dev:api\" \"npm run dev:web\"",
+    "dev:api": "uv run --project apps/backend uvicorn app.main:app --app-dir apps/backend --reload --host 0.0.0.0 --port 8000",
+    "dev:web": "npm run dev --workspace apps/frontend",
+    "build": "npm run build --workspace apps/frontend",
+    "test": "uv run --project apps/backend pytest apps/backend/tests",
+    "setup": "npm ci && uv sync --project apps/backend --locked"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}
