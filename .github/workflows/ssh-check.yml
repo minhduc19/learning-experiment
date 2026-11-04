@@ -1,8 +1,8 @@
 name: Deploy to droplet
 
-on:
+on: [push]
   #workflow_dispatch:
-  on: [push]
+   
 
 permissions: {}
 
