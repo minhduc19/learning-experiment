@@ -1,4 +1,4 @@
-name: Deploy to droplet
+name: Deploy to droplet in main
 
 on: [push]
   #workflow_dispatch:
