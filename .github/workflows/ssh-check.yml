@@ -1,22 +1,28 @@
-name: Check droplet SSH
+name: Deploy to droplet
 
 on:
   workflow_dispatch:
 
 permissions: {}
 
+concurrency:
+  group: droplet-production
+  cancel-in-progress: false
+
 jobs:
-  ssh:
+  deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
     env:
+      DEPLOY_SHA: ${{ github.sha }}
       SSH_HOST: 144.126.225.254
       SSH_PORT: ${{ vars.SSH_PORT || '22' }}
       SSH_USER: ${{ secrets.SSH_USER }}
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
     steps:
-      - name: Connect and check server
+      - name: SSH, clone, and deploy
         shell: bash
         run: |
           set -euo pipefail
@@ -30,6 +36,7 @@ jobs:
           printf '%s\n' "$SSH_PRIVATE_KEY" > "$ssh_dir/key"
           printf '%s\n' "$SSH_KNOWN_HOSTS" > "$ssh_dir/known_hosts"
           chmod 600 "$ssh_dir/key" "$ssh_dir/known_hosts"
+          [[ "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]
           ssh -F /dev/null -i "$ssh_dir/key" -p "$SSH_PORT" \
             -o BatchMode=yes -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
@@ -37,4 +44,36 @@ jobs:
             -o ConnectTimeout=15 -o ServerAliveInterval=15 \
             -o ServerAliveCountMax=3 \
             -- "$SSH_USER@$SSH_HOST" \
-            'set -eu; printf "SSH connected successfully\n"; hostname; whoami; uptime'
+            "bash -s -- $DEPLOY_SHA" <<'REMOTE'
+          set -euo pipefail
+          deploy_sha="$1"
+          for command in git docker curl flock; do
+            command -v "$command" >/dev/null || { echo "Install $command on the droplet first" >&2; exit 1; }
+          done
+          docker info >/dev/null
+          docker compose version
+          mkdir -p "$HOME/github-actions"
+          exec 9>"$HOME/github-actions/learning-experiment.deploy.lock"
+          flock -n 9 || { echo "Another deployment is running" >&2; exit 1; }
+          deploy_dir="$HOME/github-actions/learning-experiment"
+          repo_url="https://github.com/minhduc19/learning-experiment.git"
+          export GIT_TERMINAL_PROMPT=0
+          if [ ! -e "$deploy_dir" ]; then
+            git clone --branch main --single-branch "$repo_url" "$deploy_dir"
+          fi
+          cd "$deploy_dir"
+          test "$(git remote get-url origin)" = "$repo_url"
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Deployment checkout has local changes; refusing to overwrite them" >&2
+            exit 1
+          fi
+          git fetch origin main
+          git cat-file -e "$deploy_sha^{commit}"
+          git merge-base --is-ancestor "$deploy_sha" FETCH_HEAD
+          git checkout --detach "$deploy_sha"
+          docker compose -p learning-experiment up --build -d --wait --wait-timeout 180
+          curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-delay 2 \
+            http://127.0.0.1:8080/api/health
+          docker compose -p learning-experiment ps
+          echo "Deployed commit $deploy_sha to http://144.126.225.254:8080"
+          REMOTE
