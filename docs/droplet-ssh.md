@@ -1,6 +1,10 @@
 # GitHub Actions SSH access
 
-The **Check droplet SSH** workflow connects to `144.126.225.254` and runs `hostname`, `whoami`, and `uptime`. It does not deploy or restart the app. After merging, run it from **Actions → Check droplet SSH → Run workflow**.
+The **Deploy to droplet** workflow connects to `144.126.225.254`, clones or updates this public repository, checks out the exact commit selected by the workflow run, and deploys it with Docker Compose. After merging, run it from **Actions → Deploy to droplet → Run workflow**, selecting **main**. Runs from other branches are skipped.
+
+The droplet needs Bash, Git, curl, flock, Docker Engine, and the Docker Compose plugin installed. `SSH_USER` must be able to run Docker without interactive sudo. The workflow uses the dedicated checkout `~/github-actions/learning-experiment` and the Compose project name `learning-experiment`, which matches the existing deployment. It refuses to overwrite local changes in its checkout. The app remains on port 8080. Building and recreating services can briefly interrupt access; failed health checks fail the workflow but do not automatically roll back.
+
+Deployments are serialized. The workflow deploys the existing two-container configuration on main, using `docker compose -p learning-experiment up --build -d --wait`. It checks `/api/health` afterward. The single-Dockerfile PR must be accompanied by an updated deployment command if merged later.
 
 In **Settings → Secrets and variables → Actions → New repository secret**, add:
 
@@ -39,4 +43,4 @@ ssh-keygen -lf droplet_known_hosts
 
 Only after confirming the fingerprints match, paste the contents of `droplet_known_hosts` into `SSH_KNOWN_HOSTS`. Use your actual SSH port in the scan if it differs from 22; the resulting entry then uses `[144.126.225.254]:PORT`.
 
-The droplet's SSH service and any DigitalOcean/UFW firewall must allow the workflow runner to reach the configured SSH port. GitHub-hosted runners use changing public IPs; a firewall that permits only your laptop will block this workflow. No SSH connection has been tested until you configure the secrets and run the workflow.
+The droplet's SSH service and any DigitalOcean/UFW firewall must allow the workflow runner to reach the configured SSH port. GitHub-hosted runners use changing public IPs; a firewall that permits only your laptop will block this workflow. The workflow has not been run against your droplet; configure the secrets and run it when ready.
