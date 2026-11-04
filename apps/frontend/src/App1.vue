@@ -1,45 +1,7 @@
 <script setup>
-import { computed, ref } from 'vue'
+import {ref} from 'vue'
 
-const questions = [
-  { word: 'the apple', hint: 'Choose the Spanish translation', options: ['La manzana', 'El pan', 'La leche', 'El agua'], answer: 0, emoji: '🍎' },
-  { word: 'the bread', hint: 'Choose the Spanish translation', options: ['El gato', 'La casa', 'El pan', 'La manzana'], answer: 2, emoji: '🥖' },
-  { word: 'the water', hint: 'Choose the Spanish translation', options: ['La leche', 'El agua', 'El libro', 'El perro'], answer: 1, emoji: '💧' },
-  { word: 'the cat', hint: 'Choose the Spanish translation', options: ['El perro', 'El pan', 'La casa', 'El gato'], answer: 3, emoji: '🐈' },
-  { word: 'the house', hint: 'Choose the Spanish translation', options: ['La casa', 'La manzana', 'El agua', 'El libro'], answer: 0, emoji: '🏡' },
-]
-const index = ref(0)
-const selected = ref(null)
-const checked = ref(false)
-const score = ref(0)
-const finished = ref(false)
-const question = computed(() => questions[index.value])
-const correct = computed(() => selected.value === question.value.answer)
-const progress = computed(() => finished.value ? 100 : (index.value + (checked.value ? 1 : 0)) / questions.length * 100)
-
-function submit() {
-  if (finished.value) return restart()
-  if (selected.value === null) return
-  if (!checked.value) {
-    checked.value = true
-    if (correct.value) score.value++
-    return
-  }
-  if (index.value === questions.length - 1) {
-    finished.value = true
-  } else {
-    index.value++
-    selected.value = null
-    checked.value = false
-  }
-}
-function restart() {
-  index.value = 0
-  selected.value = null
-  checked.value = false
-  score.value = 0
-  finished.value = false
-}
+const count = ref(0) 
 </script>
 
 <template>
