@@ -395,3 +395,18 @@ highlighted source sentences. Select a segment to filter its sentences; Show all
 sentences restores the character's full set. Direct links and browser navigation
 work, and search/sort options are retained when returning to the list. Shared
 styles are in `apps/frontend/src/styles/corpus.css`.
+
+## Upload a corpus story
+
+Open `/corpus-upload`, linked from Ideas and the character explorer. Choose a UTF-8
+`.txt` file, optionally edit its title, then select Upload and import. The page
+shows file upload progress and background processing progress, followed by a link
+to explore the imported characters.
+
+Uploads can pause and resume. If the page reloads during an upload, reselect the
+same unchanged file to continue from the server's saved position. Browser storage
+keeps only resume metadata, not the file contents. Once queued, an import keeps
+running when the page closes; its `/corpus-upload?import=<job-id>` URL restores
+the status without requiring the file. Failed imports can retry, while invalid
+UTF-8 files prompt you to choose a corrected file. The file limit comes from the
+server's existing `/api/corpus/limits` endpoint.

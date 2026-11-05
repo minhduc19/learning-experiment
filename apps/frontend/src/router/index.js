@@ -33,6 +33,12 @@ export const routes = [
     meta: { title: 'Reading app', fullscreen: true },
   },
   {
+    path: '/corpus-upload',
+    name: 'corpus-upload',
+    component: () => import('../views/CorpusUploadView.vue'),
+    meta: { title: 'Upload a corpus story' },
+  },
+  {
     path: '/characters',
     name: 'characters',
     component: () => import('../views/CharactersView.vue'),
