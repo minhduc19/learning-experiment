@@ -8,6 +8,11 @@ export function useQuiz() {
   const question = computed(() => questions[index.value])
   const correct = computed(() => selected.value?.id === question.value?.answer && selected.value !== null)
 
+  const sentence = computed(() => {
+    if (!question.value) return ''
+    return question.value.sentence.replaceAll('[[blank]]', correct.value ? selected.value.fill ?? selected.value.label : '___')
+  })
+
   function choose(option) {
     if (!complete.value && !selected.value && question.value.options.includes(option)) selected.value = option
   }
@@ -23,5 +28,5 @@ export function useQuiz() {
     selected.value = null
   }
 
-  return { index, selected, complete, question, correct, choose, proceed, restart, total: questions.length }
+  return { index, selected, complete, question, sentence, correct, choose, proceed, restart, total: questions.length }
 }
