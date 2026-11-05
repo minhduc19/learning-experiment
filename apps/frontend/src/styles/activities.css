@@ -352,3 +352,19 @@
   }
   .activity-screen-question { gap: 8px; }
 }
+
+.activity-progress-with-hearts {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.activity-progress-with-hearts .activity-progress { flex: 1; min-width: 0; }
+.activity-hearts { display: flex; gap: 3px; flex-shrink: 0; font-size: 1.5rem; line-height: 1.2; }
+.activity-hearts.is-healthy { color: #357a00; }
+.activity-hearts.is-warning { color: #a86500; }
+.activity-hearts.is-danger { color: #b52525; }
+.activity-hearts .is-lost { color: #a2a9a5; }
+.activity-option:disabled { cursor: default; }
+.activity-score { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--space-4); }
+.activity-score strong { display: block; font-size: 2rem; }
