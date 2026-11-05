@@ -5,12 +5,27 @@ import reading from '../data/reading.json'
 import MultipleChoiceActivity from '../components/MultipleChoiceActivity.vue'
 import { useReadingProgress } from '../composables/useReadingProgress.js'
 
-const { visibleBlocks, complete, unlock } = useReadingProgress(reading.blocks)
+const { passed, visibleBlocks, complete, unlock } = useReadingProgress(reading.blocks)
 const sentenceCount = reading.blocks.filter(block => block.type === 'sentence').length
 
 const settingsDialog = ref(null)
 const displayPinyin = ref(true)
 const displayTranslation = ref(true)
+const readingOnly = ref(false)
+const blockElements = new Map()
+
+function setBlockElement(id, element) {
+  if (element) blockElements.set(id, element)
+  else blockElements.delete(id)
+}
+
+async function passCheckpoint(id) {
+  unlock(id)
+  if (!readingOnly.value) return
+  await nextTick()
+  const nextBlock = reading.blocks[reading.blocks.findIndex(block => block.id === id) + 1]
+  blockElements.get(nextBlock?.id)?.focus()
+}
 const languageSize = ref(32)
 const translationSize = ref(16)
 const sentenceSpacing = ref(24)
@@ -97,12 +112,12 @@ onUnmounted(() => {
       </div>
 
       <template v-for="block in visibleBlocks" :key="block.id">
-      <section v-if="block.type === 'sentence'" class="reading-block" aria-label="Reading sentence">
+      <section v-if="block.type === 'sentence'" class="reading-block" :ref="element => setBlockElement(block.id, element)" tabindex="-1" aria-label="Reading sentence">
         <p class="reading-sentence" :lang="reading.language"><template v-for="segment in block.segments" :key="segment.id"><button v-if="segment.details" type="button" class="reading-phrase" :class="{ 'is-active': selected?.id === segment.id }" :aria-expanded="selected?.id === segment.id" aria-controls="phrase-meaning" aria-haspopup="dialog" @click="openMeaning(segment, $event)"><ruby>{{ segment.text }}<rt v-if="displayPinyin && segment.pinyin">{{ segment.pinyin }}</rt></ruby></button><span v-else class="reading-punctuation">{{ segment.text }}</span></template></p>
         <p v-if="displayTranslation" class="reading-translation" :lang="reading.translationLanguage">{{ block.translation }}</p>
       </section>
-      <section v-else-if="block.type === 'Multiple-choice'" class="reading-checkpoint" :aria-label="`Reading checkpoint ${block.id}`">
-        <MultipleChoiceActivity embedded :show-instructions="false" :items="[block.question]" :text-size="languageSize" :translation-size="translationSize" translation-label="English translation" @passed="unlock(block.id)" />
+      <section v-else-if="block.type === 'Multiple-choice'" class="reading-checkpoint" v-show="!readingOnly || !passed.has(block.id)" :ref="element => setBlockElement(block.id, element)" tabindex="-1" :aria-label="`Reading checkpoint ${block.id}`">
+        <MultipleChoiceActivity embedded :show-instructions="false" :items="[block.question]" :text-size="languageSize" :translation-size="translationSize" translation-label="English translation" @passed="passCheckpoint(block.id)" />
       </section>
       </template>
       <p v-if="complete" class="reading-end">End of reading · {{ sentenceCount }} sentences</p>
@@ -115,6 +130,11 @@ onUnmounted(() => {
           <h2 id="reading-settings-title">Reading settings</h2>
           <button class="reading-settings-button" aria-label="Close settings" autofocus>×</button>
         </div>
+        <label class="reading-setting-row">
+          <span>Only display reading content</span>
+          <input v-model="readingOnly" type="checkbox" aria-describedby="reading-only-help">
+        </label>
+        <p id="reading-only-help" class="reading-help">Hide completed quizzes. The current quiz stays visible until answered correctly.</p>
         <label class="reading-setting-row">
           <span>Display pinyin</span>
           <input v-model="displayPinyin" type="checkbox">

@@ -220,3 +220,10 @@ instructions on standalone quiz routes. Reading sentences, embedded question
 sentences, and options use the same font family, live language-size setting,
 and light font weight. Feedback and translations follow the translation size.
 Question sections retain an accessible label when the visible heading is hidden.
+
+The reading settings modal includes **Only display reading content**. When enabled,
+correctly answered quizzes are hidden, while the current unanswered quiz stays
+visible so it can unlock later content. Turning the option off restores completed
+quizzes with their answers and feedback intact. New correct answers are hidden
+automatically while the option is enabled. This setting lasts for the current page
+session, like the other reading settings.

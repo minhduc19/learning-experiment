@@ -10,5 +10,5 @@ export function useReadingProgress(blocks) {
     if (blocks[checkpointIndex.value]?.id === id) passed.value.add(id)
   }
 
-  return { visibleBlocks, complete, unlock }
+  return { passed, visibleBlocks, complete, unlock }
 }
