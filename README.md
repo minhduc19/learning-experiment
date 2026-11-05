@@ -24,7 +24,9 @@ The frontend calls relative `/api` URLs. Vite proxies these to FastAPI during de
 The frontend uses Vue Router with browser history and lazy-loaded pages:
 
 - `/`: the original home page and backend connection check
-- `/ideas/one`: `apps/frontend/src/views/IdeaOneView.vue`
+- `/multiple-choice` (also `/ideas/one`): interactive three-question quiz in
+  `apps/frontend/src/views/IdeaOneView.vue`. Edit `src/data/questions.js` to add
+  questions, option-specific feedback, and Spanish translations.
 - `/ideas/two`: `apps/frontend/src/views/IdeaTwoView.vue`
 - Unknown URLs show a page with a link back home.
 
@@ -53,6 +55,8 @@ for frontend routes while keeping `/api` routed to FastAPI.
 available in every view and component without additional imports.
 
 - `tokens.css`: CSS custom properties for colors, typography, spacing, and sizing.
+- `activities.css`: reusable activity progress bars, prompts, answer cards, feedback
+  dialogs, and completion screens.
 - `base.css`: project-wide defaults for elements and keyboard focus.
 - `components.css`: reusable `.page`, `.button`, `.site-nav`, `.stack`, and
   `.cluster` classes. Layouts are opt-in so new ideas can use their own structure.
@@ -74,6 +78,36 @@ Use the shared classes in any Vue template:
 Change tokens to update the whole project's theme. For component-specific rules,
 use `<style scoped>` and reference tokens such as `var(--space-3)` and
 `var(--color-primary)`. Add reusable patterns to `components.css`.
+
+### Reusing the activity design
+
+The activity stylesheet loads globally through `main.css`. Wrap an activity in
+`.activity` and reuse its classes; no CSS import or copied style block is needed:
+
+```vue
+<template>
+  <main class="page activity">
+    <progress class="activity-progress" :value="1" :max="3" aria-label="Questions completed" />
+    <h1 class="activity-title">Choose the right word</h1>
+    <p class="activity-sentence">A new activity prompt</p>
+    <div class="activity-options">
+      <button class="activity-option">An answer</button>
+    </div>
+    <button class="button activity-action">Continue</button>
+  </main>
+</template>
+```
+
+Use `.activity-feedback` on a native `<dialog>` and add `.is-correct` for success
+feedback. Its contents can use `.activity-feedback-icon`, `.activity-picked`,
+`.activity-translation`, and `.button.activity-action`. Open it with `showModal()`;
+the stylesheet handles appearance while your component handles interaction.
+Use `.activity-finish` for completion screens, `.activity-topline` for a progress
+header, and `.activity-hint` or `.activity-footer` for supporting text.
+
+Each activity can override `--activity-accent`, `--activity-progress-color`, and
+`--activity-border-color` on its `.activity` wrapper. Shared changes belong in
+`activities.css`; only unique layout or behavior belongs in the activity component.
 
 ## Checks
 
