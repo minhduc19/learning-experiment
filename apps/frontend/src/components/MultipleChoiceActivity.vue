@@ -73,7 +73,7 @@ async function startAgain() {
     <section v-else class="activity-screen-question" :key="question.id" aria-labelledby="question-heading">
       <div class="activity-mascot" aria-hidden="true">✦</div>
       <h1 class="activity-title" id="question-heading" ref="heading" tabindex="-1">{{ question.instruction }}</h1>
-      <p class="activity-hint">{{ strict ? 'One choice per question. Choose carefully, then press Check.' : 'Choose the word that completes the sentence.' }}</p>
+      <p class="activity-hint">{{ strict ? 'Choose an answer, then press Check to submit. You cannot retry after checking.' : 'Choose the word that completes the sentence.' }}</p>
       <p class="activity-sentence" aria-live="polite"><template v-for="(part, position) in question.sentence.split('[[blank]]')" :key="position">{{ part }}<span v-if="position < question.sentence.split('[[blank]]').length - 1" class="activity-answer" :class="{ 'is-correct': checked && correct, 'is-incorrect': checked && !correct }">{{ answerText }}<span v-if="checked" class="activity-answer-icon" aria-hidden="true">{{ correct ? ' ✓' : ' ✗' }}</span><span v-if="checked" class="activity-sr-only">{{ correct ? ' (correct)' : ' (incorrect)' }}</span></span></template></p>
       <div class="activity-options" role="group" aria-label="Answer options">
         <button
@@ -81,7 +81,7 @@ async function startAgain() {
           :key="option.id"
           :ref="(element) => answerButtons[position] = element"
           class="activity-option"
-          :disabled="checked || (strict && selected !== null)"
+          :disabled="checked"
           :aria-pressed="selected?.id === option.id"
           :class="{ 'is-selected': selected?.id === option.id }"
           @click="selectOption(option, position)"

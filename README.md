@@ -54,8 +54,8 @@ for frontend routes while keeping `/api` routed to FastAPI.
 
 ## Strict quiz
 
-`/multiple-choice-strict-quiz` is a full-screen, seven-question quiz. A selection
-locks immediately; Check submits it once and Continue advances after either
+`/multiple-choice-strict-quiz` is a full-screen, seven-question quiz. Selections can change until Check
+locks and submits the answer once and Continue advances after either
 result. Five hearts start green (4–5 remaining), become amber (2–3), then red
 (1). Each incorrect submission greys one heart. The fifth mistake ends the
 attempt after its feedback. Results show correct, incorrect, and any unanswered

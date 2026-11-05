@@ -3,13 +3,21 @@ import { test } from 'node:test'
 import { useQuiz } from '../src/composables/useQuiz.js'
 import { strictQuestions } from '../src/data/strictQuestions.js'
 
-test('strict selection locks immediately and checking counts once', () => {
+test('strict selections can change before Check, then lock and count once', () => {
   const quiz = useQuiz({ strict: true, items: strictQuestions })
-  const wrong = quiz.question.value.options.find(option => option.id !== quiz.question.value.answer)
+  const question = quiz.question.value
+  const wrong = question.options.find(option => option.id !== question.answer)
+  const right = question.options.find(option => option.id === question.answer)
   quiz.choose(wrong)
-  quiz.choose(quiz.question.value.options.find(option => option.id === quiz.question.value.answer))
-  assert.equal(quiz.selected.value.id, wrong.id)
+  quiz.choose(right)
+  assert.equal(quiz.selected.value.id, right.id)
+  assert.equal(quiz.sentence.value, question.sentence.replaceAll('[[blank]]', right.fill ?? right.label.toLowerCase()))
+  assert.equal(quiz.results.value.length, 0)
+  assert.equal(quiz.hearts.value, 5)
+  quiz.choose(wrong)
   quiz.check()
+  quiz.choose(right)
+  assert.equal(quiz.selected.value.id, wrong.id, 'cannot change submitted answer')
   quiz.check()
   assert.equal(quiz.incorrectCount.value, 1)
   assert.equal(quiz.hearts.value, 4)
