@@ -212,3 +212,10 @@ Omit either prop to keep the standalone activity's existing defaults.
 
 The reading app passes its live text-size settings, so updates also apply to
 existing checkpoints and newly revealed checkpoints without resetting answers.
+
+In the reading app, checkpoints use `:show-instructions="false"` to omit the
+activity title and instruction hint. The component defaults to showing these
+instructions on standalone quiz routes. Reading sentences, embedded question
+sentences, and options use the same font family, live language-size setting,
+and light font weight. Feedback and translations follow the translation size.
+Question sections retain an accessible label when the visible heading is hidden.

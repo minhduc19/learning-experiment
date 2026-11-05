@@ -7,6 +7,7 @@ import { strictQuestions } from '../data/strictQuestions.js'
 const props = defineProps({
   strict: { type: Boolean, default: false },
   embedded: { type: Boolean, default: false },
+  showInstructions: { type: Boolean, default: true },
   items: { type: Array, default: null },
   translationLabel: { type: String, default: 'Spanish translation' },
   // Pixel values; null keeps the standalone activity's default typography.
@@ -21,6 +22,7 @@ const feedbackDescriptionId = useId()
 const { results, correctCount, incorrectCount, hearts, failed, index, selected, checked, check, complete, question, answerText, correct, choose, proceed, restart, total } = useQuiz({ strict: props.strict, items: props.items ?? (props.strict ? strictQuestions : questions) })
 const feedbackHeading = ref(null)
 const heading = ref(null)
+const questionSection = ref(null)
 const answerButtons = ref([])
 let lastAnswer = 0
 
@@ -41,7 +43,7 @@ async function dismissFeedback() {
   const advance = props.strict || correct.value
   proceed()
   await nextTick()
-  if (advance) heading.value?.focus()
+  if (advance) (heading.value ?? questionSection.value)?.focus()
   else answerButtons.value[lastAnswer]?.focus()
 }
 
@@ -70,7 +72,7 @@ async function startAgain() {
     </div>
     </div>
 
-    <p v-if="complete && embedded" class="activity-checkpoint-passed" role="status">✓ Correct — reading unlocked.</p>
+    <p v-if="complete && embedded" ref="heading" tabindex="-1" class="activity-checkpoint-passed" role="status">✓ Correct — reading unlocked.</p>
     <section v-else-if="complete" class="activity-finish">
       <div class="activity-mascot" aria-hidden="true">★</div>
       <p class="activity-eyebrow">{{ strict ? 'QUIZ RESULTS' : 'LESSON COMPLETE' }}</p>
@@ -87,10 +89,10 @@ async function startAgain() {
       <button class="button activity-action" @click="startAgain">{{ strict ? 'Redo quiz' : 'Practice again' }}</button>
     </section>
 
-    <section v-else class="activity-screen-question" :key="question.id" :aria-labelledby="questionHeadingId">
+    <section v-else class="activity-screen-question" ref="questionSection" tabindex="-1" :key="question.id" :aria-labelledby="showInstructions ? questionHeadingId : undefined" :aria-label="showInstructions ? undefined : question.instruction">
       <div class="activity-mascot" aria-hidden="true">✦</div>
-      <h1 class="activity-title" :id="questionHeadingId" ref="heading" tabindex="-1">{{ question.instruction }}</h1>
-      <p class="activity-hint">{{ strict ? 'Choose an answer, then press Check to submit. You cannot retry after checking.' : 'Choose the word that completes the sentence.' }}</p>
+      <h1 v-if="showInstructions" class="activity-title" :id="questionHeadingId" ref="heading" tabindex="-1">{{ question.instruction }}</h1>
+      <p v-if="showInstructions" class="activity-hint">{{ strict ? 'Choose an answer, then press Check to submit. You cannot retry after checking.' : 'Choose the word that completes the sentence.' }}</p>
       <p class="activity-sentence" aria-live="polite"><template v-for="(part, position) in question.sentence.split('[[blank]]')" :key="position">{{ part }}<span v-if="position < question.sentence.split('[[blank]]').length - 1" class="activity-answer" :class="{ 'is-correct': checked && correct, 'is-incorrect': checked && !correct }">{{ answerText }}<span v-if="checked" class="activity-answer-icon" aria-hidden="true">{{ correct ? ' ✓' : ' ✗' }}</span><span v-if="checked" class="activity-sr-only">{{ correct ? ' (correct)' : ' (incorrect)' }}</span></span></template></p>
       <div class="activity-options" role="group" aria-label="Answer options">
         <button
