@@ -33,6 +33,12 @@ export const routes = [
     meta: { title: 'Reading app', fullscreen: true },
   },
   {
+    path: '/database-status',
+    name: 'database-status',
+    component: () => import('../views/DatabaseStatusView.vue'),
+    meta: { title: 'Database status' },
+  },
+  {
     path: '/ideas/two',
     name: 'idea-two',
     component: () => import('../views/IdeaTwoView.vue'),
