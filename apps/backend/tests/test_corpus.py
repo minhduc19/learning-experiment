@@ -539,3 +539,63 @@ def test_graceful_stop_exits_after_committed_checkpoint(client, monkeypatch):
     assert (
         client.get("/api/corpus/imports/" + job["id"]).json()["status"] == "completed"
     )
+
+
+def test_character_detail_and_segment_sentence_counts(client):
+    one = imported(client, "谢谢。谢谢你。谢谢，谢谢。")
+    imported(client, "谢谢。感谢。")
+    character = client.get("/api/corpus/characters?character=谢").json()["items"][0]
+    detail = client.get(f"/api/corpus/characters/{character['id']}").json()
+    assert detail["occurrence_count"] == 11
+    assert detail["sentence_count"] == 5
+    assert detail["distinct_segment_count"] == 2
+    filtered = client.get(
+        f"/api/corpus/characters/{character['id']}",
+        params={"story_id": one["story_id"]},
+    ).json()
+    assert filtered["sentence_count"] == 3
+    segments = client.get(
+        f"/api/corpus/characters/{character['id']}/segments?include_sentence_counts=true"
+    ).json()
+    assert segments["next_cursor"] is None
+    by_text = {row["text"]: row for row in segments["items"]}
+    assert by_text["谢谢"]["occurrence_count"] == 5
+    assert by_text["谢谢"]["sentence_count"] == 4
+    assert by_text["感谢"]["sentence_count"] == 1
+    assert client.get("/api/corpus/characters/999999").status_code == 404
+    matches = client.get(f"/api/corpus/characters/{character['id']}/sentences").json()[
+        "items"
+    ]
+    assert all(row["story_title"] == "中文故事" for row in matches)
+    assert len(matches) == 5
+
+
+def test_sentence_counts_do_not_count_fragments_as_separate_sentences(client):
+    imported(client, "学" * 10000 + "。")
+    character = client.get("/api/corpus/characters?character=学").json()["items"][0]
+    detail = client.get(f"/api/corpus/characters/{character['id']}").json()
+    assert detail["sentence_count"] == 1
+    segments = client.get(
+        f"/api/corpus/characters/{character['id']}/segments?include_sentence_counts=true"
+    ).json()["items"]
+    assert all(row["sentence_count"] == 1 for row in segments)
+
+
+def test_character_counts_for_non_word_segments_and_legacy_segment_shape(client):
+    imported(client, "。\r\n")
+    character = client.get(
+        "/api/corpus/characters?character=。&include_non_han=true"
+    ).json()["items"][0]
+    detail = client.get(f"/api/corpus/characters/{character['id']}").json()
+    assert detail["sentence_count"] == 1
+    assert detail["distinct_segment_count"] == 0
+    path = f"/api/corpus/characters/{character['id']}/segments"
+    empty = client.get(path + "?include_sentence_counts=true").json()
+    assert empty == {"items": [], "next_cursor": None}
+    legacy = client.get(path + "?include_non_words=true").json()
+    assert legacy["next_cursor"] is None
+    assert "sentence_count" not in legacy["items"][0]
+    counted = client.get(
+        path + "?include_non_words=true&include_sentence_counts=true"
+    ).json()
+    assert counted["items"][0]["sentence_count"] == 1

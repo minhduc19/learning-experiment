@@ -12,7 +12,7 @@
     "dev:api": "uv run --project apps/backend uvicorn app.main:app --env-file .env --app-dir apps/backend --reload --host 0.0.0.0 --port 8000",
     "dev:web": "npm run dev --workspace apps/frontend",
     "build": "npm run build --workspace apps/frontend",
-    "test": "uv run --project apps/backend pytest apps/backend/tests",
+    "test": "uv run --project apps/backend pytest apps/backend/tests && node --test apps/frontend/tests/*.test.js",
     "setup": "npm ci && uv sync --project apps/backend --locked"
   },
   "devDependencies": {

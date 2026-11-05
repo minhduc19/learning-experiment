@@ -1,0 +1,61 @@
+.corpus-page { max-width: 76rem; margin-top: 2vh; }
+.corpus-heading { max-width: 48rem; margin-bottom: var(--space-5); }
+.corpus-heading h1 { font-size: clamp(2rem, 5vw, 3.2rem); margin: 0 0 var(--space-3); }
+.corpus-heading > p:last-child { color: #52665d; font-size: 1.05rem; }
+.corpus-eyebrow { color: var(--color-primary); font-size: .75rem; font-weight: 750; letter-spacing: .12em; margin-bottom: var(--space-2); }
+.corpus-back { display: inline-block; margin-bottom: var(--space-4); text-underline-offset: .2em; }
+.corpus-toolbar { display: grid; grid-template-columns: 1fr minmax(12rem, .6fr); gap: var(--space-3) var(--space-4); padding: var(--space-4); background: white; border: 1px solid #dce6e0; border-radius: 1rem; }
+.corpus-toolbar label { display: block; font-weight: 600; margin-bottom: .4rem; }
+.corpus-search-input { display: flex; gap: var(--space-2); }
+.corpus-toolbar input:not([type=checkbox]), .corpus-toolbar select { width: 100%; min-width: 0; padding: .7rem .85rem; background: #fff; color: var(--color-text); border: 1px solid #bacdc4; border-radius: var(--radius-control); }
+.corpus-toolbar .corpus-checkbox { display: flex; align-items: center; gap: .6rem; grid-column: 1 / -1; margin: 0; font-size: .9rem; font-weight: 400; }
+.corpus-checkbox input { accent-color: var(--color-primary); width: 1.1rem; height: 1.1rem; flex-shrink: 0; }
+.corpus-muted { color: #52665d; }
+.corpus-section-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); }
+.corpus-section-heading h2 { margin: 0; font-size: 1.45rem; }
+.corpus-text-button { color: var(--color-primary); font-weight: 600; background: none; border: 0; padding: .4rem; text-decoration: underline; text-underline-offset: .2em; cursor: pointer; }
+.corpus-text-button:disabled { opacity: .5; cursor: wait; }
+.corpus-character-grid, .corpus-segment-grid, .corpus-sentences { list-style: none; padding: 0; margin: 0; }
+.corpus-character-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-3); }
+.corpus-character-grid li, .corpus-segment-grid li { min-width: 0; }
+.corpus-character-card { position: relative; display: flex; flex-direction: column; height: 100%; gap: .15rem; padding: var(--space-3); border: 1px solid #dce6e0; border-radius: 1rem; background: #fff; text-decoration: none; color: var(--color-text); font-size: .82rem; transition: border-color .15s, box-shadow .15s; }
+.corpus-character-card:hover, .corpus-segment-card:hover { border-color: var(--color-primary); box-shadow: 0 4px 16px #163b3509; }
+.corpus-character-glyph { display: flex; align-items: center; min-height: 4.5rem; font-size: 2.8rem; font-weight: 500; padding-bottom: .5rem; overflow-wrap: anywhere; }
+.corpus-character-glyph.is-named { font-size: 1.15rem; }
+.corpus-card-arrow { position: absolute; top: .8rem; right: 1rem; color: #7b958a; }
+.corpus-pagination { margin: var(--space-4) 0; display: flex; justify-content: center; }
+.corpus-error { padding: var(--space-3); border-radius: var(--radius-control); background: #fff1ef; color: #972c23; }
+.corpus-error .corpus-text-button { color: inherit; }
+.corpus-empty { text-align: center; padding: 3rem var(--space-4); border: 1px dashed #bacdc4; border-radius: 1rem; margin-top: var(--space-3); }
+.corpus-empty h2 { font-size: 1.4rem; }
+.corpus-summary { display: grid; grid-template-columns: 9rem 1fr; gap: var(--space-5); align-items: center; padding: var(--space-5); background: white; border: 1px solid #dce6e0; border-radius: 1.25rem; }
+.corpus-summary-glyph { display: grid; place-items: center; min-height: 9rem; padding: var(--space-2); background: #e9f3ed; border-radius: 1rem; color: var(--color-primary); font-size: 5rem; line-height: 1.3; overflow-wrap: anywhere; }
+.corpus-summary-glyph.is-named { font-size: 1.3rem; }
+.corpus-summary-caption { margin: 0 0 var(--space-3); font-size: .85rem; color: #52665d; }
+.corpus-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); margin: 0; }
+.corpus-metrics dt { font-size: .78rem; color: #52665d; }
+.corpus-metrics dd { margin: .35rem 0 0; font-size: clamp(1.3rem, 2.5vw, 2rem); font-weight: 650; overflow-wrap: anywhere; }
+.corpus-count-note { font-size: .85rem; color: #52665d; margin-block: var(--space-3) var(--space-5); }
+.corpus-section { margin-top: 2.5rem; }
+.corpus-segment-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: var(--space-3); }
+.corpus-segment-card { display: flex; flex-direction: column; gap: var(--space-2); width: 100%; height: 100%; padding: var(--space-4); border: 1px solid #dce6e0; border-radius: 1rem; background: white; color: var(--color-text); text-align: left; cursor: pointer; font-size: .85rem; }
+.corpus-segment-card.is-selected { border: 2px solid var(--color-primary); padding: calc(var(--space-4) - 1px); background: #edf6ef; }
+.corpus-segment-text { font-size: 1.65rem; overflow-wrap: anywhere; }
+.corpus-segment-stats { display: flex; flex-wrap: wrap; gap: .3rem var(--space-3); }
+.corpus-sentence-card { border: 1px solid #dce6e0; border-radius: 1rem; background: white; padding: var(--space-4); margin-top: var(--space-3); }
+.corpus-sentence-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .4rem var(--space-3); color: #52665d; font-size: .8rem; }
+.corpus-sentence-text { font-size: 1.35rem; line-height: 1.9; margin-bottom: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.corpus-sentence-text mark { color: #124b39; background: #d2edc9; border-radius: .2rem; padding-block: .1rem; }
+@media (max-width: 760px) {
+  .corpus-summary { grid-template-columns: 6rem 1fr; padding: var(--space-4); gap: var(--space-3); }
+  .corpus-summary-glyph { min-height: 6rem; font-size: 3.7rem; }
+  .corpus-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 480px) {
+  .corpus-page { padding: var(--space-3); }
+  .corpus-toolbar { grid-template-columns: 1fr; padding: var(--space-3); }
+  .corpus-character-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+  .corpus-summary { grid-template-columns: 1fr; }
+  .corpus-summary-glyph { width: 6rem; }
+  .corpus-segment-grid { grid-template-columns: 1fr; }
+}

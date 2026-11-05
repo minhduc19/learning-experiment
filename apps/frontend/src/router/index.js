@@ -33,6 +33,17 @@ export const routes = [
     meta: { title: 'Reading app', fullscreen: true },
   },
   {
+    path: '/characters',
+    name: 'characters',
+    component: () => import('../views/CharactersView.vue'),
+    meta: { title: 'Character explorer' },
+  },
+  {
+    path: '/characters/:characterId',
+    name: 'character-detail',
+    component: () => import('../views/CharacterDetailView.vue'),
+  },
+  {
     path: '/database-status',
     name: 'database-status',
     component: () => import('../views/DatabaseStatusView.vue'),
