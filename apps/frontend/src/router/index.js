@@ -22,6 +22,12 @@ export const routes = [
     meta: { title: 'Strict quiz', fullscreen: true },
   },
   {
+    path: '/reading-app',
+    name: 'reading-app',
+    component: () => import('../views/ReadingView.vue'),
+    meta: { title: 'Reading app', fullscreen: true },
+  },
+  {
     path: '/ideas/two',
     name: 'idea-two',
     component: () => import('../views/IdeaTwoView.vue'),

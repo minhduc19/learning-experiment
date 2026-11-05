@@ -65,6 +65,19 @@ Edit `src/data/strictQuestions.js` to change this quiz's question set.
 The practice route keeps its retry behavior. Both modes share
 `src/components/MultipleChoiceActivity.vue` and the activity CSS.
 
+## Mandarin reading
+
+`/reading-app` displays three sentence blocks from `apps/frontend/src/data/reading.json`.
+Each block has a full English translation and an ordered `segments` array. Segments
+contain `id`, `text`, `pinyin`, and optional `details` (`translation`, `partOfSpeech`,
+`note`). Punctuation segments have no details and are not interactive. Mandarin
+sentence text is derived from the segments rather than stored twice.
+
+Pinyin appears above phrases using HTML ruby. Click or tap a phrase (or use Tab
+and Enter) to open its detailed meaning. Close with Escape, the close button, or
+by clicking outside. Reading UI styles live in `src/styles/reading.css` and load
+through the shared stylesheet entry point.
+
 ## Shared styles
 
 `apps/frontend/src/main.js` imports `src/styles/main.css` once, making the CSS
