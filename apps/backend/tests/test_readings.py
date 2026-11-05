@@ -76,3 +76,62 @@ def test_storage_errors_and_invalid_saved_file(client, monkeypatch, tmp_path):
     reading_id = uuid4()
     (directory / f'{reading_id}.json').write_text('invalid json')
     assert client.get(f'/api/readings/{reading_id}').status_code == 500
+
+
+def test_list_readings_empty_and_generated_document_links(client):
+    assert client.get('/api/readings').json() == {
+        'items': [], 'total': 0, 'limit': 50, 'offset': 0, 'has_more': False,
+    }
+    document = client.post('/api/readings', json={'text': '我喜欢散步。今天天气很好！', 'title': '公园'}).json()
+    response = client.get('/api/readings')
+    assert response.status_code == 200
+    result = response.json()
+    assert result['total'] == 1
+    assert result['items'] == [{
+        'id': document['id'], 'title': '公园', 'language': 'zh-Hans', 'sentence_count': 2,
+        'url': f"/api/readings/{document['id']}", 'reader_url': f"/reading-app?reading={document['id']}",
+    }]
+    assert client.get(result['items'][0]['url']).json() == document
+    assert 'blocks' not in result['items'][0]
+
+
+def test_list_readings_pagination(client):
+    documents = [client.post('/api/readings', json={'text': '我喜欢中文。', 'title': str(i)}).json() for i in range(3)]
+    expected_ids = sorted(doc['id'] for doc in documents)
+    first = client.get('/api/readings?limit=2').json()
+    assert [item['id'] for item in first['items']] == expected_ids[:2]
+    assert first['has_more'] is True
+    last = client.get('/api/readings?limit=2&offset=2').json()
+    assert [item['id'] for item in last['items']] == expected_ids[2:]
+    assert last['has_more'] is False
+    assert last['total'] == 3
+    assert client.get('/api/readings?offset=100').json()['items'] == []
+
+
+@pytest.mark.parametrize('query', ['limit=0', 'limit=101', 'offset=-1', 'limit=invalid'])
+def test_list_readings_rejects_invalid_pagination(client, query):
+    assert client.get('/api/readings?' + query).status_code == 422
+
+
+def test_list_readings_ignores_invalid_and_unrelated_files(client, tmp_path):
+    document = client.post('/api/readings', json={'text': '我喜欢中文。'}).json()
+    directory = tmp_path / 'readings'
+    (directory / 'draft.tmp').write_text('partial')
+    (directory / 'unrelated.json').write_text('{}')
+    (directory / f'{uuid4()}.json').write_text('corrupted')
+    mismatch = dict(document, id=str(uuid4()))
+    (directory / f'{uuid4()}.json').write_text(json.dumps(mismatch))
+    (directory / f'{uuid4()}.json').symlink_to(directory / f"{document['id']}.json")
+    result = client.get('/api/readings').json()
+    assert result['total'] == 1
+    assert result['items'][0]['id'] == document['id']
+
+
+def test_list_readings_storage_failure(client, monkeypatch, tmp_path):
+    invalid = tmp_path / 'file'
+    invalid.write_text('not a directory')
+    monkeypatch.setenv('READING_DATA_DIR', str(invalid))
+    response = client.get('/api/readings')
+    assert response.status_code == 503
+    assert response.json() == {'detail': 'Reading storage is unavailable'}
+    assert str(tmp_path) not in response.text

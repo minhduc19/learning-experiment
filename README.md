@@ -340,3 +340,17 @@ frontend proxy. The original backend `/docs`, `/redoc`, and `/openapi.json` URLs
 remain available. Swagger UI's scripts and stylesheet load from FastAPI's default
 jsDelivr CDN, so interactive docs require browser access to that CDN. The schema
 JSON link remains available independently of those assets.
+
+### List available readings
+
+`GET /api/readings?limit=50&offset=0` returns saved reading summaries, sorted by
+UUID filename for deterministic pagination. `limit` is 1–100 (default 50), and
+`offset` is zero or greater. The response contains `items`, `total`, `limit`,
+`offset`, and `has_more`. Each item contains `id`, `title`, `language`,
+`sentence_count`, `url` for the full document, and `reader_url` for opening it.
+
+An empty or not-yet-created storage directory returns an empty list. Temporary
+files, unrelated files, symlinks, and invalid saved readings are omitted; invalid
+reading files are logged. Storage access errors return a generic 503. To retrieve
+full reading blocks and segments, follow each item's `url`. The list currently
+scans saved JSON files; a database-backed index can be added if the library grows.

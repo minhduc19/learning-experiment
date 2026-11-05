@@ -36,3 +36,20 @@ class ReadingDocument(BaseModel):
     title: str
     language: Literal["zh-Hans"] = "zh-Hans"
     blocks: list[SentenceBlock]
+
+
+class ReadingSummary(BaseModel):
+    id: UUID
+    title: str
+    language: Literal["zh-Hans"]
+    sentence_count: int
+    url: str
+    reader_url: str
+
+
+class ReadingList(BaseModel):
+    items: list[ReadingSummary]
+    total: int
+    limit: int
+    offset: int
+    has_more: bool
