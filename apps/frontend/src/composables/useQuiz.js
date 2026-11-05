@@ -23,7 +23,7 @@ export function useQuiz({ strict = false, items = questions } = {}) {
   })
 
   function choose(option) {
-    if (!complete.value && !checked.value && !(strict && selected.value) && question.value.options.includes(option)) selected.value = option
+    if (!complete.value && !checked.value && question.value.options.includes(option)) selected.value = option
   }
 
   function check() {
