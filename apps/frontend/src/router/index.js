@@ -16,7 +16,6 @@ export const routes = [
   },
   {
     path: '/multiple-choice',
-    alias: '/ideas/one',
     name: 'idea-one',
     component: () => import('../views/IdeaOneView.vue'),
     meta: { title: 'Multiple choice', fullscreen: true },
