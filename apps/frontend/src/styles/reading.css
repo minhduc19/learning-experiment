@@ -50,7 +50,8 @@
 .activity-embedded .activity-screen-question { overflow: visible; gap: var(--space-3); }
 .activity-embedded .activity-feedback { border-radius: 18px; border-bottom: 2px solid #ebbb99; }
 .activity-embedded .activity-feedback.is-correct { border-bottom-color: #a1ce79; }
-.activity-checkpoint-passed { color: #245800; font-weight: 600; }
+/* Keep submitted options available for review within the reading passage. */
+.activity-embedded.activity-has-feedback .activity-options { display: grid; }
 
 /* Reading text and embedded question text share the same typography. */
 .reading-checkpoint .activity-sentence,

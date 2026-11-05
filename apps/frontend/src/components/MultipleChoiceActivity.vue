@@ -40,6 +40,8 @@ async function checkAnswer() {
 }
 
 async function dismissFeedback() {
+  // Passed reading checkpoints remain as a review of the submitted answer.
+  if (props.embedded && correct.value) return
   const advance = props.strict || correct.value
   proceed()
   await nextTick()
@@ -72,8 +74,7 @@ async function startAgain() {
     </div>
     </div>
 
-    <p v-if="complete && embedded" ref="heading" tabindex="-1" class="activity-checkpoint-passed" role="status">✓ Correct — reading unlocked.</p>
-    <section v-else-if="complete" class="activity-finish">
+    <section v-if="complete" class="activity-finish">
       <div class="activity-mascot" aria-hidden="true">★</div>
       <p class="activity-eyebrow">{{ strict ? 'QUIZ RESULTS' : 'LESSON COMPLETE' }}</p>
       <h1 class="activity-title" ref="heading" tabindex="-1">{{ failed ? 'Out of hearts' : 'You did it!' }}</h1>
@@ -125,7 +126,7 @@ async function startAgain() {
         <p v-if="correct" class="activity-translation"><strong>{{ translationLabel }}</strong><br>{{ question.translation }}</p>
         <p :id="feedbackDescriptionId">{{ selected.feedback }}</p>
         </div>
-        <div class="activity-feedback-actions">
+        <div v-if="!embedded || !correct" class="activity-feedback-actions">
         <button class="button activity-action" autofocus @click="dismissFeedback">{{ strict ? ((failed || index === total - 1) ? 'See results' : 'Continue') : (correct ? 'Continue' : 'Try again') }}</button>
         </div>
       </template>

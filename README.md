@@ -187,8 +187,9 @@ optional `fill`, and `feedback`.
 Only content through the first unanswered checkpoint is rendered. Wrong answers
 show feedback and Try again; students can change their selection before Check.
 A correct Check reveals the next sentences through the next unanswered checkpoint.
-Earlier reading remains visible, and each checkpoint retains its feedback until
-Continue. The included passage has two checkpoints. Progress resets on reload.
+Earlier reading remains visible, and correctly answered checkpoints keep their
+completed sentence, locked options, and feedback. They have no Continue button
+and are never replaced with an unlocked message. The included passage has two checkpoints. Progress resets on reload.
 The embedded checkpoints share `MultipleChoiceActivity.vue` with the existing
 practice and strict quiz routes.
 
