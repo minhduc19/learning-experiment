@@ -75,7 +75,7 @@ watch(() => [sort.value, includeOther.value, route.query.character], () => {
     <ul v-if="characters.items.length" class="corpus-character-grid" aria-label="Characters" :aria-busy="characters.loading">
       <li v-for="character in characters.items" :key="character.id">
         <RouterLink class="corpus-character-card" :to="{ name: 'character-detail', params: { characterId: character.id }, query: route.query }" :aria-label="`${characterLabel(character.value)} — ${formatCount(character.occurrence_count)} occurrences, ${formatCount(character.distinct_segment_count)} word segments`">
-          <span class="corpus-character-glyph" :class="{ 'is-named': characterLabel(character.value) !== character.value }" lang="zh-Hans">{{ characterLabel(character.value) }}</span>
+          <span class="corpus-character-glyph" :class="{ 'is-named': characterLabel(character.value) !== character.value }" lang="zh-Hans">{{ characterLabel(character.traditional_value || character.value) }}<small v-if="character.simplified_value && character.simplified_value !== (character.traditional_value || character.value)" class="corpus-script-alternative" lang="zh-Hans">{{ characterLabel(character.simplified_value) }}</small></span>
           <span><strong>{{ formatCount(character.occurrence_count) }}</strong> {{ character.occurrence_count === 1 ? 'occurrence' : 'occurrences' }}</span>
           <span class="corpus-muted">{{ formatCount(character.distinct_segment_count) }} word {{ character.distinct_segment_count === 1 ? 'segment' : 'segments' }}</span>
           <svg class="corpus-card-arrow" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 17 17 7M7 7h10v10" /></svg>

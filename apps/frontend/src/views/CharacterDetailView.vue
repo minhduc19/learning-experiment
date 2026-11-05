@@ -77,7 +77,7 @@ onUnmounted(() => { revision += 1; controller?.abort() })
 
     <template v-if="character">
       <section class="corpus-summary" aria-label="Character overview">
-        <div class="corpus-summary-glyph" :class="{ 'is-named': characterLabel(character.value) !== character.value }" lang="zh-Hans">{{ characterLabel(character.value) }}</div>
+        <div class="corpus-summary-glyph" :class="{ 'is-named': characterLabel(character.value) !== character.value }" lang="zh-Hans">{{ characterLabel(character.traditional_value || character.value) }}<small v-if="character.simplified_value && character.simplified_value !== (character.traditional_value || character.value)" class="corpus-script-alternative" lang="zh-Hans">{{ characterLabel(character.simplified_value) }}</small></div>
         <div>
           <p class="corpus-summary-caption">Across all completed stories</p>
           <dl class="corpus-metrics">
@@ -99,7 +99,7 @@ onUnmounted(() => { revision += 1; controller?.abort() })
         <ul class="corpus-segment-grid" aria-label="Associated segments" :aria-busy="segments.loading">
           <li v-for="segment in segments.items" :key="segment.id">
             <button class="corpus-segment-card" :class="{ 'is-selected': selectedSegment?.id === segment.id }" :aria-pressed="selectedSegment?.id === segment.id" @click="selectSegment(segment)">
-              <span class="corpus-segment-text" lang="zh-Hans">{{ characterLabel(segment.text) }}</span>
+              <span class="corpus-segment-text" lang="zh-Hans">{{ characterLabel(segment.traditional_text || segment.text) }}<small v-if="segment.simplified_text && segment.simplified_text !== (segment.traditional_text || segment.text)" class="corpus-script-alternative" lang="zh-Hans">{{ characterLabel(segment.simplified_text) }}</small></span>
               <span class="corpus-segment-stats"><span><strong>{{ formatCount(segment.occurrence_count) }}</strong> {{ segment.occurrence_count === 1 ? 'appearance' : 'appearances' }}</span><span><strong>{{ formatCount(segment.sentence_count) }}</strong> {{ segment.sentence_count === 1 ? 'sentence' : 'sentences' }}</span></span>
               <span class="corpus-muted">{{ formatCount(segment.count_in_segment) }} × {{ characterLabel(character.value) }} per segment</span>
             </button>

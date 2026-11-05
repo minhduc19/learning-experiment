@@ -91,3 +91,7 @@
 .corpus-upload-success > p { margin-bottom: var(--space-4); }
 @media (max-width: 480px) { .corpus-upload-card, .corpus-upload-status { padding: var(--space-3); } }
 .corpus-upload-status-heading > div { min-width: 0; overflow-wrap: anywhere; }
+
+.corpus-script-alternative { display: inline-block; margin-inline-start: .5em; font-size: .55em; font-weight: 400; color: #52665d; vertical-align: baseline; overflow-wrap: anywhere; }
+.corpus-summary-glyph { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; }
+.corpus-sentence-simplified { margin: .65rem 0 0; color: #52665d; font-size: 1.05rem; line-height: 1.9; white-space: pre-wrap; overflow-wrap: anywhere; }
