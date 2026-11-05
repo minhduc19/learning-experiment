@@ -103,7 +103,7 @@ onUnmounted(() => {
       </section>
       <section v-else-if="block.type === 'Multiple-choice'" class="reading-checkpoint" :aria-label="`Reading checkpoint ${block.id}`">
         <p class="reading-eyebrow">READING CHECKPOINT</p>
-        <MultipleChoiceActivity embedded :items="[block.question]" translation-label="English translation" @passed="unlock(block.id)" />
+        <MultipleChoiceActivity embedded :items="[block.question]" :text-size="languageSize" :translation-size="translationSize" translation-label="English translation" @passed="unlock(block.id)" />
       </section>
       </template>
       <p v-if="complete" class="reading-end">End of reading · {{ sentenceCount }} sentences</p>
