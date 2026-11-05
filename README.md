@@ -11,6 +11,8 @@ FastAPI + Vue monorepo
 Install Node.js 24 LTS and [uv](https://docs.astral.sh/uv/getting-started/installation/), then from the repository root:
 
 ```sh
+cp .env.example .env
+docker compose up -d db
 npm run setup
 npm run dev
 ```
@@ -18,6 +20,36 @@ npm run dev
 Open http://localhost:5173. FastAPI serves http://localhost:8000 and interactive API docs at http://localhost:8000/docs. Both servers reload on changes. Ctrl+C stops both.
 
 The frontend calls relative `/api` URLs. Vite proxies these to FastAPI during development, so no CORS configuration is needed. Production hosting must route `/api` to FastAPI and serve `apps/frontend/dist` as static files; Vite's dev proxy is not part of the production build.
+
+## PostgreSQL
+
+PostgreSQL 17 runs as the Compose `db` service. For local development, copy
+`.env.example` to `.env`, start `docker compose up -d db`, then run `npm run dev`.
+The backend's Uvicorn development command loads `.env`. The database is exposed
+only on localhost (port 5432 by default). Change `PGPORT` in `.env` if needed.
+
+The backend uses Psycopg 3. Use `app.database.connect_database()` as a context
+manager for SQL operations; it commits on success, rolls back on exceptions, and
+closes the connection. Configure connections with `PGHOST`, `PGPORT`, `PGUSER`,
+`PGPASSWORD`, and `PGDATABASE`, or supply `DATABASE_URL` for an external database.
+When running Uvicorn directly, supply these environment variables yourself or
+use `--env-file .env`.
+
+- `/api/health`: application liveness, independent of the database.
+- `/api/health/db`: executes `SELECT 1`; returns 200 when connected or 503 when
+  unavailable, without exposing connection details.
+
+The full Compose stack supplies database connection variables automatically and
+waits for PostgreSQL readiness before starting the backend. It uses a named
+`postgres_data` volume, so `docker compose down` preserves data. Avoid adding
+`--volumes` unless you intend to erase the local database. PostgreSQL initialization
+credentials apply only when the volume is first created. Development credentials
+in the example are for local use; configure deployment credentials separately.
+
+CI runs database integration tests against PostgreSQL. Run `npm test` for the unit tests. To include the integration test, set
+`TEST_DATABASE_URL` to a reachable PostgreSQL URL before running `npm test`.
+Application data models and schema migrations can be added when the storage
+requirements are defined.
 
 ## Idea pages
 

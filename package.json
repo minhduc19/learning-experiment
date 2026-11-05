@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "concurrently -k -n api,web \"npm run dev:api\" \"npm run dev:web\"",
-    "dev:api": "uv run --project apps/backend uvicorn app.main:app --app-dir apps/backend --reload --host 0.0.0.0 --port 8000",
+    "dev:api": "uv run --project apps/backend uvicorn app.main:app --env-file .env --app-dir apps/backend --reload --host 0.0.0.0 --port 8000",
     "dev:web": "npm run dev --workspace apps/frontend",
     "build": "npm run build --workspace apps/frontend",
     "test": "uv run --project apps/backend pytest apps/backend/tests",
