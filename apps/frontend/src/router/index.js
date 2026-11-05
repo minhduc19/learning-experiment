@@ -39,6 +39,12 @@ export const routes = [
     meta: { title: 'Database status' },
   },
   {
+    path: '/api-docs',
+    name: 'api-docs',
+    component: () => import('../views/ApiDocsView.vue'),
+    meta: { title: 'API documentation' },
+  },
+  {
     path: '/ideas/two',
     name: 'idea-two',
     component: () => import('../views/IdeaTwoView.vue'),
