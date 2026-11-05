@@ -3,17 +3,20 @@ import logging
 import os
 import re
 import tempfile
-from uuid import UUID, uuid4
+from uuid import uuid4
+
+from pydantic import TypeAdapter
 
 import jieba
 from pypinyin import Style, lazy_pinyin
 
 from app.core.config import get_reading_directory
-from app.readings.schemas import ReadingCreate, ReadingDocument, ReadingList, ReadingSummary, Segment, SentenceBlock
+from app.readings.schemas import ReadingCreate, ReadingDocument, ReadingId, ReadingList, ReadingSummary, Segment, SentenceBlock
 
 # Keep sentence punctuation, closing quotation marks, and internal whitespace.
 SENTENCES = re.compile(r'.+?(?:[。！？!?]+[”’」』]*|[\r\n]+|$)\s*', re.DOTALL)
 tokenizer = jieba.Tokenizer()
+reading_id_adapter = TypeAdapter(ReadingId)
 
 
 def generate_reading(data: ReadingCreate) -> ReadingDocument:
@@ -24,10 +27,11 @@ def generate_reading(data: ReadingCreate) -> ReadingDocument:
             syllables = lazy_pinyin(word, style=Style.TONE, errors=lambda _: [])
             segments.append(Segment(
                 id=f"s{sentence_index}-w{word_index}", text=word,
-                pinyin=" ".join(syllables) or None,
+                pinyin=" ".join(syllables) or None, details=None,
             ))
-        blocks.append(SentenceBlock(id=f"sentence-{sentence_index}", segments=segments))
-    return ReadingDocument(id=uuid4(), title=data.title.strip() or data.text[:30], blocks=blocks)
+        blocks.append(SentenceBlock(id=f"sentence-{sentence_index}", type="sentence", translation=None, segments=segments))
+    return ReadingDocument(id=str(uuid4()), title=data.title.strip() or data.text[:30],
+                           titleTranslation=None, language="zh-Hans", translationLanguage="en", blocks=blocks)
 
 
 def save_reading(document: ReadingDocument) -> None:
@@ -37,7 +41,7 @@ def save_reading(document: ReadingDocument) -> None:
     try:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=directory, suffix=".tmp", delete=False) as file:
             temporary = file.name
-            file.write(document.model_dump_json(indent=2))
+            file.write(document.model_dump_json(indent=2, exclude_unset=True))
             file.flush()
             os.fsync(file.fileno())
         os.replace(temporary, directory / f"{document.id}.json")
@@ -46,7 +50,7 @@ def save_reading(document: ReadingDocument) -> None:
             os.unlink(temporary)
 
 
-def read_reading(reading_id: UUID) -> ReadingDocument:
+def read_reading(reading_id: str) -> ReadingDocument:
     path = get_reading_directory() / f"{reading_id}.json"
     return ReadingDocument.model_validate(json.loads(path.read_text(encoding="utf-8")))
 
@@ -62,10 +66,8 @@ def list_readings(limit: int = 50, offset: int = 0) -> ReadingList:
         if path.suffix != ".json" or path.is_symlink() or not path.is_file():
             continue
         try:
-            reading_id = UUID(path.stem)
+            reading_id = reading_id_adapter.validate_python(path.stem)
         except ValueError:
-            continue
-        if str(reading_id) != path.stem:
             continue
         try:
             document = read_reading(reading_id)
@@ -79,7 +81,7 @@ def list_readings(limit: int = 50, offset: int = 0) -> ReadingList:
             continue
         summaries.append(ReadingSummary(
             id=document.id, title=document.title, language=document.language,
-            sentence_count=len(document.blocks), url=f"/api/readings/{document.id}",
+            sentence_count=sum(block.type == "sentence" for block in document.blocks), url=f"/api/readings/{document.id}",
             reader_url=f"/reading-app?reading={document.id}",
         ))
     total = len(summaries)

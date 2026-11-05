@@ -27,7 +27,10 @@ def test_generate_save_and_read_json(client, tmp_path):
     assert len({segment['id'] for segment in segments}) == len(segments)
     assert next(segment['pinyin'] for segment in segments if segment['text'] == '散步') == 'sàn bù'
     assert all(segment['pinyin'] is None for segment in segments if segment['text'] in ['。', '！', '\n'])
-    assert 'translation' not in document['blocks'][0]
+    assert document['blocks'][0]['translation'] is None
+    assert document['titleTranslation'] is None
+    assert document['translationLanguage'] == 'en'
+    assert all(segment['details'] is None for segment in segments)
     path = tmp_path / 'readings' / f"{document['id']}.json"
     assert json.loads(path.read_text()) == document
     # A new client retrieves the persisted file, independent of the creation request.
@@ -42,7 +45,7 @@ def test_invalid_text_is_rejected(client, text):
 
 def test_reading_ids_cannot_escape_storage(client):
     assert client.get('/api/readings/' + str(uuid4())).status_code == 404
-    assert client.get('/api/readings/not-a-uuid').status_code == 422
+    assert client.get('/api/readings/invalid.name').status_code == 422
     assert client.get('/api/readings/..%2F..%2F.env').status_code in [404, 422]
 
 
@@ -135,3 +138,53 @@ def test_list_readings_storage_failure(client, monkeypatch, tmp_path):
     assert response.status_code == 503
     assert response.json() == {'detail': 'Reading storage is unavailable'}
     assert str(tmp_path) not in response.text
+
+
+def full_reading_fixture():
+    from pathlib import Path
+    return json.loads((Path(__file__).resolve().parents[2] / 'frontend/src/data/reading.json').read_text())
+
+
+def test_full_frontend_reading_round_trips_without_losing_fields(client, tmp_path):
+    from app.readings.schemas import ReadingDocument
+    from app.readings.service import save_reading
+
+    fixture = full_reading_fixture()
+    save_reading(ReadingDocument.model_validate(fixture))
+    saved = json.loads((tmp_path / 'readings' / 'reading-001.json').read_text())
+    assert saved == fixture
+    response = client.get('/api/readings/reading-001')
+    assert response.status_code == 200
+    assert response.json() == fixture
+    summary = client.get('/api/readings').json()['items'][0]
+    assert summary['id'] == 'reading-001'
+    assert summary['sentence_count'] == 3
+    assert client.get(summary['url']).json() == fixture
+
+
+def test_existing_segmentation_only_documents_remain_readable(client, tmp_path):
+    reading_id = str(uuid4())
+    old_document = {
+        'id': reading_id, 'title': 'Existing reading', 'language': 'zh-Hans',
+        'blocks': [{'id': 's1', 'type': 'sentence', 'segments': [{'id': 'w1', 'text': '我', 'pinyin': 'wǒ'}]}],
+    }
+    directory = tmp_path / 'readings'
+    directory.mkdir()
+    (directory / f'{reading_id}.json').write_text(json.dumps(old_document))
+    assert client.get('/api/readings/' + reading_id).json() == old_document
+
+
+@pytest.mark.parametrize('change', ['unknown_type', 'unknown_answer', 'duplicate_options'])
+def test_invalid_rich_documents_are_rejected(client, tmp_path, change):
+    fixture = full_reading_fixture()
+    if change == 'unknown_type':
+        fixture['blocks'][1]['type'] = 'unsupported'
+    elif change == 'unknown_answer':
+        fixture['blocks'][1]['question']['answer'] = 'missing-option'
+    else:
+        fixture['blocks'][1]['question']['options'][1]['id'] = fixture['blocks'][1]['question']['options'][0]['id']
+    directory = tmp_path / 'readings'
+    directory.mkdir()
+    (directory / 'reading-001.json').write_text(json.dumps(fixture))
+    assert client.get('/api/readings/reading-001').status_code == 500
+    assert client.get('/api/readings').json()['total'] == 0
