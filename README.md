@@ -26,7 +26,9 @@ The frontend uses Vue Router with browser history and lazy-loaded pages:
 - `/`: the original home page and backend connection check
 - `/multiple-choice` (also `/ideas/one`): interactive three-question quiz in
   `apps/frontend/src/views/IdeaOneView.vue`. Edit `src/data/questions.js` to add
-  questions, option-specific feedback, and Spanish translations.
+  questions, option-specific feedback, and Spanish translations. Use `[[blank]]`
+  in each sentence; the correct option’s `fill` text replaces the marker while
+  feedback is open (`label` is used if `fill` is omitted).
 - `/ideas/two`: `apps/frontend/src/views/IdeaTwoView.vue`
 - Unknown URLs show a page with a link back home.
 
@@ -100,7 +102,8 @@ The activity stylesheet loads globally through `main.css`. Wrap an activity in
 
 Use `.activity-feedback` on a native `<dialog>` and add `.is-correct` for success
 feedback. Its contents can use `.activity-feedback-icon`, `.activity-picked`,
-`.activity-translation`, and `.button.activity-action`. Open it with `showModal()`;
+`.activity-translation`, and `.button.activity-action`. The feedback is a bottom sheet capped at half the viewport, with scrollable
+content and an always-visible action button. Open it with `showModal()`;
 the stylesheet handles appearance while your component handles interaction.
 Use `.activity-finish` for completion screens, `.activity-topline` for a progress
 header, and `.activity-hint` or `.activity-footer` for supporting text.

@@ -37,3 +37,23 @@ test('unanswered questions cannot advance; lesson completes and restarts', () =>
   assert.equal(quiz.index.value, 0)
   assert.equal(quiz.selected.value, null)
 })
+
+
+test('blank markers fill only on correct answers and reset on continue', () => {
+  const quiz = useQuiz()
+  for (const question of questions) {
+    assert.ok(question.sentence.includes('[[blank]]'))
+    assert.equal(quiz.sentence.value, question.sentence.replaceAll('[[blank]]', '___'))
+    quiz.choose(question.options.find(option => option.id !== question.answer))
+    assert.ok(quiz.sentence.value.includes('___'))
+    quiz.proceed()
+    const answer = question.options.find(option => option.id === question.answer)
+    quiz.choose(answer)
+    assert.equal(quiz.sentence.value, question.sentence.replaceAll('[[blank]]', answer.fill ?? answer.label))
+    assert.ok(!quiz.sentence.value.includes('[[blank]]'))
+    quiz.proceed()
+  }
+  assert.equal(quiz.sentence.value, '')
+  quiz.restart()
+  assert.equal(quiz.sentence.value, 'I ___ three languages.')
+})
