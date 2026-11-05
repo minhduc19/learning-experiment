@@ -1,12 +1,21 @@
 <script setup>
-import { nextTick, ref } from 'vue'
+import { nextTick, ref, useId } from 'vue'
 import { useQuiz } from '../composables/useQuiz'
 import { questions } from '../data/questions.js'
 import { strictQuestions } from '../data/strictQuestions.js'
 
-const props = defineProps({ strict: { type: Boolean, default: false } })
+const props = defineProps({
+  strict: { type: Boolean, default: false },
+  embedded: { type: Boolean, default: false },
+  items: { type: Array, default: null },
+  translationLabel: { type: String, default: 'Spanish translation' },
+})
+const emit = defineEmits(['passed'])
+const questionHeadingId = useId()
+const feedbackHeadingId = useId()
+const feedbackDescriptionId = useId()
 
-const { results, correctCount, incorrectCount, hearts, failed, index, selected, checked, check, complete, question, answerText, correct, choose, proceed, restart, total } = useQuiz({ strict: props.strict, items: props.strict ? strictQuestions : questions })
+const { results, correctCount, incorrectCount, hearts, failed, index, selected, checked, check, complete, question, answerText, correct, choose, proceed, restart, total } = useQuiz({ strict: props.strict, items: props.items ?? (props.strict ? strictQuestions : questions) })
 const feedbackHeading = ref(null)
 const heading = ref(null)
 const answerButtons = ref([])
@@ -20,6 +29,7 @@ function selectOption(option, position) {
 async function checkAnswer() {
   if (!selected.value || checked.value) return
   check()
+  if (props.embedded && correct.value) emit('passed')
   await nextTick()
   feedbackHeading.value?.focus()
 }
@@ -40,8 +50,8 @@ async function startAgain() {
 </script>
 
 <template>
-  <main class="activity activity-screen" :class="{ 'activity-has-feedback': checked }">
-    <div class="activity-screen-progress">
+  <component :is="embedded ? 'div' : 'main'" class="activity" :class="{ 'activity-screen': !embedded, 'activity-embedded': embedded, 'activity-has-feedback': checked }">
+    <div v-if="!embedded" class="activity-screen-progress">
     <div class="activity-topline">
       <span class="activity-eyebrow">{{ strict ? 'STRICT QUIZ' : 'DAILY PRACTICE' }}</span>
       <span>{{ strict ? results.length : (complete ? total : index + 1) }} / {{ total }}</span>
@@ -54,7 +64,8 @@ async function startAgain() {
     </div>
     </div>
 
-    <section v-if="complete" class="activity-finish">
+    <p v-if="complete && embedded" class="activity-checkpoint-passed" role="status">✓ Correct — reading unlocked.</p>
+    <section v-else-if="complete" class="activity-finish">
       <div class="activity-mascot" aria-hidden="true">★</div>
       <p class="activity-eyebrow">{{ strict ? 'QUIZ RESULTS' : 'LESSON COMPLETE' }}</p>
       <h1 class="activity-title" ref="heading" tabindex="-1">{{ failed ? 'Out of hearts' : 'You did it!' }}</h1>
@@ -70,9 +81,9 @@ async function startAgain() {
       <button class="button activity-action" @click="startAgain">{{ strict ? 'Redo quiz' : 'Practice again' }}</button>
     </section>
 
-    <section v-else class="activity-screen-question" :key="question.id" aria-labelledby="question-heading">
+    <section v-else class="activity-screen-question" :key="question.id" :aria-labelledby="questionHeadingId">
       <div class="activity-mascot" aria-hidden="true">✦</div>
-      <h1 class="activity-title" id="question-heading" ref="heading" tabindex="-1">{{ question.instruction }}</h1>
+      <h1 class="activity-title" :id="questionHeadingId" ref="heading" tabindex="-1">{{ question.instruction }}</h1>
       <p class="activity-hint">{{ strict ? 'Choose an answer, then press Check to submit. You cannot retry after checking.' : 'Choose the word that completes the sentence.' }}</p>
       <p class="activity-sentence" aria-live="polite"><template v-for="(part, position) in question.sentence.split('[[blank]]')" :key="position">{{ part }}<span v-if="position < question.sentence.split('[[blank]]').length - 1" class="activity-answer" :class="{ 'is-correct': checked && correct, 'is-incorrect': checked && !correct }">{{ answerText }}<span v-if="checked" class="activity-answer-icon" aria-hidden="true">{{ correct ? ' ✓' : ' ✗' }}</span><span v-if="checked" class="activity-sr-only">{{ correct ? ' (correct)' : ' (incorrect)' }}</span></span></template></p>
       <div class="activity-options" role="group" aria-label="Answer options">
@@ -98,18 +109,18 @@ async function startAgain() {
     </footer>
 
     <section v-if="checked" class="activity-feedback" role="region" :class="{ 'is-correct': correct }"
-      aria-labelledby="feedback-heading" aria-describedby="feedback-description">
+      :aria-labelledby="feedbackHeadingId" :aria-describedby="feedbackDescriptionId">
       <template v-if="selected">
         <div class="activity-feedback-body">
         <span class="activity-feedback-icon" aria-hidden="true">{{ correct ? '✓' : '↻' }}</span>
-        <h2 id="feedback-heading" ref="feedbackHeading" tabindex="-1">{{ correct ? 'Awesome!' : 'Opps!' }}</h2>
-        <p v-if="correct" class="activity-translation"><strong>Spanish translation</strong><br>{{ question.translation }}</p>
-        <p id="feedback-description">{{ selected.feedback }}</p>
+        <h2 :id="feedbackHeadingId" ref="feedbackHeading" tabindex="-1">{{ correct ? 'Awesome!' : 'Opps!' }}</h2>
+        <p v-if="correct" class="activity-translation"><strong>{{ translationLabel }}</strong><br>{{ question.translation }}</p>
+        <p :id="feedbackDescriptionId">{{ selected.feedback }}</p>
         </div>
         <div class="activity-feedback-actions">
         <button class="button activity-action" autofocus @click="dismissFeedback">{{ strict ? ((failed || index === total - 1) ? 'See results' : 'Continue') : (correct ? 'Continue' : 'Try again') }}</button>
         </div>
       </template>
     </section>
-  </main>
+  </component>
 </template>

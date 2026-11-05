@@ -175,3 +175,19 @@ docker compose down
 ```
 
 These containers run the built application without development reload. Rebuild after source changes. Dependencies are installed from the npm and uv lockfiles; the backend runs as a non-root user and Compose waits for its health check before starting the frontend. No local Node.js, Python, or uv installation is needed.
+
+### Reading checkpoints
+
+Reading blocks support `type: "sentence"` and `type: "Multiple-choice"`.
+A Multiple-choice block contains `id`, `type`, and a `question` object using the
+same fields as the quiz data: `id`, `instruction`, `sentence` with `[[blank]]`,
+`answer` (the correct option ID), `translation`, and `options` with `id`, `label`,
+optional `fill`, and `feedback`.
+
+Only content through the first unanswered checkpoint is rendered. Wrong answers
+show feedback and Try again; students can change their selection before Check.
+A correct Check reveals the next sentences through the next unanswered checkpoint.
+Earlier reading remains visible, and each checkpoint retains its feedback until
+Continue. The included passage has two checkpoints. Progress resets on reload.
+The embedded checkpoints share `MultipleChoiceActivity.vue` with the existing
+practice and strict quiz routes.
