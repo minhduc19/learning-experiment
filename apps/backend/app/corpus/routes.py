@@ -16,6 +16,7 @@ from app.corpus.config import MAX_PATCH_BYTES, max_upload_bytes, storage_directo
 from app.corpus.database import connect
 from app.corpus.schemas import (
     Character,
+    CharacterDetail,
     ImportAccepted,
     ImportCreate,
     ImportStatus,
@@ -207,16 +208,32 @@ def characters(
     return queries.characters(sort, story_id, include_non_han, cursor, limit, character)
 
 
-@router.get("/characters/{character_id}/segments", response_model=Page[Segment])
+@router.get("/characters/{character_id}", response_model=CharacterDetail)
+def character_detail(character_id: int, story_id: UUID | None = None):
+    """Character counts and distinct logical sentence total from completed stories."""
+    return queries.character_detail(character_id, story_id)
+
+
+@router.get(
+    "/characters/{character_id}/segments",
+    response_model=Page[Segment],
+    response_model_exclude_unset=True,
+)
 def character_segments(
     character_id: int,
     story_id: UUID | None = None,
     include_non_words: bool = False,
+    include_sentence_counts: bool = False,
     cursor: Cursor = None,
     limit: Limit = 50,
 ):
     return queries.character_segments(
-        character_id, story_id, include_non_words, cursor, limit
+        character_id,
+        story_id,
+        include_non_words,
+        cursor,
+        limit,
+        include_sentence_counts,
     )
 
 

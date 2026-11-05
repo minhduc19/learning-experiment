@@ -85,6 +85,7 @@ behind your existing access controls when uploads should be private.
 | `GET /api/corpus/characters` | Characters ranked by `occurrence_count` descending |
 | `GET /api/corpus/characters?sort=distinct_segment_count` | Characters ranked by distinct word membership |
 | `GET /api/corpus/characters?character=学` | Look up a character and its ID |
+| `GET /api/corpus/characters/{id}` | Character statistics and distinct logical sentence count |
 | `GET /api/corpus/characters/{id}/segments` | Distinct word segments containing that character |
 | `GET /api/corpus/segments/{id}/sentences` | Distinct sentence fragments containing that segment |
 | `GET /api/corpus/characters/{id}/sentences` | Distinct sentence fragments containing that character |
@@ -166,3 +167,19 @@ code points and 160,000 sentence rows. Streaming reconstruction matched the
 original SHA-256. The test database occupied approximately 253 MiB, excluding
 additional transient WAL and upload storage. This illustrates storage overhead;
 it is not a production capacity or speed guarantee.
+
+## Frontend explorer and sentence counts
+
+Visit `/characters` to browse frequency rankings and `/characters/{id}` to explore
+a character's associations. The Ideas directory links to the explorer. Selecting
+a segment filters the sentence list, with per-excerpt match counts and Unicode
+code-point highlighting. All three lists use cursor pagination.
+
+`GET /api/corpus/characters/{id}` returns the character statistics plus
+`sentence_count`, optionally scoped with `story_id`. The segment-list endpoint
+accepts `include_sentence_counts=true` to add each segment's `sentence_count`
+without making every existing segment-list request perform that aggregation.
+Sentence counts count distinct `(story_id, sentence_position)` pairs: repeated
+matches or multiple continuation fragments do not inflate a logical sentence's
+count. Counts include only completed stories. Sentence results also include
+`story_title` for identifying their source.

@@ -382,3 +382,16 @@ and query frequency rankings and sentence concordances through `/api/corpus`.
 See [the corpus API guide](docs/corpus.md) for resumable uploads, worker setup,
 endpoints, exact reconstruction, and configurable file limits. The full Compose
 stack starts migrations and the corpus worker automatically.
+
+## Character explorer
+
+Open `/characters` (also linked from Ideas) to browse the imported corpus. Sort
+by frequency or different word segments, search for one character, and optionally
+include punctuation and other characters. Lists load additional pages on demand.
+
+Selecting a character opens `/characters/:characterId`, showing occurrence and
+sentence totals, associated segments with their appearance/sentence counts, and
+highlighted source sentences. Select a segment to filter its sentences; Show all
+sentences restores the character's full set. Direct links and browser navigation
+work, and search/sort options are retained when returning to the list. Shared
+styles are in `apps/frontend/src/styles/corpus.css`.

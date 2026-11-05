@@ -1,3 +1,5 @@
+from datetime import datetime
+from typing import Generic, Literal, TypeVar
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -12,9 +14,6 @@ class ImportCreate(BaseModel):
     upload_id: UUID
     title: str = Field(min_length=1, max_length=300)
 
-
-from datetime import datetime
-from typing import Generic, Literal, TypeVar
 
 Status = Literal["queued", "processing", "completed", "failed"]
 T = TypeVar("T")
@@ -58,12 +57,17 @@ class Character(BaseModel):
     segment_occurrence_count: int
 
 
+class CharacterDetail(Character):
+    sentence_count: int
+
+
 class Segment(BaseModel):
     id: int
     text: str
     is_word: bool
     count_in_segment: int
     occurrence_count: int
+    sentence_count: int | None = None
 
 
 class Match(BaseModel):
@@ -72,6 +76,7 @@ class Match(BaseModel):
 
 
 class Sentence(BaseModel):
+    story_title: str
     id: int
     story_id: UUID
     position: int

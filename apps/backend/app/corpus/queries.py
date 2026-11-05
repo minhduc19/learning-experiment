@@ -85,7 +85,41 @@ def characters(sort, story_id, include_non_han, cursor, limit, character):
     return page(rows, limit, sort, scope, [sort, "id"])
 
 
-def character_segments(character_id, story_id, include_non_words, cursor, limit):
+def character_detail(character_id, story_id=None):
+    with connect() as db:
+        require_story(db, story_id)
+        table = "story_character_stats" if story_id else "character_stats"
+        condition = sql.SQL(" AND st.story_id=%s") if story_id else sql.SQL("")
+        params = [character_id] + ([story_id] if story_id else [])
+        row = db.execute(
+            sql.SQL("""SELECT c.id,c.value,c.is_han,st.occurrence_count,
+            st.distinct_segment_count,st.segment_occurrence_count FROM corpus.characters c
+            JOIN corpus.{} st ON st.character_id=c.id WHERE c.id=%s{}""").format(
+                sql.Identifier(table), condition
+            ),
+            params,
+        ).fetchone()
+        if row is None:
+            raise HTTPException(404, "Character not found in the completed corpus")
+        row["sentence_count"] = db.execute(
+            """SELECT count(DISTINCT (s.story_id,s.sentence_position)) AS n
+            FROM corpus.segment_characters sc JOIN corpus.segment_occurrences o ON o.segment_id=sc.segment_id
+            JOIN corpus.sentences s ON s.id=o.sentence_id
+            JOIN corpus.stories d ON d.id=s.story_id AND d.status='completed'
+            WHERE sc.character_id=%s AND (%s::uuid IS NULL OR s.story_id=%s)""",
+            (character_id, story_id, story_id),
+        ).fetchone()["n"]
+        return row
+
+
+def character_segments(
+    character_id,
+    story_id,
+    include_non_words,
+    cursor,
+    limit,
+    include_sentence_counts=False,
+):
     scope = f"{character_id}:{story_id}:{include_non_words}"
     values = decode_cursor(cursor, "segments", scope, 1)
     after = integer_values(values)[0] if values else 0
@@ -105,6 +139,18 @@ def character_segments(character_id, story_id, include_non_words, cursor, limit)
             AND (%s::uuid IS NULL OR d.id=%s) GROUP BY s.id,sc.count_in_segment ORDER BY s.id LIMIT %s""",
             (character_id, after, include_non_words, story_id, story_id, limit + 1),
         ).fetchall()
+        if include_sentence_counts:
+            counts = db.execute(
+                """SELECT o.segment_id,count(DISTINCT (s.story_id,s.sentence_position)) AS n
+                FROM corpus.segment_occurrences o JOIN corpus.sentences s ON s.id=o.sentence_id
+                JOIN corpus.stories d ON d.id=s.story_id AND d.status='completed'
+                WHERE o.segment_id=ANY(%s) AND (%s::uuid IS NULL OR s.story_id=%s)
+                GROUP BY o.segment_id""",
+                ([row["id"] for row in rows[:limit]], story_id, story_id),
+            ).fetchall()
+            by_id = {count["segment_id"]: count["n"] for count in counts}
+            for row in rows:
+                row["sentence_count"] = by_id.get(row["id"], 0)
     return page(rows, limit, "segments", scope, ["id"])
 
 
@@ -149,7 +195,7 @@ def sentences(
             params.append(segment_id)
         extra = " AND " + " AND ".join(conditions) if conditions else ""
         rows = db.execute(
-            """SELECT s.* FROM corpus.sentences s JOIN corpus.stories d ON d.id=s.story_id AND d.status='completed'
+            """SELECT s.*,d.title AS story_title FROM corpus.sentences s JOIN corpus.stories d ON d.id=s.story_id AND d.status='completed'
             WHERE (%s::uuid IS NULL OR s.story_id=%s) AND (s.story_id,s.position)>(%s,%s)"""
             + extra
             + """
