@@ -13,6 +13,8 @@ test('each answer has feedback; wrong answers retry and correct answers advance'
       const quiz = useQuiz()
       quiz.index.value = index
       quiz.choose(option)
+      assert.equal(quiz.correct.value, false)
+      quiz.check()
       assert.equal(quiz.correct.value, option.id === question.answer)
       quiz.choose(question.options.find(other => other !== option))
       assert.equal(quiz.selected.value.id, option.id, 'selection stays locked during feedback')
@@ -29,6 +31,7 @@ test('unanswered questions cannot advance; lesson completes and restarts', () =>
   assert.equal(quiz.index.value, 0)
   for (const question of questions) {
     quiz.choose(question.options.find(option => option.id === question.answer))
+    quiz.check()
     quiz.proceed()
   }
   assert.equal(quiz.complete.value, true)
@@ -36,4 +39,27 @@ test('unanswered questions cannot advance; lesson completes and restarts', () =>
   assert.equal(quiz.complete.value, false)
   assert.equal(quiz.index.value, 0)
   assert.equal(quiz.selected.value, null)
+})
+
+
+test('all selections preview before checking, can change, and reset after feedback', () => {
+  const quiz = useQuiz()
+  for (const question of questions) {
+    assert.ok(question.sentence.includes('[[blank]]'))
+    assert.equal(quiz.sentence.value, question.sentence.replaceAll('[[blank]]', '___'))
+    quiz.choose(question.options.find(option => option.id !== question.answer))
+    assert.equal(quiz.checked.value, false)
+    assert.ok(!quiz.sentence.value.includes('___'))
+    quiz.proceed()
+    assert.equal(quiz.question.value.id, question.id)
+    const answer = question.options.find(option => option.id === question.answer)
+    quiz.choose(answer)
+    assert.equal(quiz.sentence.value, question.sentence.replaceAll('[[blank]]', answer.fill ?? answer.label))
+    assert.ok(!quiz.sentence.value.includes('[[blank]]'))
+    quiz.check()
+    quiz.proceed()
+  }
+  assert.equal(quiz.sentence.value, '')
+  quiz.restart()
+  assert.equal(quiz.sentence.value, 'I ___ three languages.')
 })

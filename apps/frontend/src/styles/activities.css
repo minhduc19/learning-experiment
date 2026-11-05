@@ -123,21 +123,41 @@
   margin-top: var(--space-4);
 }
 
-.activity-feedback {
-  box-sizing: border-box;
-  width: min(480px, calc(100% - 32px));
-  max-height: calc(100dvh - 32px);
-  overflow-y: auto;
-  padding: var(--space-5);
-  border: 2px solid #ebbb99;
-  border-radius: 24px;
-  background: #fff7ef;
-  color: var(--color-text);
-  box-shadow: 0 24px 80px #163b3533;
+
+
+.activity-sentence {
+  scroll-margin-top: var(--space-3);
 }
 
-.activity-feedback::backdrop {
-  background: #10251dcc;
+.activity-feedback {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 2px solid #ebbb99;
+  border-bottom: 0;
+  border-radius: 24px 24px 0 0;
+  background: #fff7ef;
+  color: var(--color-text);
+  box-shadow: 0 -8px 32px #163b3522;
+}
+
+.activity-feedback-body,
+.activity-feedback-actions {
+  width: 100%;
+  max-width: calc(var(--content-width) + 2 * var(--space-5));
+  margin-inline: auto;
+  padding: var(--space-3) var(--space-5);
+}
+
+.activity-feedback-actions {
+  flex-shrink: 0;
+  padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
+}
+
+.activity-feedback-actions .activity-action {
+  margin-top: 0;
 }
 
 .activity-feedback.is-correct {
@@ -163,11 +183,6 @@
 .activity-feedback h2 {
   font-size: 2rem;
   margin-block: var(--space-3);
-}
-
-.activity-picked {
-  font-size: 0.85rem;
-  color: #52665d;
 }
 
 .activity-translation {
@@ -197,3 +212,159 @@
 .activity-finish .activity-mascot {
   margin: var(--space-5) auto;
 }
+
+/* Full-screen lesson layout, also reusable by other activity routes. */
+.activity-screen {
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  padding: clamp(12px, 3vh, 24px) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom));
+  gap: clamp(8px, 2vh, 20px);
+  overflow: hidden;
+}
+
+.activity-screen > *:not(dialog) {
+  width: 100%;
+  max-width: var(--content-width);
+  margin-inline: auto;
+}
+
+.activity-screen .activity-progress {
+  margin-block: 8px 0;
+  height: 12px;
+}
+
+.activity-screen-question {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(8px, 2vh, 16px);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.activity-screen-question > * {
+  margin-block: 0;
+}
+
+.activity-screen .activity-mascot {
+  width: 40px;
+  height: 40px;
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.activity-screen .activity-title {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+}
+
+.activity-screen .activity-sentence {
+  padding: clamp(12px, 2vh, 24px);
+  font-size: clamp(1.25rem, 4vw, 1.8rem);
+}
+
+.activity-screen .activity-options {
+  gap: 8px;
+}
+
+.activity-screen .activity-option {
+  padding: 10px 16px;
+  min-height: 48px;
+}
+
+.activity-option.is-selected {
+  background: #eefbdc;
+  border-color: #79ab4f;
+  color: #285900;
+}
+
+.activity-screen-actions .activity-action {
+  margin-top: 0;
+}
+
+.activity-screen.activity-has-feedback {
+  height: auto;
+  min-height: 100dvh;
+  overflow: visible;
+  grid-template-rows: auto minmax(min-content, 1fr) auto;
+  padding: 16px 0 0;
+}
+
+.activity-has-feedback > .activity-screen-progress,
+.activity-has-feedback > .activity-screen-question {
+  width: calc(100% - 32px);
+}
+
+.activity-screen.activity-has-feedback > .activity-feedback {
+  max-width: none;
+}
+
+.activity-has-feedback .activity-screen-question {
+  overflow: visible;
+  padding-block: var(--space-3);
+}
+
+.activity-answer {
+  border-radius: 6px;
+}
+
+.activity-answer.is-correct {
+  color: #245800;
+  background: #d6f8b5;
+  padding: 2px 6px;
+}
+
+.activity-answer.is-incorrect {
+  color: #9c2525;
+  background: #ffe0e0;
+  padding: 2px 6px;
+}
+
+.activity-answer-icon { font-size: 0.75em; }
+
+.activity-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.activity-has-feedback .activity-options,
+.activity-has-feedback .activity-mascot,
+.activity-has-feedback .activity-hint {
+  display: none;
+}
+
+.activity-screen .activity-finish {
+  align-self: center;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+@media (max-height: 650px) {
+  .activity-screen-question .activity-mascot,
+  .activity-screen-question .activity-hint {
+    display: none;
+  }
+  .activity-screen-question { gap: 8px; }
+}
+
+.activity-progress-with-hearts {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.activity-progress-with-hearts .activity-progress { flex: 1; min-width: 0; }
+.activity-hearts { display: flex; gap: 3px; flex-shrink: 0; font-size: 1.5rem; line-height: 1.2; }
+.activity-hearts.is-healthy { color: #357a00; }
+.activity-hearts.is-warning { color: #a86500; }
+.activity-hearts.is-danger { color: #b52525; }
+.activity-hearts .is-lost { color: #a2a9a5; }
+.activity-option:disabled { cursor: default; }
+.activity-score { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--space-4); }
+.activity-score strong { display: block; font-size: 2rem; }

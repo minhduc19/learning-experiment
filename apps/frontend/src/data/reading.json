@@ -1,0 +1,44 @@
+{
+  "id": "reading-001",
+  "title": "在公园散步",
+  "titleTranslation": "A walk in the park",
+  "language": "zh-Hans",
+  "translationLanguage": "en",
+  "blocks": [
+    {
+      "id": "sentence-001",
+      "type": "sentence",
+      "translation": "I like taking walks in the park.",
+      "segments": [
+        { "id": "s1", "text": "我", "pinyin": "wǒ", "details": { "translation": "I; me", "partOfSpeech": "pronoun" } },
+        { "id": "s2", "text": "喜欢", "pinyin": "xǐ huān", "details": { "translation": "to like; to enjoy", "partOfSpeech": "verb", "note": "Can be followed by a noun or an activity." } },
+        { "id": "s3", "text": "在公园", "pinyin": "zài gōng yuán", "details": { "translation": "in the park", "note": "在 introduces a location; 公园 means park." } },
+        { "id": "s4", "text": "散步", "pinyin": "sàn bù", "details": { "translation": "to take a walk", "partOfSpeech": "verb", "note": "Usually describes walking for leisure." } },
+        { "id": "s5", "text": "。", "pinyin": null }
+      ]
+    },
+    {
+      "id": "sentence-002",
+      "type": "sentence",
+      "translation": "The weather is very nice today.",
+      "segments": [
+        { "id": "s6", "text": "今天", "pinyin": "jīn tiān", "details": { "translation": "today" } },
+        { "id": "s7", "text": "天气", "pinyin": "tiān qì", "details": { "translation": "weather", "partOfSpeech": "noun" } },
+        { "id": "s8", "text": "很好", "pinyin": "hěn hǎo", "details": { "translation": "very good; very nice", "note": "很 connects the subject to an adjective; its emphasis depends on context." } },
+        { "id": "s9", "text": "。", "pinyin": null }
+      ]
+    },
+    {
+      "id": "sentence-003",
+      "type": "sentence",
+      "translation": "We sit under a tree and chat.",
+      "segments": [
+        { "id": "s10", "text": "我们", "pinyin": "wǒ men", "details": { "translation": "we; us", "partOfSpeech": "pronoun", "note": "们 makes the pronoun 我 plural." } },
+        { "id": "s11", "text": "坐在", "pinyin": "zuò zài", "details": { "translation": "to sit at; to sit in", "note": "坐 means to sit; 在 introduces the location that follows." } },
+        { "id": "s12", "text": "树下", "pinyin": "shù xià", "details": { "translation": "under a tree", "note": "树 means tree; 下 means below or underneath." } },
+        { "id": "s13", "text": "聊天", "pinyin": "liáo tiān", "details": { "translation": "to chat; to have a conversation", "partOfSpeech": "verb" } },
+        { "id": "s14", "text": "。", "pinyin": null }
+      ]
+    }
+  ]
+}

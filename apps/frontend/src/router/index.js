@@ -19,7 +19,19 @@ export const routes = [
     alias: '/ideas/one',
     name: 'idea-one',
     component: () => import('../views/IdeaOneView.vue'),
-    meta: { title: 'Multiple choice' },
+    meta: { title: 'Multiple choice', fullscreen: true },
+  },
+  {
+    path: '/multiple-choice-strict-quiz',
+    name: 'strict-quiz',
+    component: () => import('../views/StrictQuizView.vue'),
+    meta: { title: 'Strict quiz', fullscreen: true },
+  },
+  {
+    path: '/reading-app',
+    name: 'reading-app',
+    component: () => import('../views/ReadingView.vue'),
+    meta: { title: 'Reading app', fullscreen: true },
   },
   {
     path: '/ideas/two',

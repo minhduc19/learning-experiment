@@ -27,7 +27,10 @@ The frontend uses Vue Router with browser history and lazy-loaded pages:
 - `/ideas`: links to all titled routes and their aliases
 - `/multiple-choice` (also `/ideas/one`): interactive three-question quiz in
   `apps/frontend/src/views/IdeaOneView.vue`. Edit `src/data/questions.js` to add
-  questions, option-specific feedback, and Spanish translations.
+  questions, option-specific feedback, and Spanish translations. Use `[[blank]]`
+  in each sentence; the selected option’s `fill` text replaces the marker immediately (a lowercase
+  `label` is used if `fill` is omitted). Students can change their selection,
+  then press Check to see feedback.
 - `/ideas/two`: `apps/frontend/src/views/IdeaTwoView.vue`
 - Unknown URLs show a page with a link back home.
 
@@ -49,6 +52,32 @@ automatically. For example:
 Vite and the included Nginx configuration support opening and refreshing nested
 URLs directly. On other production hosts, configure a fallback to `index.html`
 for frontend routes while keeping `/api` routed to FastAPI.
+
+## Strict quiz
+
+`/multiple-choice-strict-quiz` is a full-screen, seven-question quiz. Selections can change until Check
+locks and submits the answer once and Continue advances after either
+result. Five hearts start green (4–5 remaining), become amber (2–3), then red
+(1). Each incorrect submission greys one heart. The fifth mistake ends the
+attempt after its feedback. Results show correct, incorrect, and any unanswered
+questions, with a Redo quiz button that resets scores, hearts, and progress.
+Edit `src/data/strictQuestions.js` to change this quiz's question set.
+
+The practice route keeps its retry behavior. Both modes share
+`src/components/MultipleChoiceActivity.vue` and the activity CSS.
+
+## Mandarin reading
+
+`/reading-app` displays three sentence blocks from `apps/frontend/src/data/reading.json`.
+Each block has a full English translation and an ordered `segments` array. Segments
+contain `id`, `text`, `pinyin`, and optional `details` (`translation`, `partOfSpeech`,
+`note`). Punctuation segments have no details and are not interactive. Mandarin
+sentence text is derived from the segments rather than stored twice.
+
+Pinyin appears above phrases using HTML ruby. Click or tap a phrase (or use Tab
+and Enter) to open its detailed meaning. Close with Escape, the close button, or
+by clicking outside. Reading UI styles live in `src/styles/reading.css` and load
+through the shared stylesheet entry point.
 
 ## Shared styles
 
@@ -99,12 +128,19 @@ The activity stylesheet loads globally through `main.css`. Wrap an activity in
 </template>
 ```
 
-Use `.activity-feedback` on a native `<dialog>` and add `.is-correct` for success
-feedback. Its contents can use `.activity-feedback-icon`, `.activity-picked`,
-`.activity-translation`, and `.button.activity-action`. Open it with `showModal()`;
-the stylesheet handles appearance while your component handles interaction.
+Use `.activity-feedback` on a feedback section with an accessible heading. Add
+`.is-correct` for success feedback. Its contents can use `.activity-feedback-icon`,
+`.activity-translation`, and `.button.activity-action`. The panel grows with its
+content below the sentence; long feedback uses normal page scrolling instead of
+an internal scrollbar. Move keyboard focus to its heading when feedback appears.
+After Check, `.activity-answer.is-correct` and `.activity-answer.is-incorrect`
+highlight the filled word with distinct colors and a matching result icon.
 Use `.activity-finish` for completion screens, `.activity-topline` for a progress
 header, and `.activity-hint` or `.activity-footer` for supporting text.
+
+Routes with `meta.fullscreen: true` hide the site navigation. Use
+`.activity.activity-screen` for a viewport-sized lesson with a pinned Check button.
+The question area can scroll on unusually small screens or with enlarged text.
 
 Each activity can override `--activity-accent`, `--activity-progress-color`, and
 `--activity-border-color` on its `.activity` wrapper. Shared changes belong in
