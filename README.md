@@ -101,11 +101,13 @@ The activity stylesheet loads globally through `main.css`. Wrap an activity in
 </template>
 ```
 
-Use `.activity-feedback` on a native `<dialog>` and add `.is-correct` for success
-feedback. Its contents can use `.activity-feedback-icon`, `.activity-picked`,
-`.activity-translation`, and `.button.activity-action`. The feedback is a bottom sheet capped at half the viewport, with scrollable
-content and an always-visible action button. Open it with `showModal()`;
-the stylesheet handles appearance while your component handles interaction.
+Use `.activity-feedback` on a feedback section with an accessible heading. Add
+`.is-correct` for success feedback. Its contents can use `.activity-feedback-icon`,
+`.activity-translation`, and `.button.activity-action`. The panel grows with its
+content below the sentence; long feedback uses normal page scrolling instead of
+an internal scrollbar. Move keyboard focus to its heading when feedback appears.
+After Check, `.activity-answer.is-correct` and `.activity-answer.is-incorrect`
+highlight the filled word with distinct colors and a matching result icon.
 Use `.activity-finish` for completion screens, `.activity-topline` for a progress
 header, and `.activity-hint` or `.activity-footer` for supporting text.
 

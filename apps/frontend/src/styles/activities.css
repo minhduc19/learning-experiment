@@ -130,27 +130,17 @@
 }
 
 .activity-feedback {
-  position: fixed;
-  inset: auto 0 0;
-  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   width: 100%;
-  max-width: none;
-  height: 50dvh;
-  max-height: 50dvh;
   margin: 0;
   padding: 0;
-  overflow: hidden;
   border: 2px solid #ebbb99;
   border-bottom: 0;
   border-radius: 24px 24px 0 0;
   background: #fff7ef;
   color: var(--color-text);
   box-shadow: 0 -8px 32px #163b3522;
-}
-
-.activity-feedback[open] {
-  display: flex;
-  flex-direction: column;
 }
 
 .activity-feedback-body,
@@ -161,13 +151,6 @@
   padding: var(--space-3) var(--space-5);
 }
 
-.activity-feedback-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
 .activity-feedback-actions {
   flex-shrink: 0;
   padding-bottom: max(var(--space-4), env(safe-area-inset-bottom));
@@ -175,10 +158,6 @@
 
 .activity-feedback-actions .activity-action {
   margin-top: 0;
-}
-
-.activity-feedback::backdrop {
-  background: transparent;
 }
 
 .activity-feedback.is-correct {
@@ -204,11 +183,6 @@
 .activity-feedback h2 {
   font-size: 2rem;
   margin-block: var(--space-3);
-}
-
-.activity-picked {
-  font-size: 0.85rem;
-  color: #52665d;
 }
 
 .activity-translation {
@@ -309,8 +283,54 @@
 }
 
 .activity-screen.activity-has-feedback {
-  height: 50dvh;
-  grid-template-rows: auto minmax(0, 1fr);
+  height: auto;
+  min-height: 100dvh;
+  overflow: visible;
+  grid-template-rows: auto minmax(min-content, 1fr) auto;
+  padding: 16px 0 0;
+}
+
+.activity-has-feedback > .activity-screen-progress,
+.activity-has-feedback > .activity-screen-question {
+  width: calc(100% - 32px);
+}
+
+.activity-screen.activity-has-feedback > .activity-feedback {
+  max-width: none;
+}
+
+.activity-has-feedback .activity-screen-question {
+  overflow: visible;
+  padding-block: var(--space-3);
+}
+
+.activity-answer {
+  border-radius: 6px;
+}
+
+.activity-answer.is-correct {
+  color: #245800;
+  background: #d6f8b5;
+  padding: 2px 6px;
+}
+
+.activity-answer.is-incorrect {
+  color: #9c2525;
+  background: #ffe0e0;
+  padding: 2px 6px;
+}
+
+.activity-answer-icon { font-size: 0.75em; }
+
+.activity-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .activity-has-feedback .activity-options,
