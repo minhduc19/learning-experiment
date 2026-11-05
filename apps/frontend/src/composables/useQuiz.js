@@ -9,9 +9,11 @@ export function useQuiz() {
   const question = computed(() => questions[index.value])
   const correct = computed(() => checked.value && selected.value?.id === question.value?.answer && selected.value !== null)
 
+  const answerText = computed(() => selected.value ? selected.value.fill ?? selected.value.label.toLowerCase() : '___')
+
   const sentence = computed(() => {
     if (!question.value) return ''
-    return question.value.sentence.replaceAll('[[blank]]', selected.value ? selected.value.fill ?? selected.value.label.toLowerCase() : '___')
+    return question.value.sentence.replaceAll('[[blank]]', answerText.value)
   })
 
   function choose(option) {
@@ -35,5 +37,5 @@ export function useQuiz() {
     checked.value = false
   }
 
-  return { index, selected, checked, check, complete, question, sentence, correct, choose, proceed, restart, total: questions.length }
+  return { index, selected, checked, check, complete, question, answerText, sentence, correct, choose, proceed, restart, total: questions.length }
 }

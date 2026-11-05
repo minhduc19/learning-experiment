@@ -2,8 +2,8 @@
 import { nextTick, ref } from 'vue'
 import { useQuiz } from '../composables/useQuiz'
 
-const { index, selected, checked, check, complete, question, sentence, correct, choose, proceed, restart, total } = useQuiz()
-const feedbackDialog = ref(null)
+const { index, selected, checked, check, complete, question, answerText, correct, choose, proceed, restart, total } = useQuiz()
+const feedbackHeading = ref(null)
 const heading = ref(null)
 const answerButtons = ref([])
 let lastAnswer = 0
@@ -17,12 +17,11 @@ async function checkAnswer() {
   if (!selected.value || checked.value) return
   check()
   await nextTick()
-  feedbackDialog.value.showModal()
+  feedbackHeading.value?.focus()
 }
 
 async function dismissFeedback() {
   const advance = correct.value
-  feedbackDialog.value.close()
   proceed()
   await nextTick()
   if (advance) heading.value?.focus()
@@ -58,7 +57,7 @@ async function startAgain() {
       <div class="activity-mascot" aria-hidden="true">✦</div>
       <h1 class="activity-title" id="question-heading" ref="heading" tabindex="-1">{{ question.instruction }}</h1>
       <p class="activity-hint">Choose the word that completes the sentence.</p>
-      <p class="activity-sentence" aria-live="polite">{{ sentence }}</p>
+      <p class="activity-sentence" aria-live="polite"><template v-for="(part, position) in question.sentence.split('[[blank]]')" :key="position">{{ part }}<span v-if="position < question.sentence.split('[[blank]]').length - 1" class="activity-answer" :class="{ 'is-correct': checked && correct, 'is-incorrect': checked && !correct }">{{ answerText }}<span v-if="checked" class="activity-answer-icon" aria-hidden="true">{{ correct ? ' ✓' : ' ✗' }}</span><span v-if="checked" class="activity-sr-only">{{ correct ? ' (correct)' : ' (incorrect)' }}</span></span></template></p>
       <div class="activity-options" role="group" aria-label="Answer options">
         <button
           v-for="(option, position) in question.options"
@@ -81,13 +80,12 @@ async function startAgain() {
       <button class="button activity-action" :disabled="!selected" @click="checkAnswer">Check</button>
     </footer>
 
-    <dialog ref="feedbackDialog" class="activity-feedback" :class="{ 'is-correct': correct }"
-      aria-labelledby="feedback-heading" aria-describedby="feedback-description" @cancel.prevent>
+    <section v-if="checked" class="activity-feedback" role="region" :class="{ 'is-correct': correct }"
+      aria-labelledby="feedback-heading" aria-describedby="feedback-description">
       <template v-if="selected">
         <div class="activity-feedback-body">
         <span class="activity-feedback-icon" aria-hidden="true">{{ correct ? '✓' : '↻' }}</span>
-        <h2 id="feedback-heading">{{ correct ? 'Awesome!' : 'Opps!' }}</h2>
-        <p class="activity-picked">You chose “{{ selected.label }}”.</p>
+        <h2 id="feedback-heading" ref="feedbackHeading" tabindex="-1">{{ correct ? 'Awesome!' : 'Opps!' }}</h2>
         <p v-if="correct" class="activity-translation"><strong>Spanish translation</strong><br>{{ question.translation }}</p>
         <p id="feedback-description">{{ selected.feedback }}</p>
         </div>
@@ -95,6 +93,6 @@ async function startAgain() {
         <button class="button activity-action" autofocus @click="dismissFeedback">{{ correct ? 'Continue' : 'Try again' }}</button>
         </div>
       </template>
-    </dialog>
+    </section>
   </main>
 </template>
