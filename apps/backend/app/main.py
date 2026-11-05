@@ -3,10 +3,12 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 from fastapi.openapi.docs import get_swagger_ui_html
 
+from app.corpus.routes import router as corpus_router
 from app.db.connection import connect_database
 from app.readings.routes import router as readings_router
 
 app = FastAPI(title="Monorepo API")
+app.include_router(corpus_router, prefix="/api/corpus", tags=["corpus"])
 app.include_router(readings_router, prefix="/api/readings", tags=["readings"])
 
 
