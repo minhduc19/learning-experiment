@@ -1,12 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// Routes with a title appear in the main navigation automatically.
+// Routes with a title appear on the ideas page automatically.
 export const routes = [
   {
     path: '/',
     name: 'home',
     component: () => import('../views/HomeView.vue'),
     meta: { title: 'Home' },
+  },
+  {
+    path: '/ideas',
+    name: 'ideas',
+    component: () => import('../views/IdeasView.vue'),
+    meta: { title: 'Ideas' },
   },
   {
     path: '/multiple-choice',

@@ -24,6 +24,7 @@ The frontend calls relative `/api` URLs. Vite proxies these to FastAPI during de
 The frontend uses Vue Router with browser history and lazy-loaded pages:
 
 - `/`: the original home page and backend connection check
+- `/ideas`: links to all titled routes and their aliases
 - `/multiple-choice` (also `/ideas/one`): interactive three-question quiz in
   `apps/frontend/src/views/IdeaOneView.vue`. Edit `src/data/questions.js` to add
   questions, option-specific feedback, and Spanish translations.
@@ -33,7 +34,7 @@ The frontend uses Vue Router with browser history and lazy-loaded pages:
 Build each idea in its own view component. To add another idea, create a `.vue`
 file in `apps/frontend/src/views/` and add a route in
 `apps/frontend/src/router/index.js` with a unique `path`, `name`, lazy-loaded
-`component`, and `meta.title`. Routes with a title appear in the navigation
+`component`, and `meta.title`. Routes with a title appear on the ideas page
 automatically. For example:
 
 ```js
