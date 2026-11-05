@@ -276,3 +276,11 @@ docker compose -p learning-experiment up -d --no-deps --force-recreate frontend
 
 Run this from the deployment directory on the server. It preserves the database
 container and data volume. Merge the proxy fix for automatic address refreshes.
+
+### Database status page
+
+Open `/database-status` from the Ideas directory to check PostgreSQL readiness
+through the frontend proxy. The page calls `/api/health/db` automatically on entry
+and offers Check again. It distinguishes a healthy database, database connection
+failure, an unavailable API/proxy, unexpected responses, and request timeouts.
+The result is a snapshot from the last check, with a timestamp; it does not poll.
