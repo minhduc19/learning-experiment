@@ -77,9 +77,14 @@ jobs:
           git cat-file -e "$deploy_sha^{commit}"
           git merge-base --is-ancestor "$deploy_sha" FETCH_HEAD
           git checkout --detach "$deploy_sha"
+          deployment_diagnostics() {
+            docker compose -p learning-experiment ps || true
+            docker compose -p learning-experiment logs --no-color --tail=100 frontend backend db || true
+          }
+          trap 'status=$?; deployment_diagnostics; exit "$status"' ERR
           docker compose -p learning-experiment up --build -d --wait --wait-timeout 180
           curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-delay 2 \
-            http://127.0.0.1:8080/api/health
+            http://127.0.0.1:8080/api/health/db
           docker compose -p learning-experiment ps
           echo "Deployed commit $deploy_sha to http://144.126.225.254:8080"
           REMOTE

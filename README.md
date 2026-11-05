@@ -259,3 +259,20 @@ visible so it can unlock later content. Turning the option off restores complete
 quizzes with their answers and feedback intact. New correct answers are hidden
 automatically while the option is enabled. This setting lasts for the current page
 session, like the other reading settings.
+
+### Deployment proxy health
+
+The frontend health check calls `/api/health/db` through Nginx, so a healthy
+frontend confirms that the proxy, backend, and database are reachable together.
+Nginx uses Docker's DNS resolver to refresh backend addresses after container
+recreation. Deployment failures include recent service logs and container status.
+
+If an older deployment returns 502 while the backend is healthy, recreate only
+the frontend to refresh its cached upstream address:
+
+```sh
+docker compose -p learning-experiment up -d --no-deps --force-recreate frontend
+```
+
+Run this from the deployment directory on the server. It preserves the database
+container and data volume. Merge the proxy fix for automatic address refreshes.
