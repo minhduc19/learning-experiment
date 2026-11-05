@@ -123,7 +123,7 @@ async function startAgain() {
         <div class="activity-feedback-body">
         <span class="activity-feedback-icon" aria-hidden="true">{{ correct ? '✓' : '↻' }}</span>
         <h2 :id="feedbackHeadingId" ref="feedbackHeading" tabindex="-1">{{ correct ? 'Awesome!' : 'Opps!' }}</h2>
-        <p v-if="correct" class="activity-translation"><strong>{{ translationLabel }}</strong><br>{{ question.translation }}</p>
+        <p v-if="correct && question.translation" class="activity-translation"><strong>{{ translationLabel }}</strong><br>{{ question.translation }}</p>
         <p :id="feedbackDescriptionId">{{ selected.feedback }}</p>
         </div>
         <div v-if="!embedded || !correct" class="activity-feedback-actions">

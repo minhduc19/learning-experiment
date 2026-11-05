@@ -10,6 +10,7 @@ const reading = ref(null)
 const blocks = computed(() => reading.value?.blocks ?? [])
 const { passed, visibleBlocks, complete, unlock } = useReadingProgress(blocks)
 const sentenceCount = computed(() => blocks.value.filter(block => block.type === 'sentence').length)
+const hasPhraseDetails = computed(() => blocks.value.some(block => block.type === 'sentence' && block.segments.some(hasSegmentDetails)))
 const sourceText = ref('')
 const readingTitle = ref('')
 const generating = ref(false)
@@ -115,6 +116,10 @@ function positionPopup() {
   popup.value.style.top = `${top}px`
 }
 
+function hasSegmentDetails(segment) {
+  return Boolean(segment.details && (segment.details.translation || segment.details.partOfSpeech || segment.details.note))
+}
+
 async function openMeaning(segment, event) {
   if (selected.value?.id === segment.id && popup.value.matches(':popover-open')) {
     closeMeaning()
@@ -196,12 +201,12 @@ onUnmounted(() => {
         <p class="reading-eyebrow">A LITTLE EVERY DAY</p>
         <h1 id="reading-title" :lang="reading.language">{{ reading.title }}</h1>
         <p v-if="displayTranslation && reading.titleTranslation" class="reading-subtitle">{{ reading.titleTranslation }}</p>
-        <p class="reading-help">Read each sentence with pinyin above its words. Use the wheel to adjust the display.</p>
+        <p class="reading-help">{{ hasPhraseDetails ? 'Tap or click a word or phrase to explore its meaning. You can also use Tab and Enter.' : 'Read each sentence with pinyin above its words. Use the wheel to adjust the display.' }}</p>
       </div>
 
       <template v-for="block in visibleBlocks" :key="block.id">
       <section v-if="block.type === 'sentence'" class="reading-block" :ref="element => setBlockElement(block.id, element)" tabindex="-1" aria-label="Reading sentence">
-        <p class="reading-sentence" :lang="reading.language"><template v-for="segment in block.segments" :key="segment.id"><button v-if="segment.details" type="button" class="reading-phrase" :class="{ 'is-active': selected?.id === segment.id }" :aria-expanded="selected?.id === segment.id" aria-controls="phrase-meaning" aria-haspopup="dialog" @click="openMeaning(segment, $event)"><ruby>{{ segment.text }}<rt v-if="displayPinyin && segment.pinyin">{{ segment.pinyin }}</rt></ruby></button><span v-else :class="segment.pinyin ? 'reading-phrase' : 'reading-punctuation'"><ruby v-if="segment.pinyin">{{ segment.text }}<rt v-if="displayPinyin">{{ segment.pinyin }}</rt></ruby><template v-else>{{ segment.text }}</template></span></template></p>
+        <p class="reading-sentence" :lang="reading.language"><template v-for="segment in block.segments" :key="segment.id"><button v-if="hasSegmentDetails(segment)" type="button" class="reading-phrase" :class="{ 'is-active': selected?.id === segment.id }" :aria-expanded="selected?.id === segment.id" aria-controls="phrase-meaning" aria-haspopup="dialog" @click="openMeaning(segment, $event)"><ruby>{{ segment.text }}<rt v-if="displayPinyin && segment.pinyin">{{ segment.pinyin }}</rt></ruby></button><span v-else :class="segment.pinyin ? 'reading-phrase' : 'reading-punctuation'"><ruby v-if="segment.pinyin">{{ segment.text }}<rt v-if="displayPinyin">{{ segment.pinyin }}</rt></ruby><template v-else>{{ segment.text }}</template></span></template></p>
         <p v-if="displayTranslation && block.translation" class="reading-translation" :lang="reading.translationLanguage">{{ block.translation }}</p>
       </section>
       <section v-else-if="block.type === 'Multiple-choice'" class="reading-checkpoint" v-show="!readingOnly || !passed.has(block.id)" :ref="element => setBlockElement(block.id, element)" tabindex="-1" :aria-label="`Reading checkpoint ${block.id}`">
@@ -261,7 +266,7 @@ onUnmounted(() => {
         <p class="reading-eyebrow">PHRASE MEANING</p>
         <h2 id="phrase-heading" ref="popupHeading" tabindex="-1" :lang="reading.language">{{ selected.text }}</h2>
         <p class="reading-popup-pinyin" lang="zh-Latn-pinyin">{{ selected.pinyin }}</p>
-        <p class="reading-popup-meaning" :lang="reading.translationLanguage">{{ selected.details.translation }}</p>
+        <p v-if="selected.details.translation" class="reading-popup-meaning" :lang="reading.translationLanguage">{{ selected.details.translation }}</p>
         <span v-if="selected.details.partOfSpeech" class="reading-word-type">{{ selected.details.partOfSpeech }}</span>
         <p v-if="selected.details.note" class="reading-popup-note">{{ selected.details.note }}</p>
       </template>

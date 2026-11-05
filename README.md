@@ -301,7 +301,7 @@ The PostgreSQL helper moved to `app/db/connection.py`; existing health URLs are 
   `type: "sentence"`, and `segments` containing `id`, `text`, and `pinyin` (null
   for punctuation or text without a Chinese pronunciation).
 - `GET /api/readings/{id}` reads that saved JSON file. Unknown IDs return 404,
-  malformed IDs/input return 422, and unavailable storage returns 503.
+  unsafe IDs or malformed input return 422, and unavailable storage returns 503.
 
 Example:
 
@@ -344,7 +344,7 @@ JSON link remains available independently of those assets.
 ### List available readings
 
 `GET /api/readings?limit=50&offset=0` returns saved reading summaries, sorted by
-UUID filename for deterministic pagination. `limit` is 1–100 (default 50), and
+reading ID filename for deterministic pagination. `limit` is 1–100 (default 50), and
 `offset` is zero or greater. The response contains `items`, `total`, `limit`,
 `offset`, and `has_more`. Each item contains `id`, `title`, `language`,
 `sentence_count`, `url` for the full document, and `reader_url` for opening it.
@@ -354,3 +354,24 @@ files, unrelated files, symlinks, and invalid saved readings are omitted; invali
 reading files are logged. Storage access errors return a generic 503. To retrieve
 full reading blocks and segments, follow each item's `url`. The list currently
 scans saved JSON files; a database-backed index can be added if the library grows.
+
+### Full reading document compatibility
+
+Saved readings and `GET /api/readings/{reading_id}` support the complete structure
+in `apps/frontend/src/data/reading.json`: `titleTranslation`, `translationLanguage`,
+sentence `translation`, segment `details.translation` / `partOfSpeech` / `note`,
+and interleaved `Multiple-choice` blocks with their full question/option data.
+Fields omitted in saved documents stay omitted in the response. Populated fields
+are preserved, including punctuation with null pinyin and optional detail fields.
+
+Generated readings still use UUID IDs and add empty translation placeholders
+(`titleTranslation: null`, sentence `translation: null`, segment `details: null`)
+with `translationLanguage: "en"`. This does not generate translations or quizzes;
+it leaves room for a later enrichment step. Existing segmentation-only files
+remain readable without rewriting them.
+
+Document IDs may also be safe names such as `reading-001` (1–100 ASCII letters,
+digits, underscores, or hyphens; first character alphanumeric). Save an enriched
+document as `<id>.json` in `READING_DATA_DIR` to serve it with its original ID.
+The list endpoint supports both named IDs and UUIDs and counts only sentence
+blocks, excluding checkpoints. No import/update/translation endpoint is added.

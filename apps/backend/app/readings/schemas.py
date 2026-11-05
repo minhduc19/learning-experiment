@@ -1,7 +1,9 @@
-from typing import Literal
-from uuid import UUID
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
+
+
+ReadingId = Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$")]
 
 
 class ReadingCreate(BaseModel):
@@ -19,29 +21,71 @@ class ReadingCreate(BaseModel):
         return value
 
 
+class SegmentDetails(BaseModel):
+    translation: str | None = None
+    partOfSpeech: str | None = None
+    note: str | None = None
+
+
 class Segment(BaseModel):
     id: str
     text: str
-    pinyin: str | None
+    pinyin: str | None = None
+    details: SegmentDetails | None = None
 
 
 class SentenceBlock(BaseModel):
     id: str
     type: Literal["sentence"] = "sentence"
+    translation: str | None = None
     segments: list[Segment]
 
 
+class QuestionOption(BaseModel):
+    id: str
+    label: str
+    fill: str | None = None
+    feedback: str = ""
+
+
+class MultipleChoiceQuestion(BaseModel):
+    id: str
+    instruction: str = "Fill in the blank"
+    sentence: str
+    answer: str
+    translation: str | None = None
+    options: list[QuestionOption] = Field(min_length=2)
+
+    @model_validator(mode="after")
+    def validate_options(self):
+        ids = [option.id for option in self.options]
+        if len(ids) != len(set(ids)) or self.answer not in ids:
+            raise ValueError("Options must have unique IDs and include the correct answer")
+        return self
+
+
+class MultipleChoiceBlock(BaseModel):
+    id: str
+    type: Literal["Multiple-choice"]
+    question: MultipleChoiceQuestion
+
+
+ReadingBlock = Annotated[SentenceBlock | MultipleChoiceBlock, Field(discriminator="type")]
+
+
 class ReadingDocument(BaseModel):
-    id: UUID
+    id: ReadingId
     title: str
-    language: Literal["zh-Hans"] = "zh-Hans"
-    blocks: list[SentenceBlock]
+    titleTranslation: str | None = None
+    language: str = "zh-Hans"
+    translationLanguage: str | None = None
+    blocks: list[ReadingBlock]
 
 
 class ReadingSummary(BaseModel):
-    id: UUID
+    id: ReadingId
     title: str
-    language: Literal["zh-Hans"]
+    language: str
     sentence_count: int
     url: str
     reader_url: str
