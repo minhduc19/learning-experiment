@@ -79,7 +79,7 @@ jobs:
           git checkout --detach "$deploy_sha"
           deployment_diagnostics() {
             docker compose -p learning-experiment ps || true
-            docker compose -p learning-experiment logs --no-color --tail=100 frontend backend db || true
+            docker compose -p learning-experiment logs --no-color --tail=100 frontend backend corpus-migrate corpus-worker db || true
           }
           trap 'status=$?; deployment_diagnostics; exit "$status"' ERR
           docker compose -p learning-experiment up --build -d --wait --wait-timeout 180

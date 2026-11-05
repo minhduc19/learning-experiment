@@ -48,8 +48,7 @@ in the example are for local use; configure deployment credentials separately.
 
 CI runs database integration tests against PostgreSQL. Run `npm test` for the unit tests. To include the integration test, set
 `TEST_DATABASE_URL` to a reachable PostgreSQL URL before running `npm test`.
-Application data models and schema migrations can be added when the storage
-requirements are defined.
+Corpus tables use versioned SQL migrations; see [Chinese corpus imports](docs/corpus.md).
 
 ## Idea pages
 
@@ -375,3 +374,11 @@ digits, underscores, or hyphens; first character alphanumeric). Save an enriched
 document as `<id>.json` in `READING_DATA_DIR` to serve it with its original ID.
 The list endpoint supports both named IDs and UUIDs and counts only sentence
 blocks, excluding checkpoints. No import/update/translation endpoint is added.
+
+## Chinese corpus imports
+
+Upload large UTF-8 stories, import every character and segment into PostgreSQL,
+and query frequency rankings and sentence concordances through `/api/corpus`.
+See [the corpus API guide](docs/corpus.md) for resumable uploads, worker setup,
+endpoints, exact reconstruction, and configurable file limits. The full Compose
+stack starts migrations and the corpus worker automatically.
