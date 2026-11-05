@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
 const status = ref('Checking…')
 async function checkHealth() {
   status.value = 'Checking…'
@@ -20,6 +21,7 @@ onMounted(checkHealth)
     <p>YOUR MONOREPO IS READY</p>
     <h1>FastAPI + Vue</h1>
     <p>A Python API and a Vue 3 frontend, working together.</p>
+    <p><RouterLink :to="{ name: 'ideas' }">Browse ideas and activities →</RouterLink></p>
     <p>Deployment check: version 4</p>
     <p role="status">Backend: {{ status }}</p>
     <div class="cluster">

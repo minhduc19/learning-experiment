@@ -62,3 +62,9 @@
   align-items: center;
   gap: var(--space-3);
 }
+
+.route-list { list-style: none; padding: 0; margin-block: var(--space-4); }
+.route-list li + li { margin-top: var(--space-2); }
+.route-list a { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-3); border: 1px solid #dce6dc; border-radius: var(--radius-control); text-decoration: none; background: white; }
+.route-list a:hover { background: #e9f5df; }
+.route-list code { color: var(--color-text); font-size: 0.8rem; overflow-wrap: anywhere; }

@@ -21,8 +21,13 @@ The frontend calls relative `/api` URLs. Vite proxies these to FastAPI during de
 
 ## Idea pages
 
+The shared header shows only Home. The home page links to `/ideas`, a directory
+of every titled route and its aliases, generated from the router configuration.
+The not-found wildcard is not a navigable page and is omitted.
+
 The frontend uses Vue Router with browser history and lazy-loaded pages:
 
+- `/ideas`: links to all pages and route aliases
 - `/`: the original home page and backend connection check
 - `/multiple-choice` (also `/ideas/one`): interactive three-question quiz in
   `apps/frontend/src/views/IdeaOneView.vue`. Edit `src/data/questions.js` to add
@@ -36,7 +41,7 @@ The frontend uses Vue Router with browser history and lazy-loaded pages:
 Build each idea in its own view component. To add another idea, create a `.vue`
 file in `apps/frontend/src/views/` and add a route in
 `apps/frontend/src/router/index.js` with a unique `path`, `name`, lazy-loaded
-`component`, and `meta.title`. Routes with a title appear in the navigation
+`component`, and `meta.title`. Routes with a title appear in the Ideas directory
 automatically. For example:
 
 ```js
