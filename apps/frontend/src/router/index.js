@@ -1,7 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { auth, initializeAuth } from '../composables/useAuth'
 
 // Routes with a title appear in the Ideas directory automatically.
 export const routes = [
+  { path: '/login', name: 'login', component: () => import('../views/AuthView.vue'), meta: { title: 'Log in' } },
+  { path: '/register', name: 'register', component: () => import('../views/AuthView.vue'), meta: { title: 'Create account' } },
+  { path: '/my-stories', name: 'my-stories', component: () => import('../views/MyStoriesView.vue'), meta: { title: 'My stories', requiresAuth: true } },
+  { path: '/my-stories/:storyId', name: 'story', component: () => import('../views/StoryView.vue'), meta: { requiresAuth: true } },
   {
     path: '/',
     name: 'home',
@@ -36,18 +41,19 @@ export const routes = [
     path: '/corpus-upload',
     name: 'corpus-upload',
     component: () => import('../views/CorpusUploadView.vue'),
-    meta: { title: 'Upload a corpus story' },
+    meta: { title: 'Upload a corpus story', requiresAuth: true },
   },
   {
     path: '/characters',
     name: 'characters',
     component: () => import('../views/CharactersView.vue'),
-    meta: { title: 'Character explorer' },
+    meta: { title: 'Character explorer', requiresAuth: true },
   },
   {
     path: '/characters/:characterId',
     name: 'character-detail',
     component: () => import('../views/CharacterDetailView.vue'),
+    meta: { requiresAuth: true },
   },
   {
     path: '/database-status',
@@ -74,8 +80,16 @@ export const routes = [
   },
 ]
 
-export default createRouter({
+const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
   scrollBehavior: () => ({ top: 0 }),
 })
+
+router.beforeEach(async to => {
+  if (!to.meta.requiresAuth) return true
+  await initializeAuth()
+  if (!auth.user) return { name: 'login', query: { next: to.fullPath } }
+  return true
+})
+export default router

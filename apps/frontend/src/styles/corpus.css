@@ -95,3 +95,9 @@
 .corpus-script-alternative { display: inline-block; margin-inline-start: .5em; font-size: .55em; font-weight: 400; color: #52665d; vertical-align: baseline; overflow-wrap: anywhere; }
 .corpus-summary-glyph { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; }
 .corpus-sentence-simplified { margin: .65rem 0 0; color: #52665d; font-size: 1.05rem; line-height: 1.9; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.auth-page { max-width: 38rem; }
+.auth-form label { display:block; font-weight:600; margin-bottom:1rem; }
+.auth-form input { display:block; width:100%; padding:.8rem; margin-top:.4rem; border:1px solid #bacdc4; border-radius:.5rem; color:var(--color-text); background:white; }
+.story-content { white-space:pre-wrap; overflow-wrap:anywhere; font-size:1.4rem; line-height:2; margin-top:2rem; }
+.story-reader select { padding:.5rem; margin:.5rem; }

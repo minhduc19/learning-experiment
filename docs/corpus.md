@@ -264,3 +264,13 @@ The command shares the worker's backfill lock and waits if another worker is
 already converting. Script conversion versions are checked on resumable imports
 and backfill; changing the conversion configuration requires an explicit data
 migration. Keeping the original and both variants requires additional storage.
+
+## Authentication and ownership
+
+All `/api/corpus` endpoints now require an account access token. The browser
+uploader and explorer handle authentication automatically; the Python upload
+script prompts for your login. Story lists, character statistics, segment
+associations, and sentence/export results include only the current user's data.
+See [authentication.md](authentication.md) for endpoints, HTTPS configuration,
+and assigning existing anonymous records. Shared vocabulary definitions do not
+grant access to another user's sentences or counts.

@@ -40,8 +40,26 @@ def client(corpus_database, monkeypatch, tmp_path):
     monkeypatch.setenv("CORPUS_DATA_DIR", str(tmp_path))
     with connect(worker=True) as db:
         db.execute("DROP SCHEMA IF EXISTS corpus CASCADE")
+        db.execute("DROP SCHEMA IF EXISTS auth CASCADE")
     migrate()
     with TestClient(app) as client:
+        assert (
+            client.post(
+                "/api/auth/register",
+                json={
+                    "email": "owner@example.com",
+                    "username": "owner",
+                    "password": "test-password-123",
+                },
+            ).status_code
+            == 201
+        )
+        login = client.post(
+            "/api/auth/login",
+            json={"email": "owner@example.com", "password": "test-password-123"},
+        )
+        assert login.status_code == 200, login.text
+        client.headers["Authorization"] = "Bearer " + login.json()["access_token"]
         yield client
 
 
@@ -328,7 +346,7 @@ def test_migrations_are_idempotent(client):
             db.execute("SELECT count(*) AS n FROM corpus.schema_migrations").fetchone()[
                 "n"
             ]
-            == 2
+            == 3
         )
 
 

@@ -12,7 +12,7 @@ test('corpus pages use opaque cursors, append results, and reset for a different
     urls.push(url)
     return urls.length === 1 ? response([{ id: 1 }], 'opaque=cursor+') : response([{ id: 2 }])
   }
-  const page = useCorpusPage(2)
+  const page = useCorpusPage(2, (...args) => fetch(...args))
   await page.reset('/api/corpus/characters?sort=occurrence_count')
   await page.load()
   assert.deepEqual(page.items.map(item => item.id), [1, 2])
@@ -27,7 +27,7 @@ test('a late response cannot replace a newer character or segment selection', as
   let finishOld
   globalThis.fetch = async url => url.includes('/old')
     ? new Promise(resolve => { finishOld = resolve }) : response([{ id: 2 }])
-  const page = useCorpusPage()
+  const page = useCorpusPage(30, (...args) => fetch(...args))
   const old = page.reset('/old')
   await page.reset('/new')
   finishOld(response([{ id: 1 }]))
@@ -44,7 +44,7 @@ test('a failed next page preserves existing rows and retries the same cursor', a
     if (call === 2) return { ok: false, status: 503 }
     return call === 1 ? response([{ id: 1 }], 'next') : response([{ id: 2 }])
   }
-  const page = useCorpusPage()
+  const page = useCorpusPage(30, (...args) => fetch(...args))
   await page.reset('/characters')
   await page.load()
   assert.deepEqual(page.items.map(item => item.id), [1])
@@ -58,7 +58,7 @@ test('a failed next page preserves existing rows and retries the same cursor', a
 
 test('malformed pages show an error rather than looking like an empty corpus', async () => {
   globalThis.fetch = async () => ({ ok: true, json: async () => ({ unexpected: true }) })
-  const page = useCorpusPage()
+  const page = useCorpusPage(30, (...args) => fetch(...args))
   await page.reset('/characters')
   assert.equal(page.loaded, false)
   assert.match(page.error, /unexpected/)

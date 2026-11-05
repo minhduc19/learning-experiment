@@ -1,9 +1,10 @@
+import { authorizedFetch } from './useAuth.js'
 import { getCurrentScope, onScopeDispose, reactive } from 'vue'
 
-export async function fetchCorpus(path, signal) {
+export async function fetchCorpus(path, signal, fetcher = authorizedFetch) {
   let response
   try {
-    response = await fetch(path, { signal, cache: 'no-store' })
+    response = await fetcher(path, { signal, cache: 'no-store' })
   } catch (error) {
     if (error.name === 'AbortError') throw error
     throw new Error('Could not reach the corpus. Check your connection and try again.')
@@ -20,7 +21,7 @@ export async function fetchCorpus(path, signal) {
 }
 
 // The revision guards against stale responses even if a transport ignores abort.
-export function useCorpusPage(pageSize = 30) {
+export function useCorpusPage(pageSize = 30, fetcher = authorizedFetch) {
   const state = reactive({ items: [], nextCursor: null, loading: false, error: '', loaded: false })
   let endpoint = null
   let controller
@@ -39,7 +40,7 @@ export function useCorpusPage(pageSize = 30) {
     const params = new URLSearchParams({ limit: String(pageSize) })
     if (state.nextCursor) params.set('cursor', state.nextCursor)
     try {
-      const data = await fetchCorpus(`${endpoint}${endpoint.includes('?') ? '&' : '?'}${params}`, signal)
+      const data = await fetchCorpus(`${endpoint}${endpoint.includes('?') ? '&' : '?'}${params}`, signal, fetcher)
       if (ticket !== revision) return
       if (!Array.isArray(data?.items) || !(data.next_cursor === null || typeof data.next_cursor === 'string')) {
         throw new Error('The corpus returned an unexpected response. Please try again.')
