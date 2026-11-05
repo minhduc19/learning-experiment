@@ -9,6 +9,9 @@ const props = defineProps({
   embedded: { type: Boolean, default: false },
   items: { type: Array, default: null },
   translationLabel: { type: String, default: 'Spanish translation' },
+  // Pixel values; null keeps the standalone activity's default typography.
+  textSize: { type: Number, default: null, validator: (value) => value === null || (Number.isFinite(value) && value > 0) },
+  translationSize: { type: Number, default: null, validator: (value) => value === null || (Number.isFinite(value) && value > 0) },
 })
 const emit = defineEmits(['passed'])
 const questionHeadingId = useId()
@@ -50,7 +53,10 @@ async function startAgain() {
 </script>
 
 <template>
-  <component :is="embedded ? 'div' : 'main'" class="activity" :class="{ 'activity-screen': !embedded, 'activity-embedded': embedded, 'activity-has-feedback': checked }">
+  <component :is="embedded ? 'div' : 'main'" class="activity" :style="{
+    '--activity-text-size': textSize === null ? undefined : `${textSize / 16}rem`,
+    '--activity-translation-size': translationSize === null ? undefined : `${translationSize / 16}rem`,
+  }" :class="{ 'activity-screen': !embedded, 'activity-embedded': embedded, 'activity-has-feedback': checked }">
     <div v-if="!embedded" class="activity-screen-progress">
     <div class="activity-topline">
       <span class="activity-eyebrow">{{ strict ? 'STRICT QUIZ' : 'DAILY PRACTICE' }}</span>

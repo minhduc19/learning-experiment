@@ -64,6 +64,7 @@
 }
 
 .activity-hint, .activity-footer {
+  font-size: var(--activity-translation-size, 1rem);
   color: #52665d;
 }
 
@@ -72,7 +73,7 @@
   padding: var(--space-5);
   border: 2px solid var(--activity-border);
   border-radius: 20px;
-  font-size: clamp(1.4rem, 4vw, 2rem);
+  font-size: var(--activity-text-size, clamp(1.4rem, 4vw, 2rem));
   font-weight: 700;
 }
 
@@ -82,6 +83,7 @@
 }
 
 .activity-option {
+  font-size: var(--activity-text-size, 1rem);
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -185,6 +187,10 @@
   margin-block: var(--space-3);
 }
 
+.activity-feedback-body > p {
+  font-size: var(--activity-translation-size, 1rem);
+}
+
 .activity-translation {
   padding: var(--space-3);
   background: white;
@@ -260,7 +266,7 @@
 
 .activity-screen .activity-sentence {
   padding: clamp(12px, 2vh, 24px);
-  font-size: clamp(1.25rem, 4vw, 1.8rem);
+  font-size: var(--activity-text-size, clamp(1.25rem, 4vw, 1.8rem));
 }
 
 .activity-screen .activity-options {
@@ -268,6 +274,7 @@
 }
 
 .activity-screen .activity-option {
+  font-size: var(--activity-text-size, 1rem);
   padding: 10px 16px;
   min-height: 48px;
 }

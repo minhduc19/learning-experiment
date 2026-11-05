@@ -191,3 +191,24 @@ Earlier reading remains visible, and each checkpoint retains its feedback until
 Continue. The included passage has two checkpoints. Progress resets on reload.
 The embedded checkpoints share `MultipleChoiceActivity.vue` with the existing
 practice and strict quiz routes.
+
+### Passing activity text sizes
+
+`MultipleChoiceActivity` accepts optional numeric `textSize` and `translationSize`
+props in pixels. `textSize` sizes the question sentence and answer options;
+`translationSize` sizes hints, the feedback translation, and explanation text.
+Omit either prop to keep the standalone activity's existing defaults.
+
+```vue
+<MultipleChoiceActivity
+  embedded
+  :items="[block.question]"
+  :text-size="languageSize"
+  :translation-size="translationSize"
+  translation-label="English translation"
+  @passed="unlock(block.id)"
+/>
+```
+
+The reading app passes its live text-size settings, so updates also apply to
+existing checkpoints and newly revealed checkpoints without resetting answers.
