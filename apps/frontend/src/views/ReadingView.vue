@@ -71,7 +71,6 @@ onUnmounted(() => {
       </div>
 
       <section v-for="(block, index) in reading.blocks" :key="block.id" class="reading-block" :aria-label="`Sentence ${index + 1}`">
-        <span class="reading-block-number" aria-hidden="true">{{ String(index + 1).padStart(2, '0') }}</span>
         <p class="reading-sentence" :lang="reading.language"><template v-for="segment in block.segments" :key="segment.id"><button v-if="segment.details" type="button" class="reading-phrase" :class="{ 'is-active': selected?.id === segment.id }" :aria-expanded="selected?.id === segment.id" aria-controls="phrase-meaning" aria-haspopup="dialog" @click="openMeaning(segment, $event)"><ruby>{{ segment.text }}<rt v-if="segment.pinyin">{{ segment.pinyin }}</rt></ruby></button><span v-else class="reading-punctuation">{{ segment.text }}</span></template></p>
         <p class="reading-translation" :lang="reading.translationLanguage">{{ block.translation }}</p>
       </section>
