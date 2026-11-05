@@ -11,10 +11,10 @@
 .reading-help { max-width: 520px; color: #52665d; font-size: 0.9rem; }
 .reading-block { margin-block: 0; }
 .reading-block + .reading-block { margin-block-start: var(--reading-sentence-spacing, 1.5rem); }
-.reading-sentence { margin: 0; font-size: clamp(1.5rem, 5vw, 2rem); line-height: 2.7; overflow-wrap: anywhere; }
+.reading-sentence { font-weight: 300; margin: 0; font-size: clamp(1.5rem, 5vw, 2rem); line-height: 2.7; overflow-wrap: anywhere; }
 .reading-phrase { display: inline-block; vertical-align: baseline; font: inherit; line-height: inherit; color: inherit; border: 0; border-radius: 8px; background: transparent; padding: 0 4px; cursor: pointer; }
 .reading-phrase ruby { ruby-position: over; }
-.reading-phrase rt { font-family: var(--font-body); font-size: 0.45em; font-weight: 500; color: #657a68; line-height: 1.4; }
+.reading-phrase rt { font-family: var(--font-body); font-size: 0.45em; font-weight: 400; color: #657a68; line-height: 1.4; }
 .reading-phrase:hover, .reading-phrase.is-active { background: #e9f5df; color: #285900; }
 .reading-phrase.is-active { box-shadow: inset 0 -3px #79ab4f; }
 .reading-translation { margin: var(--reading-translation-spacing, 0.5rem) 0 0; color: #52665d; font-size: 1rem; }
