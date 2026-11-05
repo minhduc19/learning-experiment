@@ -12,12 +12,14 @@ from fastapi.routing import APIRoute
 from starlette.concurrency import run_in_threadpool
 
 from app.auth.dependencies import current_user, user_id
-from app.corpus import queries, uploads
+from app.corpus import progress, queries, uploads
 from app.corpus.config import MAX_PATCH_BYTES, max_upload_bytes, storage_directory
 from app.corpus.database import connect
 from app.corpus.schemas import (
     Character,
     CharacterDetail,
+    CharacterProgress,
+    CharacterProgressUpdate,
     ImportAccepted,
     ImportCreate,
     ImportStatus,
@@ -231,6 +233,16 @@ def characters(
 def character_detail(character_id: int, story_id: UUID | None = None):
     """Character counts and distinct logical sentence total from completed stories."""
     return queries.character_detail(character_id, story_id)
+
+
+@router.patch("/characters/{character_id}/progress", response_model=CharacterProgress)
+def update_character_progress(character_id: int, data: CharacterProgressUpdate):
+    """Set either or both personal flags. Both true means revision.
+
+    Only characters in the current user's completed corpus may be marked.
+    Omitted flags keep their previous values; false removes a mark.
+    """
+    return progress.update_character_progress(character_id, data)
 
 
 @router.get(

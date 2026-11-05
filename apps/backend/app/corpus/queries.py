@@ -87,6 +87,7 @@ def characters(sort, story_id, include_non_han, cursor, limit, character):
     with connect() as db:
         require_story(db, story_id)
         prefix, params = statistics(owner, story_id)
+        params.append(owner)
         conditions = ["true"]
         if not include_non_han:
             conditions.append("c.is_han")
@@ -99,7 +100,11 @@ def characters(sort, story_id, include_non_han, cursor, limit, character):
             params.extend([count, count, identifier])
         query = sql.SQL(
             prefix
-            + "SELECT c.*,st.occurrence_count,st.distinct_segment_count,st.segment_occurrence_count FROM stats st JOIN corpus.characters c ON c.id=st.character_id WHERE {} ORDER BY {} DESC,c.id LIMIT %s"
+            + """SELECT c.*,st.occurrence_count,st.distinct_segment_count,st.segment_occurrence_count,
+            coalesce(p.learned,false) AS learned,coalesce(p.learning,false) AS learning
+            FROM stats st JOIN corpus.characters c ON c.id=st.character_id
+            LEFT JOIN corpus.user_character_progress p ON p.character_id=c.id AND p.user_id=%s
+            WHERE {} ORDER BY {} DESC,c.id LIMIT %s"""
         ).format(sql.SQL(" AND ".join(conditions)), sql.Identifier("st", sort))
         rows = db.execute(query, params + [limit + 1]).fetchall()
     for row in rows:
@@ -129,8 +134,12 @@ def character_detail(character_id, story_id=None):
         prefix, params = statistics(user_id(), story_id)
         row = db.execute(
             prefix
-            + "SELECT c.*,st.occurrence_count,st.distinct_segment_count,st.segment_occurrence_count FROM corpus.characters c JOIN stats st ON st.character_id=c.id WHERE c.id=%s",
-            params + [character_id],
+            + """SELECT c.*,st.occurrence_count,st.distinct_segment_count,st.segment_occurrence_count,
+            coalesce(p.learned,false) AS learned,coalesce(p.learning,false) AS learning
+            FROM corpus.characters c JOIN stats st ON st.character_id=c.id
+            LEFT JOIN corpus.user_character_progress p ON p.character_id=c.id AND p.user_id=%s
+            WHERE c.id=%s""",
+            params + [user_id(), character_id],
         ).fetchone()
         if not row:
             raise HTTPException(404, "Character not found")
