@@ -8,6 +8,8 @@ const displayPinyin = ref(true)
 const displayTranslation = ref(true)
 const languageSize = ref(32)
 const translationSize = ref(16)
+const sentenceSpacing = ref(24)
+const translationSpacing = ref(8)
 
 function openSettings() {
   if (popup.value?.matches(':popover-open')) popup.value.hidePopover()
@@ -66,7 +68,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main class="reading-app" :style="{ '--reading-language-size': `${languageSize / 16}rem`, '--reading-translation-size': `${translationSize / 16}rem` }">
+  <main class="reading-app" :style="{ '--reading-language-size': `${languageSize / 16}rem`, '--reading-translation-size': `${translationSize / 16}rem`, '--reading-sentence-spacing': `${sentenceSpacing / 16}rem`, '--reading-translation-spacing': `${translationSpacing / 16}rem` }">
     <header class="reading-header">
       <RouterLink :to="{ name: 'home' }" class="reading-back">← Home</RouterLink>
       <span class="reading-eyebrow">MANDARIN READING</span>
@@ -119,6 +121,16 @@ onUnmounted(() => {
           <label for="reading-translation-size">Text size of translation</label>
           <output for="reading-translation-size">{{ translationSize }} px</output>
           <input id="reading-translation-size" v-model.number="translationSize" type="range" min="12" max="32" step="1">
+        </div>
+        <div class="reading-setting-size">
+          <label for="reading-sentence-spacing">Spacing between sentences</label>
+          <output for="reading-sentence-spacing">{{ sentenceSpacing }} px</output>
+          <input id="reading-sentence-spacing" v-model.number="sentenceSpacing" type="range" min="0" max="64" step="4">
+        </div>
+        <div class="reading-setting-size">
+          <label for="reading-translation-spacing">Spacing between sentence and translation</label>
+          <output for="reading-translation-spacing">{{ translationSpacing }} px</output>
+          <input id="reading-translation-spacing" v-model.number="translationSpacing" type="range" min="0" max="32" step="2">
         </div>
         <button class="button reading-settings-done">Done</button>
       </form>
