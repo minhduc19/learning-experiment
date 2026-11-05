@@ -2,9 +2,12 @@
 """Upload a UTF-8 story in bounded chunks using only Python's standard library."""
 
 import argparse
+import getpass
 import json
+from http.cookiejar import CookieJar
 from pathlib import Path
-from urllib.request import Request, urlopen
+from urllib.error import HTTPError
+from urllib.request import HTTPCookieProcessor, Request, build_opener
 
 
 def main():
@@ -13,21 +16,63 @@ def main():
     parser.add_argument("--api", default="http://localhost:8000")
     parser.add_argument("--title")
     parser.add_argument(
+        "--email", help="Your account email; the password is prompted securely"
+    )
+    parser.add_argument(
         "--upload-id", help="Resume the upload ID printed by an earlier run"
     )
     args = parser.parse_args()
     base = args.api.rstrip("/") + "/api/corpus"
 
+    opener = build_opener(HTTPCookieProcessor(CookieJar()))
+    email = args.email or input("Email: ")
+    token = None
+
+    def auth_request(path, data=None):
+        body = json.dumps(data).encode() if data else None
+        with opener.open(
+            Request(
+                args.api.rstrip("/") + "/api/auth/" + path,
+                data=body,
+                method="POST",
+                headers={"Content-Type": "application/json"},
+            ),
+            timeout=30,
+        ) as response:
+            return json.loads(response.read())
+
+    def sign_in():
+        return auth_request(
+            "login", {"email": email, "password": getpass.getpass("Password: ")}
+        )["access_token"]
+
+    token = sign_in()
+
     def request(path, method="GET", data=None, headers=None):
+        nonlocal token
         if isinstance(data, dict):
             data = json.dumps(data).encode()
             headers = {"Content-Type": "application/json", **(headers or {})}
-        with urlopen(
-            Request(base + path, data=data, headers=headers or {}, method=method),
-            timeout=120,
-        ) as response:
-            body = response.read()
-            return json.loads(body) if body else None
+        for attempt in range(2):
+            try:
+                with opener.open(
+                    Request(
+                        base + path,
+                        data=data,
+                        headers={**(headers or {}), "Authorization": "Bearer " + token},
+                        method=method,
+                    ),
+                    timeout=120,
+                ) as response:
+                    body = response.read()
+                    return json.loads(body) if body else None
+            except HTTPError as error:
+                if error.code != 401 or attempt:
+                    raise
+                try:
+                    token = auth_request("refresh")["access_token"]
+                except HTTPError:
+                    token = sign_in()
 
     size = args.file.stat().st_size
     limits = request("/limits")

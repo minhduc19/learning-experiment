@@ -1,3 +1,4 @@
+import { auth, authorizedFetch, sessionToken } from './useAuth.js'
 import { getCurrentScope, markRaw, onScopeDispose, reactive } from 'vue'
 
 const SESSION_KEY = 'corpus-upload-v1'
@@ -18,7 +19,9 @@ export function importFailure(message = '') {
   return 'The import could not finish. You can retry it from its last saved checkpoint.'
 }
 
-export function sendCorpusChunk({ path, offset, chunk, signal, onProgress }) {
+export async function sendCorpusChunk({ path, offset, chunk, signal, onProgress }) {
+  const token = await sessionToken()
+  if (!token) throw new Error('Please log in again to resume your upload.')
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     let settled = false
@@ -32,6 +35,7 @@ export function sendCorpusChunk({ path, offset, chunk, signal, onProgress }) {
     const stop = () => { xhr.abort(); finish(aborted()) }
     if (signal.aborted) { finish(aborted()); return }
     xhr.open('PATCH', path)
+    xhr.setRequestHeader('Authorization', 'Bearer ' + token)
     xhr.setRequestHeader('Content-Type', 'application/octet-stream')
     xhr.setRequestHeader('Upload-Offset', String(offset))
     xhr.timeout = 120000
@@ -54,11 +58,12 @@ export function sendCorpusChunk({ path, offset, chunk, signal, onProgress }) {
   })
 }
 
-export function useCorpusUpload({ fetcher = (...args) => fetch(...args), patch = sendCorpusChunk,
+export function useCorpusUpload({ fetcher = (...args) => authorizedFetch(...args), patch = sendCorpusChunk,
   storage, pollDelay = 2000 } = {}) {
   if (storage === undefined) {
     try { storage = globalThis.localStorage } catch { /* Storage may be disabled. */ }
   }
+  const sessionKey = auth.user ? `${SESSION_KEY}:${auth.user.id}` : SESSION_KEY
   const state = reactive({ phase: 'idle', file: null, fileMeta: null, title: '', uploadId: null,
     importId: null, uploaded: 0, inFlight: 0, limits: null, limitsLoading: false,
     limitsError: '', fileError: '', error: '', job: null, working: false, checking: false })
@@ -71,7 +76,7 @@ export function useCorpusUpload({ fetcher = (...args) => fetch(...args), patch =
   function save() {
     if (!state.uploadId && !state.importId) return
     try {
-      storage?.setItem(SESSION_KEY, JSON.stringify({ version: 1, fileMeta: state.fileMeta,
+      storage?.setItem(sessionKey, JSON.stringify({ version: 1, fileMeta: state.fileMeta,
         title: state.title, uploadId: state.uploadId, importId: state.importId }))
     } catch { /* Uploads still work when browser storage is unavailable. */ }
   }
@@ -304,12 +309,12 @@ export function useCorpusUpload({ fetcher = (...args) => fetch(...args), patch =
     stopOperation()
     Object.assign(state, { phase: 'idle', file: null, fileMeta: null, title: '', uploadId: null,
       importId: null, uploaded: 0, inFlight: 0, fileError: '', error: '', job: null })
-    try { storage?.removeItem(SESSION_KEY) } catch { /* Optional browser storage. */ }
+    try { storage?.removeItem(sessionKey) } catch { /* Optional browser storage. */ }
   }
 
   async function initialize(importId) {
     let cached
-    try { cached = JSON.parse(storage?.getItem(SESSION_KEY) || 'null') } catch { /* Ignore invalid saved data. */ }
+    try { cached = JSON.parse(storage?.getItem(sessionKey) || 'null') } catch { /* Ignore invalid saved data. */ }
     if (cached?.version === 1 && (!importId || cached.importId === importId)
       && (!cached.uploadId || UUID.test(cached.uploadId)) && (!cached.importId || UUID.test(cached.importId))
       && (cached.importId || (cached.fileMeta && typeof cached.fileMeta.name === 'string' && Number.isSafeInteger(cached.fileMeta.size) && cached.fileMeta.size > 0))) {

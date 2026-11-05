@@ -20,6 +20,9 @@ services:
       - reading_data:/app/data/readings
       - corpus_data:/app/data/corpus
     environment: &backend-environment
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-true}
+      AUTH_PUBLIC_ORIGIN: ${AUTH_PUBLIC_ORIGIN:-}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:-}
       CORPUS_DATA_DIR: /app/data/corpus
       CORPUS_MAX_UPLOAD_BYTES: ${CORPUS_MAX_UPLOAD_BYTES:-1073741824}
       READING_DATA_DIR: /app/data/readings

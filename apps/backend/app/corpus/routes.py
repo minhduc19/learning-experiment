@@ -6,11 +6,12 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 import psycopg
-from fastapi import APIRouter, Header, HTTPException, Query, Request, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from fastapi.responses import StreamingResponse
 from fastapi.routing import APIRoute
 from starlette.concurrency import run_in_threadpool
 
+from app.auth.dependencies import current_user, user_id
 from app.corpus import queries, uploads
 from app.corpus.config import MAX_PATCH_BYTES, max_upload_bytes, storage_directory
 from app.corpus.database import connect
@@ -35,7 +36,9 @@ class CorpusRoute(APIRoute):
         @wraps(handler)
         async def safe(request):
             try:
-                return await handler(request)
+                response = await handler(request)
+                response.headers["Cache-Control"] = "private, no-store"
+                return response
             except psycopg.Error:
                 raise HTTPException(
                     503,
@@ -47,7 +50,7 @@ class CorpusRoute(APIRoute):
         return safe
 
 
-router = APIRouter(route_class=CorpusRoute)
+router = APIRouter(route_class=CorpusRoute, dependencies=[Depends(current_user)])
 Limit = Annotated[int, Query(ge=1, le=100)]
 Cursor = Annotated[str | None, Query(max_length=2048)]
 
@@ -108,6 +111,7 @@ async def append_upload(
     This is a small project-specific protocol, not an implementation of tus.
     UTF-8 byte sequences may span chunks; validation happens in the import worker.
     """
+    await run_in_threadpool(uploads.upload_status, upload_id)
     if (
         request.headers.get("content-type", "").split(";")[0]
         != "application/octet-stream"
@@ -146,8 +150,8 @@ def import_status(import_id: UUID):
             """SELECT j.*,s.title,s.byte_offset,s.character_count,s.fragment_count,
             s.sentence_position AS completed_sentence_count,s.segmentation_version,s.conversion_version,s.checksum,
             u.size AS total_bytes FROM corpus.import_jobs j JOIN corpus.stories s ON s.id=j.story_id
-            JOIN corpus.uploads u ON u.id=s.upload_id WHERE j.id=%s""",
-            (import_id,),
+            JOIN corpus.uploads u ON u.id=s.upload_id WHERE j.id=%s AND s.user_id=%s""",
+            (import_id, user_id()),
         ).fetchone()
     if row is None:
         raise HTTPException(404, "Import not found")
@@ -161,7 +165,8 @@ def import_status(import_id: UUID):
 def retry_import(import_id: UUID):
     with connect() as db:
         row = db.execute(
-            "SELECT * FROM corpus.import_jobs WHERE id=%s FOR UPDATE", (import_id,)
+            "SELECT j.* FROM corpus.import_jobs j JOIN corpus.stories s ON s.id=j.story_id WHERE j.id=%s AND s.user_id=%s FOR UPDATE OF j",
+            (import_id, user_id()),
         ).fetchone()
         if row is None:
             raise HTTPException(404, "Import not found")
@@ -178,17 +183,31 @@ def retry_import(import_id: UUID):
 
 
 @router.get("/stories")
-def stories(limit: Limit = 50, after: UUID | None = None):
+def stories(
+    limit: Limit = 50, after: UUID | None = None, include_pending: bool = False
+):
     with connect() as db:
         rows = db.execute(
-            """SELECT id,title,character_count,fragment_count,sentence_position AS sentence_count,
-            checksum,conversion_version,created_at FROM corpus.stories WHERE status='completed' AND id>%s ORDER BY id LIMIT %s""",
-            (after or UUID(int=0), limit + 1),
+            """SELECT s.id,s.title,s.status,s.character_count,s.fragment_count,s.sentence_position AS sentence_count,
+            s.checksum,s.conversion_version,s.created_at,j.id AS import_id FROM corpus.stories s JOIN corpus.import_jobs j ON j.story_id=s.id WHERE s.user_id=%s AND (%s OR s.status='completed') AND s.id>%s ORDER BY s.id LIMIT %s""",
+            (user_id(), include_pending, after or UUID(int=0), limit + 1),
         ).fetchall()
     return {
         "items": rows[:limit],
         "next_after": rows[limit - 1]["id"] if len(rows) > limit else None,
     }
+
+
+@router.get("/stories/{story_id}")
+def story_detail(story_id: UUID):
+    with connect() as db:
+        row = db.execute(
+            "SELECT s.*,j.id AS import_id FROM corpus.stories s JOIN corpus.import_jobs j ON j.story_id=s.id WHERE s.id=%s AND s.user_id=%s",
+            (story_id, user_id()),
+        ).fetchone()
+    if not row:
+        raise HTTPException(404, "Story not found")
+    return row
 
 
 @router.get("/characters", response_model=Page[Character])
@@ -282,5 +301,6 @@ def export_story(
     with connect() as db:
         queries.require_story(db, story_id)
     return StreamingResponse(
-        queries.stream_text(story_id, script), media_type="text/plain; charset=utf-8"
+        queries.stream_text(story_id, script, owner_id=user_id()),
+        media_type="text/plain; charset=utf-8",
     )

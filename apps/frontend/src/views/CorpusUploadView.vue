@@ -38,7 +38,7 @@ onMounted(() => upload.initialize(typeof route.query.import === 'string' ? route
 
 <template>
   <main class="page corpus-page corpus-upload-page">
-    <RouterLink class="corpus-back" to="/characters">← Character explorer</RouterLink>
+    <div class="cluster"><RouterLink class="corpus-back" to="/characters">← Character explorer</RouterLink><RouterLink class="corpus-back" to="/my-stories">My stories</RouterLink></div>
     <header class="corpus-heading">
       <p class="corpus-eyebrow">GROW YOUR CHINESE CORPUS</p>
       <h1>Upload a story</h1>

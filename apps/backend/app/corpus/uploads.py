@@ -3,6 +3,7 @@ from uuid import uuid4
 
 from fastapi import HTTPException
 
+from app.auth.dependencies import user_id
 from app.corpus.config import max_upload_bytes, storage_directory
 from app.corpus.database import connect
 from app.corpus.script_forms import CONVERSION_VERSION
@@ -23,8 +24,8 @@ def create_upload(data):
         pass
     with connect() as db:
         row = db.execute(
-            "INSERT INTO corpus.uploads(id,filename,size) VALUES (%s,%s,%s) RETURNING *",
-            (identifier, data.filename, data.size),
+            "INSERT INTO corpus.uploads(id,filename,size,user_id) VALUES (%s,%s,%s,%s) RETURNING *",
+            (identifier, data.filename, data.size, user_id()),
         ).fetchone()
     return row
 
@@ -32,7 +33,8 @@ def create_upload(data):
 def upload_status(identifier):
     with connect() as db:
         row = db.execute(
-            "SELECT * FROM corpus.uploads WHERE id=%s", (identifier,)
+            "SELECT * FROM corpus.uploads WHERE id=%s AND user_id=%s",
+            (identifier, user_id()),
         ).fetchone()
     if row is None:
         raise HTTPException(404, "Upload not found")
@@ -42,7 +44,8 @@ def upload_status(identifier):
 def append_upload(identifier, offset, patch, size):
     with connect() as db:
         row = db.execute(
-            "SELECT * FROM corpus.uploads WHERE id=%s FOR UPDATE", (identifier,)
+            "SELECT * FROM corpus.uploads WHERE id=%s AND user_id=%s FOR UPDATE",
+            (identifier, user_id()),
         ).fetchone()
         if row is None:
             raise HTTPException(404, "Upload not found")
@@ -74,7 +77,8 @@ def create_import(data):
     segmentation_version = fingerprint()
     with connect() as db:
         row = db.execute(
-            "SELECT * FROM corpus.uploads WHERE id=%s FOR UPDATE", (data.upload_id,)
+            "SELECT * FROM corpus.uploads WHERE id=%s AND user_id=%s FOR UPDATE",
+            (data.upload_id, user_id()),
         ).fetchone()
         if row is None:
             raise HTTPException(404, "Upload not found")
@@ -88,13 +92,14 @@ def create_import(data):
             raise HTTPException(409, "Upload is incomplete")
         story_id, job_id = uuid4(), uuid4()
         db.execute(
-            "INSERT INTO corpus.stories(id,upload_id,title,segmentation_version,conversion_version) VALUES (%s,%s,%s,%s,%s)",
+            "INSERT INTO corpus.stories(id,upload_id,title,segmentation_version,conversion_version,user_id) VALUES (%s,%s,%s,%s,%s,%s)",
             (
                 story_id,
                 data.upload_id,
                 data.title,
                 segmentation_version,
                 CONVERSION_VERSION,
+                user_id(),
             ),
         )
         return db.execute(

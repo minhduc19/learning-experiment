@@ -424,3 +424,16 @@ The original text export remains the default; add `?script=traditional` or
 `?script=simplified` to `/api/corpus/stories/{id}/text` for a converted export.
 See [the corpus guide](docs/corpus.md#traditional-and-simplified-script-forms) for
 field meanings, conversion context, and migration/backfill details.
+
+## User accounts and private libraries
+
+Create an account at `/register`, log in at `/login`, and open `/my-stories` to
+read your uploaded stories. Upload and character-explorer pages require login;
+characters and segments are shared definitions, while story text, occurrences,
+and all visible counts are scoped to the signed-in user.
+
+Production sessions require HTTPS. Keep secure cookies enabled and configure
+`AUTH_PUBLIC_ORIGIN` for a TLS reverse proxy. Existing anonymous corpus data stays
+unassigned and hidden until an operator explicitly claims it for an account.
+See [authentication and ownership](docs/authentication.md) for configuration,
+API details, and the legacy-data assignment command.

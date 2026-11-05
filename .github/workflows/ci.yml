@@ -47,14 +47,19 @@ jobs:
           from urllib.request import Request, urlopen
 
           base = 'http://localhost:8080/api/corpus'
+          token = None
           def request(path, method='GET', data=None, headers=None):
               if isinstance(data, dict):
                   data = json.dumps(data).encode()
-                  headers = {'Content-Type': 'application/json'}
-              with urlopen(Request(base + path, data=data, headers=headers or {}, method=method), timeout=10) as response:
+                  headers = {'Content-Type': 'application/json', **(headers or {})}
+              headers = {**(headers or {}), **({'Authorization': 'Bearer ' + token} if token else {})}
+              url = 'http://localhost:8080/api' + path if path.startswith('/auth/') else base + path
+              with urlopen(Request(url, data=data, headers=headers, method=method), timeout=10) as response:
                   body = response.read()
                   return json.loads(body) if body else None
 
+          request('/auth/register', 'POST', {'email':'ci@example.com','username':'ci_user','password':'ci-test-password-123'})
+          token = request('/auth/login', 'POST', {'email':'ci@example.com','password':'ci-test-password-123'})['access_token']
           text = '謝謝你。\r\n我學習中文！'.encode('utf-8')
           upload = request('/uploads', 'POST', {'filename': 'ci-story.txt', 'size': len(text)})
           request('/uploads/' + upload['id'], 'PATCH', text,
@@ -69,11 +74,11 @@ jobs:
               time.sleep(1)
           else:
               raise AssertionError('Corpus worker did not finish the import')
-          with urlopen(base + '/stories/' + job['story_id'] + '/text', timeout=10) as response:
+          with urlopen(Request(base + '/stories/' + job['story_id'] + '/text', headers={'Authorization':'Bearer '+token}), timeout=10) as response:
               assert response.read() == text, 'Reconstructed story differs from upload'
-          with urlopen(base + '/stories/' + job['story_id'] + '/text?script=simplified', timeout=10) as response:
+          with urlopen(Request(base + '/stories/' + job['story_id'] + '/text?script=simplified', headers={'Authorization':'Bearer '+token}), timeout=10) as response:
               assert response.read() == '谢谢你。\r\n我学习中文！'.encode('utf-8')
-          with urlopen(base + '/stories/' + job['story_id'] + '/text?script=traditional', timeout=10) as response:
+          with urlopen(Request(base + '/stories/' + job['story_id'] + '/text?script=traditional', headers={'Authorization':'Bearer '+token}), timeout=10) as response:
               assert response.read() == text
           print('Corpus upload, exact reconstruction, and both script exports passed')
           PYTHON
