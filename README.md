@@ -27,8 +27,9 @@ The frontend uses Vue Router with browser history and lazy-loaded pages:
 - `/multiple-choice` (also `/ideas/one`): interactive three-question quiz in
   `apps/frontend/src/views/IdeaOneView.vue`. Edit `src/data/questions.js` to add
   questions, option-specific feedback, and Spanish translations. Use `[[blank]]`
-  in each sentence; the correct option’s `fill` text replaces the marker while
-  feedback is open (`label` is used if `fill` is omitted).
+  in each sentence; the selected option’s `fill` text replaces the marker immediately (a lowercase
+  `label` is used if `fill` is omitted). Students can change their selection,
+  then press Check to see feedback.
 - `/ideas/two`: `apps/frontend/src/views/IdeaTwoView.vue`
 - Unknown URLs show a page with a link back home.
 
@@ -107,6 +108,10 @@ content and an always-visible action button. Open it with `showModal()`;
 the stylesheet handles appearance while your component handles interaction.
 Use `.activity-finish` for completion screens, `.activity-topline` for a progress
 header, and `.activity-hint` or `.activity-footer` for supporting text.
+
+Routes with `meta.fullscreen: true` hide the site navigation. Use
+`.activity.activity-screen` for a viewport-sized lesson with a pinned Check button.
+The question area can scroll on unusually small screens or with enlarged text.
 
 Each activity can override `--activity-accent`, `--activity-progress-color`, and
 `--activity-border-color` on its `.activity` wrapper. Shared changes belong in

@@ -13,7 +13,7 @@ export const routes = [
     alias: '/ideas/one',
     name: 'idea-one',
     component: () => import('../views/IdeaOneView.vue'),
-    meta: { title: 'Multiple choice' },
+    meta: { title: 'Multiple choice', fullscreen: true },
   },
   {
     path: '/ideas/two',
