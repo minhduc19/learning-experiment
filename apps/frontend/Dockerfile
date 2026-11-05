@@ -13,3 +13,5 @@ FROM nginx:stable-alpine
 COPY --chmod=644 apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/frontend/dist /usr/share/nginx/html
 EXPOSE 80
+HEALTHCHECK --interval=10s --timeout=8s --start-period=10s --retries=3 \
+  CMD wget -Y off -q -O /dev/null -T 7 http://127.0.0.1/api/health/db || exit 1
