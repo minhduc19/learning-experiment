@@ -28,7 +28,7 @@ PostgreSQL 17 runs as the Compose `db` service. For local development, copy
 The backend's Uvicorn development command loads `.env`. The database is exposed
 only on localhost (port 5432 by default). Change `PGPORT` in `.env` if needed.
 
-The backend uses Psycopg 3. Use `app.database.connect_database()` as a context
+The backend uses Psycopg 3. Use `app.db.connection.connect_database()` as a context
 manager for SQL operations; it commits on success, rolls back on exceptions, and
 closes the connection. Configure connections with `PGHOST`, `PGPORT`, `PGUSER`,
 `PGPASSWORD`, and `PGDATABASE`, or supply `DATABASE_URL` for an external database.
@@ -284,3 +284,46 @@ through the frontend proxy. The page calls `/api/health/db` automatically on ent
 and offers Check again. It distinguishes a healthy database, database connection
 failure, an unavailable API/proxy, unexpected responses, and request timeouts.
 The result is a snapshot from the last check, with a timestamp; it does not poll.
+
+## Generate readings from Chinese text
+
+The backend is organized under `app/core`, `app/db`, and `app/readings`.
+The PostgreSQL helper moved to `app/db/connection.py`; existing health URLs are unchanged.
+
+- `POST /api/readings`: accepts `{ "title": "公园", "text": "我喜欢在公园散步。今天天气很好！" }`.
+  Text must include Chinese characters and be at most 100,000 characters. Title
+  is optional (up to 200 characters). Jieba generates word boundaries and pypinyin
+  adds tone-marked pinyin. Chinese sentence punctuation, `!`/`?`, and line breaks
+  separate sentence blocks. Outer whitespace is trimmed; internal text and punctuation
+  are preserved. No translations or quiz blocks are generated.
+- The response is the generated reading document, with a UUID `id`, `title`,
+  `language: "zh-Hans"`, and ordered `blocks`. Each sentence block has an `id`,
+  `type: "sentence"`, and `segments` containing `id`, `text`, and `pinyin` (null
+  for punctuation or text without a Chinese pronunciation).
+- `GET /api/readings/{id}` reads that saved JSON file. Unknown IDs return 404,
+  malformed IDs/input return 422, and unavailable storage returns 503.
+
+Example:
+
+```sh
+curl -X POST http://localhost:8000/api/readings \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"公园","text":"我喜欢在公园散步。今天天气很好！"}'
+# Use the returned UUID:
+curl http://localhost:8000/api/readings/READING_ID
+```
+
+JSON documents are written atomically to `apps/backend/data/readings` during
+local development, or to `READING_DATA_DIR` if configured. Compose uses a separate
+`reading_data` volume mounted at `/app/data/readings`, writable by the backend's
+non-root user. Documents survive backend/container recreation and normal deploys;
+include this volume in backups and avoid `docker compose down --volumes` if you
+want to retain them. PostgreSQL storage is unchanged.
+
+In `/reading-app`, paste text and select Generate reading. After generation, the
+page fetches the saved document through GET and updates the URL to
+`/reading-app?reading=UUID`. Reopening that URL fetches the saved content again.
+The bundled frontend reading JSON is no longer the page's data source. Generated
+readings omit translation fields; the reader renders pinyin without empty
+translation lines or meaning buttons. Generated boundaries and pronunciations
+may still need editorial review, especially for names and ambiguous readings.

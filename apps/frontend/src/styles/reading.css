@@ -59,3 +59,11 @@
   font-family: var(--font-body);
   font-weight: var(--reading-text-weight);
 }
+
+.reading-import { max-width: 800px; margin: auto; padding: var(--space-4); }
+.reading-import h2 { font-size: 1.4rem; }
+.reading-import-label { display: grid; gap: var(--space-1); font-weight: 600; }
+.reading-import input, .reading-import textarea { width: 100%; padding: 12px; border: 1px solid #c9d9bf; border-radius: 8px; background: white; color: var(--color-text); font-weight: 400; }
+.reading-import textarea { resize: vertical; min-height: 120px; }
+.reading-import-error { color: #9c2525; }
+.reading-phrase:not(button) { cursor: text; }

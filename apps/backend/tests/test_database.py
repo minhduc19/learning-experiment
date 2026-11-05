@@ -7,7 +7,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app import main
-from app.database import connect_database
+from app.db.connection import connect_database
 
 
 def test_database_health_connected(monkeypatch):
