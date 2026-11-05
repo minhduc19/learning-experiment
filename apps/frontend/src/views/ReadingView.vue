@@ -129,8 +129,8 @@ onUnmounted(() => {
         <button type="button" class="reading-popup-close" aria-label="Close meaning" @click="closeMeaning">×</button>
         <p class="reading-eyebrow">PHRASE MEANING</p>
         <h2 id="phrase-heading" ref="popupHeading" tabindex="-1" :lang="reading.language">{{ selected.text }}</h2>
-        <p v-if="displayPinyin" class="reading-popup-pinyin" lang="zh-Latn-pinyin">{{ selected.pinyin }}</p>
-        <p v-if="displayTranslation" class="reading-popup-meaning" :lang="reading.translationLanguage">{{ selected.details.translation }}</p>
+        <p class="reading-popup-pinyin" lang="zh-Latn-pinyin">{{ selected.pinyin }}</p>
+        <p class="reading-popup-meaning" :lang="reading.translationLanguage">{{ selected.details.translation }}</p>
         <span v-if="selected.details.partOfSpeech" class="reading-word-type">{{ selected.details.partOfSpeech }}</span>
         <p v-if="selected.details.note" class="reading-popup-note">{{ selected.details.note }}</p>
       </template>
