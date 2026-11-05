@@ -42,3 +42,13 @@
 .reading-settings-done { width: 100%; }
 .reading-sentence, .reading-popup h2 { font-size: var(--reading-language-size, 2rem); }
 .reading-translation, .reading-subtitle, .reading-popup-meaning { font-size: var(--reading-translation-size, 1rem); }
+
+.reading-checkpoint { margin-block: var(--reading-sentence-spacing, 1.5rem); }
+.activity-embedded { display: grid; gap: var(--space-3); }
+.activity-embedded .activity-title { font-size: 1.5rem; }
+.activity-embedded .activity-mascot { display: none; }
+.activity-embedded .activity-screen-question { overflow: visible; gap: var(--space-3); }
+.activity-embedded .activity-sentence { font-size: var(--reading-language-size, 2rem); }
+.activity-embedded .activity-feedback { border-radius: 18px; border-bottom: 2px solid #ebbb99; }
+.activity-embedded .activity-feedback.is-correct { border-bottom-color: #a1ce79; }
+.activity-checkpoint-passed { color: #245800; font-weight: 600; }

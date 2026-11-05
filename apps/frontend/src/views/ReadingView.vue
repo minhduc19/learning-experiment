@@ -2,6 +2,11 @@
 import { nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import reading from '../data/reading.json'
+import MultipleChoiceActivity from '../components/MultipleChoiceActivity.vue'
+import { useReadingProgress } from '../composables/useReadingProgress.js'
+
+const { visibleBlocks, complete, unlock } = useReadingProgress(reading.blocks)
+const sentenceCount = reading.blocks.filter(block => block.type === 'sentence').length
 
 const settingsDialog = ref(null)
 const displayPinyin = ref(true)
@@ -91,11 +96,18 @@ onUnmounted(() => {
         <p class="reading-help">Tap or click a word or phrase to explore its meaning. You can also use Tab and Enter.</p>
       </div>
 
-      <section v-for="(block, index) in reading.blocks" :key="block.id" class="reading-block" :aria-label="`Sentence ${index + 1}`">
+      <template v-for="block in visibleBlocks" :key="block.id">
+      <section v-if="block.type === 'sentence'" class="reading-block" aria-label="Reading sentence">
         <p class="reading-sentence" :lang="reading.language"><template v-for="segment in block.segments" :key="segment.id"><button v-if="segment.details" type="button" class="reading-phrase" :class="{ 'is-active': selected?.id === segment.id }" :aria-expanded="selected?.id === segment.id" aria-controls="phrase-meaning" aria-haspopup="dialog" @click="openMeaning(segment, $event)"><ruby>{{ segment.text }}<rt v-if="displayPinyin && segment.pinyin">{{ segment.pinyin }}</rt></ruby></button><span v-else class="reading-punctuation">{{ segment.text }}</span></template></p>
         <p v-if="displayTranslation" class="reading-translation" :lang="reading.translationLanguage">{{ block.translation }}</p>
       </section>
-      <p class="reading-end">End of reading · {{ reading.blocks.length }} sentences</p>
+      <section v-else-if="block.type === 'Multiple-choice'" class="reading-checkpoint" :aria-label="`Reading checkpoint ${block.id}`">
+        <p class="reading-eyebrow">READING CHECKPOINT</p>
+        <MultipleChoiceActivity embedded :items="[block.question]" translation-label="English translation" @passed="unlock(block.id)" />
+      </section>
+      </template>
+      <p v-if="complete" class="reading-end">End of reading · {{ sentenceCount }} sentences</p>
+      <p v-else class="reading-end">Answer this checkpoint correctly to keep reading.</p>
     </article>
 
     <dialog id="reading-settings" ref="settingsDialog" class="reading-settings" aria-labelledby="reading-settings-title">
