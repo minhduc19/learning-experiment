@@ -9,6 +9,8 @@ RUN --mount=type=secret,id=proxy_ca \
     if [ -f /run/secrets/proxy_ca ]; then export SSL_CERT_FILE=/run/secrets/proxy_ca; fi; \
     uv sync --locked --no-dev
 COPY --chown=10001:10001 apps/backend/app ./app
+RUN mkdir -p /app/data/readings && chown -R 10001:10001 /app/data
+ENV READING_DATA_DIR=/app/data/readings
 USER 10001:10001
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=8s --start-period=10s --retries=3 \

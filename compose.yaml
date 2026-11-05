@@ -16,7 +16,10 @@ services:
       retries: 10
     restart: unless-stopped
   backend:
+    volumes:
+      - reading_data:/app/data/readings
     environment:
+      READING_DATA_DIR: /app/data/readings
       PGHOST: db
       PGPORT: "5432"
       PGUSER: ${PGUSER:-learning}
@@ -43,4 +46,5 @@ services:
     restart: unless-stopped
 
 volumes:
+  reading_data:
   postgres_data:

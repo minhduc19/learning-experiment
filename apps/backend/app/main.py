@@ -2,9 +2,11 @@ import psycopg
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
-from app.database import connect_database
+from app.db.connection import connect_database
+from app.readings.routes import router as readings_router
 
 app = FastAPI(title="Monorepo API")
+app.include_router(readings_router, prefix="/api/readings", tags=["readings"])
 
 
 @app.get("/api/health")

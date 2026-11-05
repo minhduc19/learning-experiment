@@ -7,3 +7,5 @@
 .env
 .env.*
 work
+
+apps/backend/data
