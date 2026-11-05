@@ -1,5 +1,30 @@
 services:
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_USER: ${PGUSER:-learning}
+      POSTGRES_PASSWORD: ${PGPASSWORD:-learning_dev}
+      POSTGRES_DB: ${PGDATABASE:-learning}
+    ports:
+      - "127.0.0.1:${PGPORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
   backend:
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: ${PGUSER:-learning}
+      PGPASSWORD: ${PGPASSWORD:-learning_dev}
+      PGDATABASE: ${PGDATABASE:-learning}
+    depends_on:
+      db:
+        condition: service_healthy
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
@@ -16,3 +41,6 @@ services:
       backend:
         condition: service_healthy
     restart: unless-stopped
+
+volumes:
+  postgres_data:
