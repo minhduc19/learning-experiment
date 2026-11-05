@@ -144,7 +144,7 @@ def import_status(import_id: UUID):
     with connect() as db:
         row = db.execute(
             """SELECT j.*,s.title,s.byte_offset,s.character_count,s.fragment_count,
-            s.sentence_position AS completed_sentence_count,s.segmentation_version,s.checksum,
+            s.sentence_position AS completed_sentence_count,s.segmentation_version,s.conversion_version,s.checksum,
             u.size AS total_bytes FROM corpus.import_jobs j JOIN corpus.stories s ON s.id=j.story_id
             JOIN corpus.uploads u ON u.id=s.upload_id WHERE j.id=%s""",
             (import_id,),
@@ -182,7 +182,7 @@ def stories(limit: Limit = 50, after: UUID | None = None):
     with connect() as db:
         rows = db.execute(
             """SELECT id,title,character_count,fragment_count,sentence_position AS sentence_count,
-            checksum,created_at FROM corpus.stories WHERE status='completed' AND id>%s ORDER BY id LIMIT %s""",
+            checksum,conversion_version,created_at FROM corpus.stories WHERE status='completed' AND id>%s ORDER BY id LIMIT %s""",
             (after or UUID(int=0), limit + 1),
         ).fetchall()
     return {
@@ -274,10 +274,13 @@ def story_sentences(story_id: UUID, cursor: Cursor = None, limit: Limit = 50):
 
 
 @router.get("/stories/{story_id}/text")
-def export_story(story_id: UUID):
-    """Stream the exact UTF-8 text reconstructed from ordered database fragments."""
+def export_story(
+    story_id: UUID,
+    script: Literal["original", "traditional", "simplified"] = "original",
+):
+    """Stream original text (default) or the stored traditional/simplified forms in source order."""
     with connect() as db:
         queries.require_story(db, story_id)
     return StreamingResponse(
-        queries.stream_text(story_id), media_type="text/plain; charset=utf-8"
+        queries.stream_text(story_id, script), media_type="text/plain; charset=utf-8"
     )

@@ -5,6 +5,7 @@ from fastapi import HTTPException
 
 from app.corpus.config import max_upload_bytes, storage_directory
 from app.corpus.database import connect
+from app.corpus.script_forms import CONVERSION_VERSION
 from app.corpus.worker import fingerprint, path_for
 
 
@@ -87,8 +88,14 @@ def create_import(data):
             raise HTTPException(409, "Upload is incomplete")
         story_id, job_id = uuid4(), uuid4()
         db.execute(
-            "INSERT INTO corpus.stories(id,upload_id,title,segmentation_version) VALUES (%s,%s,%s,%s)",
-            (story_id, data.upload_id, data.title, segmentation_version),
+            "INSERT INTO corpus.stories(id,upload_id,title,segmentation_version,conversion_version) VALUES (%s,%s,%s,%s,%s)",
+            (
+                story_id,
+                data.upload_id,
+                data.title,
+                segmentation_version,
+                CONVERSION_VERSION,
+            ),
         )
         return db.execute(
             "INSERT INTO corpus.import_jobs(id,story_id) VALUES (%s,%s) RETURNING id,story_id,status",

@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from psycopg import sql
 
 from app.corpus.database import connect
+from app.corpus.script_forms import convert_forms, hydrate_forms
 
 
 def encode_cursor(values):
@@ -76,12 +77,14 @@ def characters(sort, story_id, include_non_han, cursor, limit, character):
             where.append(f"(st.{sort}<%s OR (st.{sort}=%s AND c.id>%s))")
             params.extend([count, count, identifier])
         # sort is a route-level Literal, and table comes from the fixed choices above.
-        query = sql.SQL("""SELECT c.id,c.value,c.is_han,st.occurrence_count,
+        query = sql.SQL("""SELECT c.id,c.value,c.traditional_value,c.simplified_value,c.is_han,st.occurrence_count,
             st.distinct_segment_count,st.segment_occurrence_count FROM corpus.{} st
             JOIN corpus.characters c ON c.id=st.character_id WHERE {} ORDER BY st.{} DESC,c.id LIMIT %s""").format(
             sql.Identifier(table), sql.SQL(" AND ".join(where)), sql.Identifier(sort)
         )
         rows = db.execute(query, params + [limit + 1]).fetchall()
+    for row in rows:
+        hydrate_forms(row, "value", vocabulary=True)
     return page(rows, limit, sort, scope, [sort, "id"])
 
 
@@ -92,7 +95,7 @@ def character_detail(character_id, story_id=None):
         condition = sql.SQL(" AND st.story_id=%s") if story_id else sql.SQL("")
         params = [character_id] + ([story_id] if story_id else [])
         row = db.execute(
-            sql.SQL("""SELECT c.id,c.value,c.is_han,st.occurrence_count,
+            sql.SQL("""SELECT c.id,c.value,c.traditional_value,c.simplified_value,c.is_han,st.occurrence_count,
             st.distinct_segment_count,st.segment_occurrence_count FROM corpus.characters c
             JOIN corpus.{} st ON st.character_id=c.id WHERE c.id=%s{}""").format(
                 sql.Identifier(table), condition
@@ -109,7 +112,7 @@ def character_detail(character_id, story_id=None):
             WHERE sc.character_id=%s AND (%s::uuid IS NULL OR s.story_id=%s)""",
             (character_id, story_id, story_id),
         ).fetchone()["n"]
-        return row
+        return hydrate_forms(row, "value", vocabulary=True)
 
 
 def character_segments(
@@ -130,7 +133,7 @@ def character_segments(
         ).fetchone():
             raise HTTPException(404, "Character not found")
         rows = db.execute(
-            """SELECT s.id,s.text,s.is_word,sc.count_in_segment,
+            """SELECT s.id,s.text,s.traditional_text,s.simplified_text,s.is_word,sc.count_in_segment,
             sum(ss.occurrence_count)::bigint AS occurrence_count
             FROM corpus.segment_characters sc JOIN corpus.segments s ON s.id=sc.segment_id
             JOIN corpus.story_segment_stats ss ON ss.segment_id=s.id
@@ -151,6 +154,8 @@ def character_segments(
             by_id = {count["segment_id"]: count["n"] for count in counts}
             for row in rows:
                 row["sentence_count"] = by_id.get(row["id"], 0)
+    for row in rows:
+        hydrate_forms(row, "text", vocabulary=True)
     return page(rows, limit, "segments", scope, ["id"])
 
 
@@ -219,15 +224,28 @@ def sentences(
             else:
                 matches = []
             row["matches"] = matches
+            hydrate_forms(row, "raw_text")
     return page(rows, limit, "sentences", scope, ["story_id", "position"])
 
 
-def stream_text(story_id):
+def stream_text(story_id, script="original"):
     with connect() as db:
+        fields = (
+            sql.SQL("raw_text")
+            if script == "original"
+            else sql.SQL("raw_text,{}").format(sql.Identifier(f"{script}_text"))
+        )
         with db.cursor(name="export_sentences") as cursor:
             cursor.execute(
-                "SELECT raw_text FROM corpus.sentences WHERE story_id=%s ORDER BY position",
+                sql.SQL(
+                    "SELECT {} FROM corpus.sentences WHERE story_id=%s ORDER BY position"
+                ).format(fields),
                 (story_id,),
             )
             for row in cursor:
-                yield row["raw_text"].encode("utf-8")
+                text = (
+                    row["raw_text"] if script == "original" else row[f"{script}_text"]
+                )
+                if text is None:
+                    text = getattr(convert_forms(row["raw_text"]), script)
+                yield text.encode("utf-8")

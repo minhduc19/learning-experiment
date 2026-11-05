@@ -55,7 +55,7 @@ jobs:
                   body = response.read()
                   return json.loads(body) if body else None
 
-          text = '谢谢你。\r\n我学习中文！'.encode('utf-8')
+          text = '謝謝你。\r\n我學習中文！'.encode('utf-8')
           upload = request('/uploads', 'POST', {'filename': 'ci-story.txt', 'size': len(text)})
           request('/uploads/' + upload['id'], 'PATCH', text,
                   {'Content-Type': 'application/octet-stream', 'Upload-Offset': '0'})
@@ -71,7 +71,11 @@ jobs:
               raise AssertionError('Corpus worker did not finish the import')
           with urlopen(base + '/stories/' + job['story_id'] + '/text', timeout=10) as response:
               assert response.read() == text, 'Reconstructed story differs from upload'
-          print('Corpus upload, worker import, and exact reconstruction passed')
+          with urlopen(base + '/stories/' + job['story_id'] + '/text?script=simplified', timeout=10) as response:
+              assert response.read() == '谢谢你。\r\n我学习中文！'.encode('utf-8')
+          with urlopen(base + '/stories/' + job['story_id'] + '/text?script=traditional', timeout=10) as response:
+              assert response.read() == text
+          print('Corpus upload, exact reconstruction, and both script exports passed')
           PYTHON
       - if: always()
         run: docker compose logs && docker compose down

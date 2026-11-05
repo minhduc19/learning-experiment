@@ -43,6 +43,7 @@ class ImportStatus(ImportAccepted):
     fragment_count: int
     completed_sentence_count: int
     segmentation_version: str
+    conversion_version: str | None
     checksum: str | None
     total_bytes: int
     progress: float
@@ -51,6 +52,8 @@ class ImportStatus(ImportAccepted):
 class Character(BaseModel):
     id: int
     value: str
+    traditional_value: str
+    simplified_value: str
     is_han: bool
     occurrence_count: int
     distinct_segment_count: int
@@ -64,6 +67,8 @@ class CharacterDetail(Character):
 class Segment(BaseModel):
     id: int
     text: str
+    traditional_text: str
+    simplified_text: str
     is_word: bool
     count_in_segment: int
     occurrence_count: int
@@ -84,6 +89,8 @@ class Sentence(BaseModel):
     part_position: int
     is_final: bool
     raw_text: str
+    traditional_text: str
+    simplified_text: str
     start_offset: int
     end_offset: int
     matches: list[Match]

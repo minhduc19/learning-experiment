@@ -205,3 +205,62 @@ Once an import is queued, the page URL includes `?import=<job-id>` and can be
 bookmarked to check background progress later. Leaving the page stops browser
 requests, not the server job. Starting a different upload clears the browser's
 saved resume metadata; it does not delete uploaded server files or cancel a job.
+
+## Traditional and simplified script forms
+
+Corpus imports use OpenCC (`opencc-python-reimplemented`, `s2t` and `t2s`) to
+persist both script variants alongside the exact original source:
+
+| Resource | Original field | Traditional field | Simplified field |
+| --- | --- | --- | --- |
+| Character | `value` | `traditional_value` | `simplified_value` |
+| Segment | `text` | `traditional_text` | `simplified_text` |
+| Sentence fragment | `raw_text` | `traditional_text` | `simplified_text` |
+
+These fields are returned by the existing character, character-detail,
+segment-list, and sentence-list APIs. For example, a source character `學` keeps
+`value: "學"`, with `traditional_value: "學"` and `simplified_value: "学"`.
+Simplified or mixed-script input also receives both variants. The generated
+traditional form is OpenCC's canonical conversion, not a claim about an author's
+original traditional spelling; ambiguities such as `发` cannot be reversed
+uniquely. The original fields preserve what was actually uploaded.
+
+Character and segment variants are converted independently from their original
+text. Each sentence is converted as a whole stored fragment, rather than by
+concatenating character variants, so OpenCC can apply phrase context (`乾坤`, for
+example). As with segmentation, exceptionally long sentences are converted per
+ordered fragment. Character-level, segment-level, and sentence-level variants
+can therefore differ where context matters. This is script conversion, not
+translation into another language.
+
+IDs, occurrence relationships, sentence order, statistics, search matching, and
+highlight offsets continue to refer to the original source. Traditional and
+simplified source characters remain separate dictionary entries even when their
+simplified variants coincide. Variant strings are additional data; do not apply
+source offsets to them without checking alignment.
+
+`GET /api/corpus/stories/{id}/text` still reconstructs the exact original UTF-8
+text and source SHA-256. Add `?script=traditional` or `?script=simplified` to stream
+the corresponding stored variants in source order. Import status and story
+summaries expose `conversion_version`, identifying the OpenCC package/configuration.
+
+Migration `002_script_forms.sql` adds columns without converting the corpus in a
+single deployment transaction. New rows receive both variants during their
+normal import batch. The existing corpus worker fills legacy rows in small,
+transactional batches with a durable progress record in
+`corpus.script_backfill_progress`; interrupted work resumes automatically. API
+reads supply missing forms while backfill is running. Older dictionary rows
+reused by a new import are repaired within that import batch too. Original values and counts
+are never rewritten by conversion.
+
+To run or finish backfill explicitly, export the normal database configuration
+and run from `apps/backend`:
+
+```sh
+uv run python -m app.corpus.backfill
+```
+
+The command shares the worker's backfill lock and waits if another worker is
+already converting. Script conversion versions are checked on resumable imports
+and backfill; changing the conversion configuration requires an explicit data
+migration. Keeping the original and both variants requires additional storage.
