@@ -24,7 +24,9 @@ The frontend calls relative `/api` URLs. Vite proxies these to FastAPI during de
 The frontend uses Vue Router with browser history and lazy-loaded pages:
 
 - `/`: the original home page and backend connection check
-- `/ideas/one`: `apps/frontend/src/views/IdeaOneView.vue`
+- `/multiple-choice` (also `/ideas/one`): interactive three-question quiz in
+  `apps/frontend/src/views/IdeaOneView.vue`. Edit `src/data/questions.js` to add
+  questions, option-specific feedback, and Spanish translations.
 - `/ideas/two`: `apps/frontend/src/views/IdeaTwoView.vue`
 - Unknown URLs show a page with a link back home.
 

@@ -9,10 +9,11 @@ export const routes = [
     meta: { title: 'Home' },
   },
   {
-    path: '/ideas/one',
+    path: '/multiple-choice',
+    alias: '/ideas/one',
     name: 'idea-one',
     component: () => import('../views/IdeaOneView.vue'),
-    meta: { title: 'Idea one' },
+    meta: { title: 'Multiple choice' },
   },
   {
     path: '/ideas/two',
