@@ -39,5 +39,39 @@ jobs:
       - run: docker compose build
       - run: docker compose up -d --wait
       - run: curl --fail --retry 5 --retry-connrefused --retry-delay 2 http://localhost:8080/api/health/db
+      - name: Import and reconstruct a corpus story through Nginx
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          import time
+          from urllib.request import Request, urlopen
+
+          base = 'http://localhost:8080/api/corpus'
+          def request(path, method='GET', data=None, headers=None):
+              if isinstance(data, dict):
+                  data = json.dumps(data).encode()
+                  headers = {'Content-Type': 'application/json'}
+              with urlopen(Request(base + path, data=data, headers=headers or {}, method=method), timeout=10) as response:
+                  body = response.read()
+                  return json.loads(body) if body else None
+
+          text = '谢谢你。\r\n我学习中文！'.encode('utf-8')
+          upload = request('/uploads', 'POST', {'filename': 'ci-story.txt', 'size': len(text)})
+          request('/uploads/' + upload['id'], 'PATCH', text,
+                  {'Content-Type': 'application/octet-stream', 'Upload-Offset': '0'})
+          job = request('/imports', 'POST', {'upload_id': upload['id'], 'title': 'CI story'})
+          deadline = time.monotonic() + 60
+          while time.monotonic() < deadline:
+              status = request('/imports/' + job['id'])
+              assert status['status'] != 'failed', status
+              if status['status'] == 'completed':
+                  break
+              time.sleep(1)
+          else:
+              raise AssertionError('Corpus worker did not finish the import')
+          with urlopen(base + '/stories/' + job['story_id'] + '/text', timeout=10) as response:
+              assert response.read() == text, 'Reconstructed story differs from upload'
+          print('Corpus upload, worker import, and exact reconstruction passed')
+          PYTHON
       - if: always()
         run: docker compose logs && docker compose down

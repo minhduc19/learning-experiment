@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import signal
 import time
 from hashlib import sha256
 from importlib.metadata import version
@@ -10,10 +11,12 @@ import jieba
 
 from app.corpus.config import MAX_SEGMENT_CHARACTERS, storage_directory
 from app.corpus.database import connect
+from app.corpus.health import heartbeat
 from app.corpus.migrate import migrate
 from app.corpus.text import fragments, is_han
 
 logger = logging.getLogger(__name__)
+stopping = False
 SEGMENTATION_VERSION = (
     f"jieba-{version('jieba')}:default:HMM=false:segments-v1:framing-v1"
 )
@@ -158,6 +161,9 @@ def record_batch(db, story, batch, tokenizer):
         (story["id"],),
     )
     db.commit()
+    heartbeat()
+    if stopping:
+        raise SystemExit(0)
 
 
 def process(db, job):
@@ -301,6 +307,9 @@ def run_once():
                     )
                     db.commit()
                 finally:
+                    # A BaseException (including graceful termination) must not
+                    # commit occurrence rows without their batch checkpoint.
+                    db.rollback()
                     db.execute(
                         "SELECT pg_advisory_unlock(hashtextextended(%s,0))", (key,)
                     )
@@ -309,13 +318,21 @@ def run_once():
     return False
 
 
+def stop(signum, frame):
+    global stopping
+    stopping = True
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--once", action="store_true")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO)
+    signal.signal(signal.SIGTERM, stop)
+    signal.signal(signal.SIGINT, stop)
     migrate()
-    while True:
+    while not stopping:
+        heartbeat()
         worked = run_once()
         if args.once:
             return

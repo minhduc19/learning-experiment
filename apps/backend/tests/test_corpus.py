@@ -481,3 +481,61 @@ def test_segment_index_bounds_for_long_tokens(client):
         client.get(f"/api/corpus/stories/{job['story_id']}/text").content
         == b"A" * 10000
     )
+
+
+def test_exit_before_checkpoint_does_not_commit_partial_batch(client, monkeypatch):
+    job = queue(client, "谢谢你。".encode())
+    original = worker.record_batch
+
+    class InterruptedConnection:
+        def __init__(self, connection):
+            self.connection = connection
+
+        def __getattr__(self, name):
+            return getattr(self.connection, name)
+
+        def execute(self, query, params=None):
+            if isinstance(query, str) and "SET byte_offset=" in query:
+                raise SystemExit("Process exits before batch checkpoint")
+            return self.connection.execute(query, params)
+
+    monkeypatch.setattr(
+        worker,
+        "record_batch",
+        lambda db, *args: original(InterruptedConnection(db), *args),
+    )
+    with pytest.raises(SystemExit):
+        worker.run_once()
+    with connect() as db:
+        assert (
+            db.execute(
+                "SELECT count(*) AS n FROM corpus.character_occurrences"
+            ).fetchone()["n"]
+            == 0
+        )
+        assert (
+            db.execute("SELECT character_count FROM corpus.stories").fetchone()[
+                "character_count"
+            ]
+            == 0
+        )
+    monkeypatch.setattr(worker, "record_batch", original)
+    worker.run_once()
+    assert (
+        client.get("/api/corpus/imports/" + job["id"]).json()["status"] == "completed"
+    )
+
+
+def test_graceful_stop_exits_after_committed_checkpoint(client, monkeypatch):
+    job = queue(client, ("我学习中文。" * 10000).encode())
+    monkeypatch.setattr(worker, "stopping", True)
+    with pytest.raises(SystemExit):
+        worker.run_once()
+    status = client.get("/api/corpus/imports/" + job["id"]).json()
+    assert status["status"] == "processing"
+    assert 0 < status["byte_offset"] < status["total_bytes"]
+    monkeypatch.setattr(worker, "stopping", False)
+    worker.run_once()
+    assert (
+        client.get("/api/corpus/imports/" + job["id"]).json()["status"] == "completed"
+    )

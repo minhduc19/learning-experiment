@@ -149,7 +149,9 @@ A worker holds a PostgreSQL session advisory lock for its job. The lock is
 released on process death; another worker can reclaim the processing job. Data,
 statistics, and the byte checkpoint commit in the same batch transaction, so
 retries cannot double-count a committed batch. Multiple workers can import
-independent stories concurrently. Batch dictionary inserts use deterministic
+independent stories concurrently. A worker heartbeat health check supports
+Compose's `--wait`; it refreshes while idle and after each committed batch.
+SIGTERM requests shutdown after a batch checkpoint. Batch dictionary inserts use deterministic
 ordering to reduce deadlocks; a failed batch can be retried.
 
 `TEST_DATABASE_URL` enables PostgreSQL integration tests. The test role needs
