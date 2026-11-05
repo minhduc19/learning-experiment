@@ -29,7 +29,7 @@ The frontend uses Vue Router with browser history and lazy-loaded pages:
 
 - `/ideas`: links to all pages and route aliases
 - `/`: the original home page and backend connection check
-- `/multiple-choice` (also `/ideas/one`): interactive three-question quiz in
+- `/multiple-choice`: interactive three-question quiz in
   `apps/frontend/src/views/IdeaOneView.vue`. Edit `src/data/questions.js` to add
   questions, option-specific feedback, and Spanish translations. Use `[[blank]]`
   in each sentence; the selected option’s `fill` text replaces the marker immediately (a lowercase
@@ -103,7 +103,7 @@ Use the shared classes in any Vue template:
     <h1>My idea</h1>
     <div class="cluster">
       <button class="button">Try it</button>
-      <a href="/ideas/one">Explore</a>
+      <a href="/multiple-choice">Explore</a>
     </div>
   </main>
 </template>
