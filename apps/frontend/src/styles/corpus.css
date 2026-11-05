@@ -59,3 +59,35 @@
   .corpus-summary-glyph { width: 6rem; }
   .corpus-segment-grid { grid-template-columns: 1fr; }
 }
+.corpus-upload-page { max-width: 54rem; }
+.corpus-upload-card, .corpus-upload-status { padding: var(--space-5); border: 1px solid #dce6e0; border-radius: 1.25rem; background: white; margin-top: var(--space-4); }
+.corpus-upload-card > label, .corpus-upload-title label { display: block; font-weight: 650; margin-bottom: var(--space-2); }
+.corpus-file-picker { padding: var(--space-4); border: 1px dashed #a6c4b6; background: #f7faf8; border-radius: .8rem; text-align: center; }
+.corpus-file-picker svg { color: var(--color-primary); }
+.corpus-file-picker > p:first-of-type { font-weight: 600; margin: var(--space-2) 0 var(--space-3); }
+.corpus-file-picker input { max-width: 100%; color: var(--color-text); font-size: .9rem; }
+.corpus-file-picker input::file-selector-button { padding: .6rem .9rem; border: 1px solid #a6c4b6; border-radius: .5rem; background: white; color: var(--color-primary); cursor: pointer; margin-right: .7rem; font: inherit; }
+.corpus-file-picker input:disabled::file-selector-button { opacity: .5; cursor: not-allowed; }
+.corpus-file-picker .corpus-muted { margin-bottom: 0; font-size: .85rem; }
+.corpus-file-summary { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem; padding: var(--space-3); background: #edf6ef; border-radius: .5rem; }
+.corpus-file-summary strong { min-width: 0; overflow-wrap: anywhere; }
+.corpus-file-summary > span { color: #52665d; }
+.corpus-upload-title { margin-block: var(--space-4); }
+.corpus-upload-title input { padding: .8rem; width: 100%; border: 1px solid #bacdc4; border-radius: var(--radius-control); background: white; color: var(--color-text); }
+.corpus-upload-title .corpus-muted { font-weight: 400; font-size: .85rem; }
+.corpus-upload-hint { color: #52665d; font-size: .85rem; margin-bottom: 0; }
+.corpus-resume-note { padding: var(--space-3); background: #fff6df; color: #665322; border-radius: var(--radius-control); }
+.corpus-upload-status-heading { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+.corpus-upload-status-heading h2 { font-size: 1.35rem; margin: 0; }
+.corpus-upload-status-heading p { margin: .3rem 0 0; }
+.corpus-upload-status-icon { display: grid; place-items: center; flex-shrink: 0; width: 3rem; height: 3rem; border-radius: 50%; background: #edf6ef; color: var(--color-primary); font-size: 1.5rem; }
+.corpus-upload-status.is-complete { border-color: #89b78c; background: #f4fbf1; }
+.corpus-upload-status.is-complete .corpus-upload-status-icon { background: #d2edc9; }
+.corpus-progress-label { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); font-size: .9rem; margin-bottom: .6rem; }
+.corpus-upload-progress { display: block; width: 100%; height: .75rem; appearance: none; border: 0; border-radius: 1rem; overflow: hidden; background: #e6eee9; accent-color: var(--color-primary); }
+.corpus-upload-progress::-webkit-progress-bar { background: #e6eee9; border-radius: 1rem; }
+.corpus-upload-progress::-webkit-progress-value { background: var(--color-primary); border-radius: 1rem; }
+.corpus-upload-progress::-moz-progress-bar { background: var(--color-primary); border-radius: 1rem; }
+.corpus-upload-success > p { margin-bottom: var(--space-4); }
+@media (max-width: 480px) { .corpus-upload-card, .corpus-upload-status { padding: var(--space-3); } }
+.corpus-upload-status-heading > div { min-width: 0; overflow-wrap: anywhere; }

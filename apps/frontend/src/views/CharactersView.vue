@@ -44,6 +44,7 @@ watch(() => [sort.value, includeOther.value, route.query.character], () => {
       <p class="corpus-eyebrow">YOUR CHINESE CORPUS</p>
       <h1>Character explorer</h1>
       <p>Discover characters, the words they form, and the sentences they appear in.</p>
+      <RouterLink class="button" to="/corpus-upload">Upload a story</RouterLink>
     </header>
 
     <section class="corpus-toolbar" aria-label="Character filters">
@@ -85,7 +86,7 @@ watch(() => [sort.value, includeOther.value, route.query.character], () => {
       <h2>{{ filtered ? 'No matching characters' : 'Your corpus is ready for its first story' }}</h2>
       <p>{{ filtered ? 'Try another character or include punctuation and other characters.' : 'Import a Chinese story to explore its characters, segments, and sentences here.' }}</p>
       <button v-if="filtered" class="button" @click="router.replace({ query: {} })">Clear filters</button>
-      <RouterLink v-else class="button" to="/api-docs">Open import documentation</RouterLink>
+      <RouterLink v-else class="button" to="/corpus-upload">Upload your first story</RouterLink>
     </section>
     <div v-if="characters.nextCursor" class="corpus-pagination">
       <button class="button" :disabled="characters.loading" @click="characters.load">{{ characters.loading ? 'Loading…' : 'Load more characters' }}</button>

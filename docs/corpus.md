@@ -183,3 +183,25 @@ Sentence counts count distinct `(story_id, sentence_position)` pairs: repeated
 matches or multiple continuation fragments do not inflate a logical sentence's
 count. Counts include only completed stories. Sentence results also include
 `story_title` for identifying their source.
+
+## Browser uploads
+
+The Vue route `/corpus-upload` provides a file picker, optional title, upload and
+processing progress, pause/resume controls, and links to the character explorer.
+It uses the same upload/import protocol as the Python script. Native Blob slices
+and XMLHttpRequest keep each request bounded to the smaller of the server chunk
+limit and 8 MiB, with live upload progress. Text is not loaded into memory as a
+single string.
+
+The browser stores one pending/recent upload's IDs and file metadata locally.
+Resuming after a reload requires reselecting the same unchanged file; its name,
+size, and modification timestamp must match. The server's committed byte offset
+is retrieved before resuming, including after an interrupted acknowledgement.
+This metadata check is not a full-file content checksum. Browser storage may be
+disabled; uploads still work in the current page, and import status URLs remain
+usable after queueing.
+
+Once an import is queued, the page URL includes `?import=<job-id>` and can be
+bookmarked to check background progress later. Leaving the page stops browser
+requests, not the server job. Starting a different upload clears the browser's
+saved resume metadata; it does not delete uploaded server files or cancel a job.
