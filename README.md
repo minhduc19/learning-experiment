@@ -52,6 +52,19 @@ Vite and the included Nginx configuration support opening and refreshing nested
 URLs directly. On other production hosts, configure a fallback to `index.html`
 for frontend routes while keeping `/api` routed to FastAPI.
 
+## Strict quiz
+
+`/multiple-choice-strict-quiz` is a full-screen, seven-question quiz. A selection
+locks immediately; Check submits it once and Continue advances after either
+result. Five hearts start green (4–5 remaining), become amber (2–3), then red
+(1). Each incorrect submission greys one heart. The fifth mistake ends the
+attempt after its feedback. Results show correct, incorrect, and any unanswered
+questions, with a Redo quiz button that resets scores, hearts, and progress.
+Edit `src/data/strictQuestions.js` to change this quiz's question set.
+
+The practice route keeps its retry behavior. Both modes share
+`src/components/MultipleChoiceActivity.vue` and the activity CSS.
+
 ## Shared styles
 
 `apps/frontend/src/main.js` imports `src/styles/main.css` once, making the CSS

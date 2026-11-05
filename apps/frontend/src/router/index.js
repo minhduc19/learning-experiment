@@ -16,6 +16,12 @@ export const routes = [
     meta: { title: 'Multiple choice', fullscreen: true },
   },
   {
+    path: '/multiple-choice-strict-quiz',
+    name: 'strict-quiz',
+    component: () => import('../views/StrictQuizView.vue'),
+    meta: { title: 'Strict quiz', fullscreen: true },
+  },
+  {
     path: '/ideas/two',
     name: 'idea-two',
     component: () => import('../views/IdeaTwoView.vue'),
