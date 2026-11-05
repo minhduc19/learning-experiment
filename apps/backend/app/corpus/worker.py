@@ -9,10 +9,12 @@ from importlib.metadata import version
 
 import jieba
 
+from app.corpus.backfill import backfill_once
 from app.corpus.config import MAX_SEGMENT_CHARACTERS, storage_directory
 from app.corpus.database import connect
 from app.corpus.health import heartbeat
 from app.corpus.migrate import migrate
+from app.corpus.script_forms import CONVERSION_VERSION, convert_forms, vocabulary_forms
 from app.corpus.text import fragments, is_han
 
 logger = logging.getLogger(__name__)
@@ -58,6 +60,7 @@ def record_batch(db, story, batch, tokenizer):
                 story["part_position"],
                 fragment.is_final,
                 fragment.text,
+                *convert_forms(fragment.text),
                 story["character_count"],
                 story["character_count"] + len(fragment.text),
             )
@@ -83,31 +86,41 @@ def record_batch(db, story, batch, tokenizer):
     # round-trip path. All inserts, statistics and checkpoints commit together.
     db.execute("""CREATE TEMP TABLE sentence_batch
         (story_id uuid,position bigint,sentence_position bigint,part_position integer,
-         is_final boolean,raw_text text,start_offset bigint,end_offset bigint) ON COMMIT DROP""")
+         is_final boolean,raw_text text,traditional_text text,simplified_text text,start_offset bigint,end_offset bigint) ON COMMIT DROP""")
     with db.cursor().copy("COPY sentence_batch FROM STDIN") as copy:
         for row in sentence_rows:
             copy.write_row(row)
     db.execute("""INSERT INTO corpus.sentences
-        (story_id,position,sentence_position,part_position,is_final,raw_text,start_offset,end_offset)
+        (story_id,position,sentence_position,part_position,is_final,raw_text,traditional_text,simplified_text,start_offset,end_offset)
         SELECT * FROM sentence_batch ORDER BY position""")
     db.execute(
-        "CREATE TEMP TABLE token_batch (sentence_position bigint, position integer, start_offset integer, text text, is_word boolean) ON COMMIT DROP"
+        "CREATE TEMP TABLE token_batch (sentence_position bigint, position integer, start_offset integer, text text) ON COMMIT DROP"
     )
     with db.cursor().copy("COPY token_batch FROM STDIN") as copy:
         for sid, position, offset, text in token_rows:
+            copy.write_row((sid, position, offset, text))
+    db.execute(
+        "CREATE TEMP TABLE segment_batch (text text, is_word boolean, traditional_text text, simplified_text text) ON COMMIT DROP"
+    )
+    with db.cursor().copy("COPY segment_batch FROM STDIN") as copy:
+        for text in sorted({row[3] for row in token_rows}):
             copy.write_row(
-                (sid, position, offset, text, any(c.isalnum() for c in text))
+                (text, any(c.isalnum() for c in text), *vocabulary_forms(text))
             )
     db.execute(
-        "CREATE TEMP TABLE character_batch (value text PRIMARY KEY, is_han boolean) ON COMMIT DROP"
+        "CREATE TEMP TABLE character_batch (value text PRIMARY KEY, is_han boolean, traditional_value text, simplified_value text) ON COMMIT DROP"
     )
     with db.cursor().copy("COPY character_batch FROM STDIN") as copy:
         for character in sorted({c for _, _, _, token in token_rows for c in token}):
-            copy.write_row((character, is_han(character)))
-    db.execute("""INSERT INTO corpus.characters(value,is_han)
-        SELECT value,is_han FROM character_batch ORDER BY value ON CONFLICT DO NOTHING""")
-    db.execute("""INSERT INTO corpus.segments(text,is_word)
-        SELECT DISTINCT text, is_word FROM token_batch ORDER BY text ON CONFLICT DO NOTHING""")
+            copy.write_row((character, is_han(character), *vocabulary_forms(character)))
+    db.execute("""INSERT INTO corpus.characters(value,is_han,traditional_value,simplified_value)
+        SELECT value,is_han,traditional_value,simplified_value FROM character_batch ORDER BY value
+        ON CONFLICT(value) DO UPDATE SET traditional_value=excluded.traditional_value,simplified_value=excluded.simplified_value
+        WHERE corpus.characters.traditional_value IS NULL OR corpus.characters.simplified_value IS NULL""")
+    db.execute("""INSERT INTO corpus.segments(text,is_word,traditional_text,simplified_text)
+        SELECT text,is_word,traditional_text,simplified_text FROM segment_batch ORDER BY text
+        ON CONFLICT(text) DO UPDATE SET traditional_text=excluded.traditional_text,simplified_text=excluded.simplified_text
+        WHERE corpus.segments.traditional_text IS NULL OR corpus.segments.simplified_text IS NULL""")
     db.execute("""CREATE TEMP TABLE occurrence_batch ON COMMIT DROP AS
         WITH inserted AS (
           INSERT INTO corpus.segment_occurrences(segment_id,sentence_id,position,start_offset,end_offset)
@@ -172,6 +185,18 @@ def process(db, job):
     ).fetchone()
     if story["segmentation_version"] != fingerprint():
         raise ValueError("Worker segmentation version differs from the import version")
+    if story["conversion_version"] not in (None, CONVERSION_VERSION):
+        raise ValueError(
+            "Worker script conversion version differs from the import version"
+        )
+    if story["conversion_version"] is None:
+        # Legacy imports may resume at their original checkpoint. Earlier rows
+        # are filled independently by the background backfill.
+        db.execute(
+            "UPDATE corpus.stories SET conversion_version=%s WHERE id=%s",
+            (CONVERSION_VERSION, story["id"]),
+        )
+        db.commit()
     upload = db.execute(
         "SELECT * FROM corpus.uploads WHERE id=%s", (story["upload_id"],)
     ).fetchone()
@@ -336,7 +361,12 @@ def main():
         worked = run_once()
         if args.once:
             return
-        if not worked:
+        try:
+            converted = backfill_once() if not stopping else False
+        except Exception:
+            logger.exception("Script backfill batch failed; it will be retried")
+            converted = False
+        if not worked and not converted:
             time.sleep(2)
 
 

@@ -410,3 +410,17 @@ running when the page closes; its `/corpus-upload?import=<job-id>` URL restores
 the status without requiring the file. Failed imports can retry, while invalid
 UTF-8 files prompt you to choose a corrected file. The file limit comes from the
 server's existing `/api/corpus/limits` endpoint.
+
+## Traditional and simplified corpus text
+
+Corpus imports now keep the original characters, segments, and sentences plus
+OpenCC-generated traditional and simplified forms. Existing corpus APIs return
+`traditional_value` / `simplified_value` for characters and `traditional_text` /
+`simplified_text` for segments and sentences. Original text, IDs, counts, offsets,
+and reconstruction remain source-based.
+
+The corpus worker automatically backfills existing records in bounded batches.
+The original text export remains the default; add `?script=traditional` or
+`?script=simplified` to `/api/corpus/stories/{id}/text` for a converted export.
+See [the corpus guide](docs/corpus.md#traditional-and-simplified-script-forms) for
+field meanings, conversion context, and migration/backfill details.

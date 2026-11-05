@@ -328,7 +328,7 @@ def test_migrations_are_idempotent(client):
             db.execute("SELECT count(*) AS n FROM corpus.schema_migrations").fetchone()[
                 "n"
             ]
-            == 1
+            == 2
         )
 
 
@@ -599,3 +599,323 @@ def test_character_counts_for_non_word_segments_and_legacy_segment_shape(client)
         path + "?include_non_words=true&include_sentence_counts=true"
     ).json()
     assert counted["items"][0]["sentence_count"] == 1
+
+
+def test_import_persists_all_script_forms_and_preserves_original_export(client):
+    from hashlib import sha256
+
+    from app.corpus.script_forms import CONVERSION_VERSION, convert_forms
+
+    text = "\ufeff 學校的學生正在學習中文。\r\n頭髮、乾坤和发。😀𠀀\t"
+    job = imported(client, text)
+    status = client.get("/api/corpus/imports/" + job["id"]).json()
+    assert status["conversion_version"] == CONVERSION_VERSION
+    assert status["checksum"] == sha256(text.encode()).hexdigest()
+    sentences = collect(client, f"/api/corpus/stories/{job['story_id']}/sentences")
+    assert "".join(row["raw_text"] for row in sentences) == text
+    for row in sentences:
+        expected = convert_forms(row["raw_text"])
+        assert row["traditional_text"] == expected.traditional
+        assert row["simplified_text"] == expected.simplified
+    for script in ["traditional", "simplified"]:
+        response = client.get(
+            f"/api/corpus/stories/{job['story_id']}/text?script={script}"
+        )
+        assert (
+            response.content
+            == "".join(row[script + "_text"] for row in sentences).encode()
+        )
+    assert (
+        client.get(f"/api/corpus/stories/{job['story_id']}/text").content
+        == text.encode()
+    )
+    assert (
+        client.get(
+            f"/api/corpus/stories/{job['story_id']}/text?script=invalid"
+        ).status_code
+        == 422
+    )
+    characters = collect(client, "/api/corpus/characters?include_non_han=true")
+    for row in characters:
+        expected = convert_forms(row["value"])
+        assert (row["traditional_value"], row["simplified_value"]) == expected
+    school = next(row for row in characters if row["value"] == "學")
+    assert (
+        client.get(f"/api/corpus/characters/{school['id']}").json()["simplified_value"]
+        == "学"
+    )
+    segments = collect(
+        client,
+        f"/api/corpus/characters/{school['id']}/segments?include_sentence_counts=true",
+    )
+    assert segments
+    for row in segments:
+        expected = convert_forms(row["text"])
+        assert (row["traditional_text"], row["simplified_text"]) == expected
+    with connect() as db:
+        for table, source, traditional, simplified in [
+            ("characters", "value", "traditional_value", "simplified_value"),
+            ("segments", "text", "traditional_text", "simplified_text"),
+            ("sentences", "raw_text", "traditional_text", "simplified_text"),
+        ]:
+            rows = db.execute(
+                sql.SQL("SELECT {},{},{} FROM corpus.{}").format(
+                    *map(sql.Identifier, (source, traditional, simplified, table))
+                )
+            ).fetchall()
+            assert rows and all(
+                r[traditional] is not None and r[simplified] is not None for r in rows
+            )
+        assert db.execute(
+            "SELECT count(*) AS n FROM corpus.character_occurrences"
+        ).fetchone()["n"] == len(text)
+
+
+def test_script_forms_do_not_merge_distinct_source_characters_or_counts(client):
+    imported(client, "發髮发學学。")
+    rows = collect(client, "/api/corpus/characters")
+    variants = [row for row in rows if row["value"] in "發髮发"]
+    assert len(variants) == 3
+    assert len({row["id"] for row in variants}) == 3
+    assert all(
+        row["simplified_value"] == "发" and row["occurrence_count"] == 1
+        for row in variants
+    )
+    school = [row for row in rows if row["value"] in "學学"]
+    assert len(school) == 2 and all(
+        row["traditional_value"] == "學" and row["simplified_value"] == "学"
+        for row in school
+    )
+
+
+def test_upgrade_existing_corpus_backfills_without_changing_source_ids_counts_or_order(
+    client,
+):
+    from app.corpus.backfill import backfill_once
+    from app.corpus.script_forms import CONVERSION_VERSION
+
+    text = "學校。\r\n頭髮。乾坤。"
+    job = imported(client, text)
+    original = collect(client, f"/api/corpus/stories/{job['story_id']}/sentences")
+    with connect() as db:
+        db.execute(
+            "ALTER TABLE corpus.characters DROP COLUMN traditional_value, DROP COLUMN simplified_value"
+        )
+        db.execute(
+            "ALTER TABLE corpus.segments DROP COLUMN traditional_text, DROP COLUMN simplified_text"
+        )
+        db.execute(
+            "ALTER TABLE corpus.sentences DROP COLUMN traditional_text, DROP COLUMN simplified_text"
+        )
+        db.execute("ALTER TABLE corpus.stories DROP COLUMN conversion_version")
+        db.execute("DROP TABLE corpus.script_backfill_progress")
+        db.execute(
+            "DELETE FROM corpus.schema_migrations WHERE version='002_script_forms.sql'"
+        )
+    migrate()
+    with connect() as db:
+        assert db.execute(
+            "SELECT count(*) AS n FROM corpus.sentences WHERE simplified_text IS NULL"
+        ).fetchone()["n"] == len(original)
+    # API values work during the backfill without rewriting rows in GET handlers.
+    before = collect(client, f"/api/corpus/stories/{job['story_id']}/sentences")
+    assert [row["id"] for row in before] == [row["id"] for row in original]
+    assert all(row["simplified_text"] for row in before)
+    assert client.get(
+        f"/api/corpus/stories/{job['story_id']}/text?script=simplified"
+    ).text == "".join(row["simplified_text"] for row in before)
+    with connect() as db:
+        assert db.execute(
+            "SELECT count(*) AS n FROM corpus.sentences WHERE simplified_text IS NULL"
+        ).fetchone()["n"] == len(original)
+    batches = 0
+    while backfill_once(batch_size=2):
+        batches += 1
+        assert batches < 100
+    assert batches > 3
+    assert not backfill_once()
+    after = collect(client, f"/api/corpus/stories/{job['story_id']}/sentences")
+    assert after == before
+    assert (
+        client.get(f"/api/corpus/stories/{job['story_id']}/text").content
+        == text.encode()
+    )
+    with connect() as db:
+        assert (
+            db.execute("SELECT conversion_version FROM corpus.stories").fetchone()[
+                "conversion_version"
+            ]
+            == CONVERSION_VERSION
+        )
+        assert db.execute(
+            "SELECT sum(occurrence_count) AS n FROM corpus.character_stats"
+        ).fetchone()["n"] == len(text)
+        for table, traditional, simplified in [
+            ("characters", "traditional_value", "simplified_value"),
+            ("segments", "traditional_text", "simplified_text"),
+            ("sentences", "traditional_text", "simplified_text"),
+        ]:
+            assert (
+                db.execute(
+                    sql.SQL(
+                        "SELECT count(*) AS n FROM corpus.{} WHERE {} IS NULL OR {} IS NULL"
+                    ).format(*map(sql.Identifier, (table, traditional, simplified)))
+                ).fetchone()["n"]
+                == 0
+            )
+
+
+def test_backfill_batch_rolls_back_forms_and_checkpoint_on_failure(client, monkeypatch):
+    from contextlib import contextmanager
+
+    from app.corpus import backfill
+
+    imported(client, "學校。")
+    with connect() as db:
+        db.execute(
+            "UPDATE corpus.characters SET traditional_value=NULL,simplified_value=NULL"
+        )
+    original = backfill.connect
+
+    class FailingConnection:
+        def __init__(self, db):
+            self.db = db
+
+        def __getattr__(self, name):
+            return getattr(self.db, name)
+
+        def execute(self, query, params=None):
+            if isinstance(query, str) and "SET last_id=" in query:
+                raise RuntimeError("Backfill interrupted after updates")
+            return self.db.execute(query, params)
+
+    @contextmanager
+    def fail(**kwargs):
+        with original(**kwargs) as db:
+            yield FailingConnection(db)
+
+    monkeypatch.setattr(backfill, "connect", fail)
+    with pytest.raises(RuntimeError):
+        backfill.backfill_once(batch_size=1)
+    with connect() as db:
+        assert (
+            db.execute(
+                "SELECT count(*) AS n FROM corpus.characters WHERE simplified_value IS NOT NULL"
+            ).fetchone()["n"]
+            == 0
+        )
+        assert (
+            db.execute(
+                "SELECT count(*) AS n FROM corpus.script_backfill_progress"
+            ).fetchone()["n"]
+            == 0
+        )
+    monkeypatch.setattr(backfill, "connect", original)
+    while backfill.backfill_once(batch_size=1):
+        pass
+    with connect() as db:
+        assert (
+            db.execute(
+                "SELECT count(*) AS n FROM corpus.characters WHERE simplified_value IS NULL"
+            ).fetchone()["n"]
+            == 0
+        )
+
+
+def test_backfill_is_serialized_between_workers(client):
+    from app.corpus.backfill import backfill_once
+
+    with connect(worker=True) as db:
+        db.execute("SELECT pg_advisory_xact_lock(735981644)")
+        assert backfill_once() is False
+    assert backfill_once() is True
+
+
+def test_legacy_checkpoint_can_resume_and_backfill_the_imported_prefix(
+    client, monkeypatch
+):
+    from app.corpus.backfill import backfill_once
+
+    text = "學校。" * 11000 + "頭髮。"
+    job = queue(client, text.encode())
+    original = worker.record_batch
+
+    def interrupted(*args):
+        original(*args)
+        raise SystemExit("Stop after the first batch")
+
+    monkeypatch.setattr(worker, "record_batch", interrupted)
+    with pytest.raises(SystemExit):
+        worker.run_once()
+    with connect() as db:
+        db.execute("UPDATE corpus.stories SET conversion_version=NULL")
+        db.execute(
+            "UPDATE corpus.sentences SET traditional_text=NULL,simplified_text=NULL"
+        )
+    monkeypatch.setattr(worker, "record_batch", original)
+    worker.run_once()
+    assert (
+        client.get("/api/corpus/imports/" + job["id"]).json()["status"] == "completed"
+    )
+    assert (
+        client.get(f"/api/corpus/stories/{job['story_id']}/text").content
+        == text.encode()
+    )
+    while backfill_once(batch_size=256):
+        pass
+    with connect() as db:
+        assert db.execute(
+            "SELECT count(*) AS n FROM corpus.character_occurrences"
+        ).fetchone()["n"] == len(text)
+        assert (
+            db.execute(
+                "SELECT count(*) AS n FROM corpus.sentences WHERE simplified_text IS NULL"
+            ).fetchone()["n"]
+            == 0
+        )
+
+
+def test_import_rejects_a_different_script_conversion_version(client):
+    job = queue(client, "學校。".encode())
+    with connect() as db:
+        db.execute("UPDATE corpus.stories SET conversion_version='different-version'")
+    worker.run_once()
+    status = client.get("/api/corpus/imports/" + job["id"]).json()
+    assert status["status"] == "failed"
+    assert "script conversion version" in status["error"]
+    assert status["character_count"] == 0
+
+
+def test_new_import_repairs_reused_legacy_vocabulary_before_publication(client):
+    imported(client, "學校。")
+    with connect() as db:
+        db.execute(
+            "UPDATE corpus.characters SET traditional_value=NULL,simplified_value=NULL"
+        )
+        db.execute(
+            "UPDATE corpus.segments SET traditional_text=NULL,simplified_text=NULL"
+        )
+    new = imported(client, "學校。")
+    with connect() as db:
+        characters = db.execute(
+            """SELECT c.* FROM corpus.characters c JOIN corpus.story_character_stats cs ON cs.character_id=c.id WHERE cs.story_id=%s""",
+            (new["story_id"],),
+        ).fetchall()
+        segments = db.execute(
+            """SELECT s.* FROM corpus.segments s JOIN corpus.story_segment_stats ss ON ss.segment_id=s.id WHERE ss.story_id=%s""",
+            (new["story_id"],),
+        ).fetchall()
+        assert all(
+            row["traditional_value"] is not None and row["simplified_value"] is not None
+            for row in characters
+        )
+        assert all(
+            row["traditional_text"] is not None and row["simplified_text"] is not None
+            for row in segments
+        )
+        assert (
+            db.execute(
+                "SELECT count(*) AS n FROM corpus.characters WHERE value=%s", ("學",)
+            ).fetchone()["n"]
+            == 1
+        )
