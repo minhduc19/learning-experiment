@@ -327,3 +327,16 @@ The bundled frontend reading JSON is no longer the page's data source. Generated
 readings omit translation fields; the reader renders pinyin without empty
 translation lines or meaning buttons. Generated boundaries and pronunciations
 may still need editorial review, especially for names and ambiguous readings.
+
+### API documentation page
+
+Open `/api-docs` from the Ideas directory to browse FastAPI's interactive Swagger
+UI and try requests. Documentation is generated from the live OpenAPI schema,
+including request/response models for the reading endpoints. The page checks that
+the schema is available before embedding the docs and offers Retry on failure.
+
+`/api/docs` and `/api/openapi.json` expose the documentation through the existing
+frontend proxy. The original backend `/docs`, `/redoc`, and `/openapi.json` URLs
+remain available. Swagger UI's scripts and stylesheet load from FastAPI's default
+jsDelivr CDN, so interactive docs require browser access to that CDN. The schema
+JSON link remains available independently of those assets.

@@ -1,6 +1,7 @@
 import psycopg
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from fastapi.openapi.docs import get_swagger_ui_html
 
 from app.db.connection import connect_database
 from app.readings.routes import router as readings_router
@@ -23,3 +24,13 @@ def database_health():
         # Keep connection details and credentials out of API responses.
         return JSONResponse(status_code=503, content={"status": "unavailable", "database": "unavailable"})
     return {"status": "ok", "database": "connected"}
+
+
+@app.get("/api/openapi.json", include_in_schema=False)
+def api_schema():
+    return app.openapi()
+
+
+@app.get("/api/docs", include_in_schema=False)
+def api_documentation():
+    return get_swagger_ui_html(openapi_url="/api/openapi.json", title="Monorepo API — Documentation")
