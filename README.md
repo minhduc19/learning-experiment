@@ -47,6 +47,34 @@ Vite and the included Nginx configuration support opening and refreshing nested
 URLs directly. On other production hosts, configure a fallback to `index.html`
 for frontend routes while keeping `/api` routed to FastAPI.
 
+## Shared styles
+
+`apps/frontend/src/main.js` imports `src/styles/main.css` once, making the CSS
+available in every view and component without additional imports.
+
+- `tokens.css`: CSS custom properties for colors, typography, spacing, and sizing.
+- `base.css`: project-wide defaults for elements and keyboard focus.
+- `components.css`: reusable `.page`, `.button`, `.site-nav`, `.stack`, and
+  `.cluster` classes. Layouts are opt-in so new ideas can use their own structure.
+
+Use the shared classes in any Vue template:
+
+```vue
+<template>
+  <main class="page">
+    <h1>My idea</h1>
+    <div class="cluster">
+      <button class="button">Try it</button>
+      <a href="/ideas/one">Explore</a>
+    </div>
+  </main>
+</template>
+```
+
+Change tokens to update the whole project's theme. For component-specific rules,
+use `<style scoped>` and reference tokens such as `var(--space-3)` and
+`var(--color-primary)`. Add reusable patterns to `components.css`.
+
 ## Checks
 
 ```sh
