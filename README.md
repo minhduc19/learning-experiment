@@ -19,6 +19,34 @@ Open http://localhost:5173. FastAPI serves http://localhost:8000 and interactive
 
 The frontend calls relative `/api` URLs. Vite proxies these to FastAPI during development, so no CORS configuration is needed. Production hosting must route `/api` to FastAPI and serve `apps/frontend/dist` as static files; Vite's dev proxy is not part of the production build.
 
+## Idea pages
+
+The frontend uses Vue Router with browser history and lazy-loaded pages:
+
+- `/`: the original home page and backend connection check
+- `/ideas/one`: `apps/frontend/src/views/IdeaOneView.vue`
+- `/ideas/two`: `apps/frontend/src/views/IdeaTwoView.vue`
+- Unknown URLs show a page with a link back home.
+
+Build each idea in its own view component. To add another idea, create a `.vue`
+file in `apps/frontend/src/views/` and add a route in
+`apps/frontend/src/router/index.js` with a unique `path`, `name`, lazy-loaded
+`component`, and `meta.title`. Routes with a title appear in the navigation
+automatically. For example:
+
+```js
+{
+  path: '/ideas/three',
+  name: 'idea-three',
+  component: () => import('../views/IdeaThreeView.vue'),
+  meta: { title: 'Idea three' },
+},
+```
+
+Vite and the included Nginx configuration support opening and refreshing nested
+URLs directly. On other production hosts, configure a fallback to `index.html`
+for frontend routes while keeping `/api` routed to FastAPI.
+
 ## Checks
 
 ```sh
