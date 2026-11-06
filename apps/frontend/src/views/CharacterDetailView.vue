@@ -2,6 +2,7 @@
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import CorpusSentences from '../components/CorpusSentences.vue'
+import VocabularyProgressControls from '../components/VocabularyProgressControls.vue'
 import { characterLabel, fetchCorpus, formatCount, useCorpusPage } from '../composables/useCorpusPage'
 
 const route = useRoute()
@@ -34,7 +35,7 @@ async function loadCharacter() {
     return
   }
   let timedOut = false
-  const timeout = setTimeout(() => { timedOut = true; requestController.abort() }, 35000)
+  const timeout = setTimeout(() => { timedOut = true; requestController.abort() }, 140000)
   try {
     const data = await fetchCorpus(`/api/corpus/characters/${identifier}`, requestController.signal)
     if (ticket !== revision) return
@@ -92,17 +93,18 @@ onUnmounted(() => { revision += 1; controller?.abort() })
 
       <section class="corpus-section" aria-labelledby="segments-heading">
         <div class="corpus-section-heading"><h2 id="segments-heading">Associated segments</h2><span class="corpus-muted">{{ formatCount(segments.items.length) }} loaded</span></div>
-        <p class="corpus-muted">Choose a segment to see its sentences.</p>
+        <p class="corpus-muted">Choose a segment to see its sentences. Mark Learned, Learning, or both for revision; click a selected mark to remove it.</p>
         <p v-if="segments.loading && !segments.items.length" class="corpus-muted" role="status">Loading segments…</p>
         <p v-if="segments.error" class="corpus-error" role="alert">{{ segments.error }} <button class="corpus-text-button" @click="segments.load">Try again</button></p>
         <p v-if="segments.loaded && !segments.items.length && !segments.error" class="corpus-muted">No associated segments.</p>
         <ul class="corpus-segment-grid" aria-label="Associated segments" :aria-busy="segments.loading">
-          <li v-for="segment in segments.items" :key="segment.id">
+          <li v-for="segment in segments.items" :key="segment.id" class="corpus-segment-item" :class="{ 'is-selected': selectedSegment?.id === segment.id }">
             <button class="corpus-segment-card" :class="{ 'is-selected': selectedSegment?.id === segment.id }" :aria-pressed="selectedSegment?.id === segment.id" @click="selectSegment(segment)">
               <span class="corpus-segment-text" lang="zh-Hans">{{ characterLabel(segment.traditional_text || segment.text) }}<small v-if="segment.simplified_text && segment.simplified_text !== (segment.traditional_text || segment.text)" class="corpus-script-alternative" lang="zh-Hans">{{ characterLabel(segment.simplified_text) }}</small></span>
               <span class="corpus-segment-stats"><span><strong>{{ formatCount(segment.occurrence_count) }}</strong> {{ segment.occurrence_count === 1 ? 'appearance' : 'appearances' }}</span><span><strong>{{ formatCount(segment.sentence_count) }}</strong> {{ segment.sentence_count === 1 ? 'sentence' : 'sentences' }}</span></span>
               <span class="corpus-muted">{{ formatCount(segment.count_in_segment) }} × {{ characterLabel(character.value) }} per segment</span>
             </button>
+            <VocabularyProgressControls :entry="segment" resource="segments" id-field="segment_id" :label="`Learning marks for segment ${characterLabel(segment.traditional_text || segment.text)}`" />
           </li>
         </ul>
         <div v-if="segments.nextCursor" class="corpus-pagination"><button class="button" :disabled="segments.loading" @click="segments.load">{{ segments.loading ? 'Loading…' : 'Load more segments' }}</button></div>

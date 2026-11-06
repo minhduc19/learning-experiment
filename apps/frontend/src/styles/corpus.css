@@ -52,6 +52,10 @@
 .corpus-segment-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: var(--space-3); }
 .corpus-segment-card { display: flex; flex-direction: column; gap: var(--space-2); width: 100%; height: 100%; padding: var(--space-4); border: 1px solid #dce6e0; border-radius: 1rem; background: white; color: var(--color-text); text-align: left; cursor: pointer; font-size: .85rem; }
 .corpus-segment-card.is-selected { border: 2px solid var(--color-primary); padding: calc(var(--space-4) - 1px); background: #edf6ef; }
+.corpus-segment-item { display:flex; flex-direction:column; background:white; border:1px solid #dce6e0; border-radius:1rem; }
+.corpus-segment-item.is-selected { border-color:var(--color-primary); }
+.corpus-segment-item > .corpus-segment-card { flex:1; height:auto; border:0; }
+.corpus-segment-item > .corpus-segment-card.is-selected { padding:var(--space-4); }
 .corpus-segment-text { font-size: 1.65rem; overflow-wrap: anywhere; }
 .corpus-segment-stats { display: flex; flex-wrap: wrap; gap: .3rem var(--space-3); }
 .corpus-sentence-card { border: 1px solid #dce6e0; border-radius: 1rem; background: white; padding: var(--space-4); margin-top: var(--space-3); }

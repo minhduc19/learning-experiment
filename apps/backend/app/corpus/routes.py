@@ -26,11 +26,12 @@ from app.corpus.schemas import (
     ImportStatus,
     Page,
     Segment,
+    SegmentProgress,
+    SegmentProgressUpdate,
     Sentence,
     UploadCreate,
     UploadStatus,
 )
-
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -333,6 +334,16 @@ def character_sentences(
     return queries.sentences(
         character_id=character_id, story_id=story_id, cursor=cursor, limit=limit
     )
+
+
+@router.patch("/segments/{segment_id}/progress", response_model=SegmentProgress)
+def update_segment_progress(segment_id: int, data: SegmentProgressUpdate):
+    """Set either or both personal segment flags; both true means revision.
+
+    Requires the segment in the user's completed corpus. Omitted flags retain
+    their values; false removes a mark. Character marks remain independent.
+    """
+    return progress.update_segment_progress(segment_id, data)
 
 
 @router.get("/segments/{segment_id}/sentences", response_model=Page[Sentence])
