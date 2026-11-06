@@ -22,7 +22,10 @@ export function parseLesson(text) {
     ids.add(item.id)
     if (item.type !== 'multiple-choice') throw new Error(`${path}.type is unsupported. Currently supported: multiple-choice.`)
     const q = item.data
-    object(q, path + '.data', ['id','instruction','sentence','answer','translation','options'])
+    object(q, path + '.data', ['id','instruction','sentence','answer','translation','options','target-character','target-segment'])
+    for (const [key, max] of [['target-character', 1], ['target-segment', 256]]) {
+      if (q[key] != null && (typeof q[key] !== 'string' || !q[key].trim() || Array.from(q[key]).length > max)) throw new Error(`${path}.${key} must be nonempty text, at most ${max} characters.`)
+    }
     string(q.id, path + '.data.id', 200); string(q.sentence, path + '.data.sentence')
     if (q.sentence.split('[[blank]]').length !== 2) throw new Error(`${path}.data.sentence needs exactly one [[blank]].`)
     if (q.instruction !== undefined && typeof q.instruction !== 'string') throw new Error(`${path}.data.instruction must be text.`)
