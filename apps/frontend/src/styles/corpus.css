@@ -18,8 +18,20 @@
 .corpus-character-grid, .corpus-segment-grid, .corpus-sentences { list-style: none; padding: 0; margin: 0; }
 .corpus-character-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-3); }
 .corpus-character-grid li, .corpus-segment-grid li { min-width: 0; }
-.corpus-character-card { position: relative; display: flex; flex-direction: column; height: 100%; gap: .15rem; padding: var(--space-3); border: 1px solid #dce6e0; border-radius: 1rem; background: #fff; text-decoration: none; color: var(--color-text); font-size: .82rem; transition: border-color .15s, box-shadow .15s; }
-.corpus-character-card:hover, .corpus-segment-card:hover { border-color: var(--color-primary); box-shadow: 0 4px 16px #163b3509; }
+.corpus-character-item { display: flex; flex-direction: column; border: 1px solid #dce6e0; border-radius: 1rem; background: #fff; transition: border-color .15s, box-shadow .15s; }
+.corpus-character-card { position: relative; display: flex; flex: 1; flex-direction: column; gap: .15rem; padding: var(--space-3); border-radius: 1rem; text-decoration: none; color: var(--color-text); font-size: .82rem; }
+.corpus-character-item:hover, .corpus-character-item:focus-within, .corpus-segment-card:hover { border-color: var(--color-primary); box-shadow: 0 4px 16px #163b3509; }
+.corpus-progress-help { color: #52665d; font-size: .88rem; margin-top: 0; }
+.corpus-progress-controls { display: grid; gap: .4rem; padding: 0 var(--space-3) var(--space-3); }
+.corpus-progress-toggle { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; width: 100%; padding: .5rem .65rem; border: 1px solid #bdcfc5; border-radius: .6rem; color: #435b50; background: white; font: inherit; font-size: .85rem; font-weight: 600; text-align: left; cursor: pointer; }
+.corpus-progress-toggle:hover { background: #f3f7f5; }
+.corpus-progress-toggle.is-learned.is-active { border-color: #4e8658; background: #e9f5e7; color: #235b2c; }
+.corpus-progress-toggle.is-learning.is-active { border-color: #5b80ab; background: #edf4fc; color: #27517e; }
+.corpus-progress-toggle:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 2px; }
+.corpus-progress-toggle:disabled { cursor: wait; }
+.corpus-progress-check { display: inline-grid; place-items: center; width: 1.2rem; height: 1.2rem; border: 1px solid currentColor; border-radius: 50%; font-size: .8rem; line-height: 1; }
+.corpus-progress-caption { min-height: 1.15rem; font-size: .72rem; color: #52665d; }
+.corpus-progress-error { margin: 0; color: #972c23; font-size: .8rem; overflow-wrap: anywhere; }
 .corpus-character-glyph { display: flex; align-items: center; min-height: 4.5rem; font-size: 2.8rem; font-weight: 500; padding-bottom: .5rem; overflow-wrap: anywhere; }
 .corpus-character-glyph.is-named { font-size: 1.15rem; }
 .corpus-card-arrow { position: absolute; top: .8rem; right: 1rem; color: #7b958a; }

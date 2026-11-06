@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Generic, Literal, TypeVar
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, model_validator
 
 
 class UploadCreate(BaseModel):
@@ -58,6 +58,29 @@ class Character(BaseModel):
     occurrence_count: int
     distinct_segment_count: int
     segment_occurrence_count: int
+    learned: bool
+    learning: bool
+
+
+class CharacterProgress(BaseModel):
+    character_id: int
+    learned: bool
+    learning: bool
+
+
+class CharacterProgressUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    learned: StrictBool | None = None
+    learning: StrictBool | None = None
+
+    @model_validator(mode="after")
+    def require_boolean_update(self):
+        if not self.model_fields_set or any(
+            getattr(self, name) is None for name in self.model_fields_set
+        ):
+            raise ValueError("Provide learned and/or learning as a boolean")
+        return self
 
 
 class CharacterDetail(Character):

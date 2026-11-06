@@ -6,6 +6,32 @@ from `/api/readings`: this change does not replace reading JSON or generate
 translations, quiz blocks, or pinyin. Interactive documentation is available on
 `/api-docs` and `/api/docs`, including these routes automatically.
 
+## Personal character learning marks
+
+In `/characters`, each card has independent **Learned** and **Learning** toggle
+buttons. One click selects a mark; clicking it again removes it. Select both to
+mark a character for revision. Marks are saved automatically for the signed-in
+user, across all their stories, and remain selected after a reload.
+
+`PATCH /api/corpus/characters/{character_id}/progress` accepts either or both
+boolean fields, for example:
+
+```json
+{"learned": true, "learning": true}
+```
+
+Omitted fields retain their existing values. `false` removes a mark. The endpoint
+returns `{character_id, learned, learning}` and rejects empty updates, nulls,
+non-boolean values, and unknown fields. It requires a bearer token and returns
+404 when the character is absent from the user's completed corpus. Character
+list and detail responses include `learned` and `learning`, both false initially.
+
+Migration `004_character_progress.sql` stores these flags in
+`corpus.user_character_progress`, keyed by `(user_id, character_id)`. Shared
+character definitions and corpus counts are unchanged. Atomic partial updates
+preserve independent flags even when both requests arrive together. Saved marks
+are private to each user, including when another user has the same character.
+
 ## Start services
 
 ```sh
