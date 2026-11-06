@@ -12,6 +12,7 @@ dependencies = [
     "argon2-cffi>=23,<26",
     "pyjwt>=2.10,<3",
     "email-validator>=2,<3",
+    "openai>=2,<3",
 ]
 
 [dependency-groups]
