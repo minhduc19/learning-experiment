@@ -54,6 +54,18 @@ changing marks from another page or device.
 
 ## Sentence practice
 
+Ranking aggregates matches once per stored fragment, then combines fragment
+counts into logical sentences and retains the first matching fragment's offset.
+It materializes the requested page before loading text and fragment counts.
+This avoids repeatedly scanning all character matches for each excerpt position.
+The database timeout remains unchanged, and no migration is required.
+
+A local synthetic PostgreSQL check with 100,000 sentences and two million marked
+occurrences returned a correct top-20 page in 1.7 seconds; the previous query
+exceeded the benchmark's five-second statement limit. This is a local measurement,
+not a guarantee for other corpus sizes or server hardware. If a deployed request
+still times out, inspect its logged SQLSTATE and database execution plan.
+
 `/sentence-practice` lists the current user's completed-story sentences ranked by
 marked Han character occurrences. `/characters` links to it. Repetitions count
 each time; a character marked both counts once. Green underlines mean Learned,
