@@ -1,10 +1,26 @@
 <script setup>
-import { onUnmounted, ref } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { authorizedFetch } from '../composables/useAuth'
 import StudySentence from '../components/StudySentence.vue'
+import { buildStudyExport, copyStudyText } from '../composables/studyExport'
 const learnedCount = ref(5), newCount = ref(5), loading = ref(false), error = ref(''), result = ref(null)
 const entries = ref([]), nextHistory = ref(null), historyBusy = ref(false), historyLoaded = ref(false), historyError = ref(''), savedAt = ref(null)
+const exportScript = ref('simplified'), copyStatus = ref(''), copying = ref(false), manualCopy = ref(false), exportBox = ref(null), previewOpen = ref(false)
+const exportText = computed(() => buildStudyExport(result.value, exportScript.value))
+watch(result, () => { copyStatus.value = ''; manualCopy.value = false })
+async function copySelection(script) {
+  if (copying.value) return
+  exportScript.value = script; copying.value = true; copyStatus.value = ''; manualCopy.value = false
+  try {
+    if (await copyStudyText(exportText.value)) copyStatus.value = `Copied ${script} Chinese with database IDs.`
+    else {
+      manualCopy.value = true; previewOpen.value = true
+      copyStatus.value = 'Automatic copy was blocked. The export is selected below; press Ctrl+C or Command+C to copy.'
+      await nextTick(); exportBox.value?.focus(); exportBox.value?.select()
+    }
+  } finally { copying.value = false }
+}
 async function loadHistory(more = false) {
   if (historyBusy.value) return
   historyBusy.value = true; historyError.value = ''
@@ -66,6 +82,12 @@ onUnmounted(() => controller?.abort())
     </form>
     <p v-if="error" class="corpus-error" role="alert">{{ error }}</p><p v-if="loading" role="status">Loading your selection…</p>
     <template v-if="result">
+      <section class="corpus-sentence-card" aria-label="Copy selection">
+        <h2>Copy selection</h2><p>Copy both groups as pipe-separated text with a header. IDs identify the stored character, segment, and sentence records; they stay the same in either writing system.</p>
+        <div class="cluster"><button class="button" :disabled="loading || copying" @click="copySelection('simplified')">Copy simplified</button><button class="button" :disabled="loading || copying" @click="copySelection('traditional')">Copy traditional</button></div>
+        <p v-if="copyStatus" :role="manualCopy ? 'alert' : 'status'">{{ copyStatus }}</p>
+        <details :open="previewOpen" @toggle="previewOpen = $event.target.open"><summary>Preview export · {{ exportScript }}</summary><p>One row per association. Literal pipes, backslashes and line breaks are escaped as \|, \\, \n and \r. Missing examples leave empty columns. Long-sentence examples retain their stored fragment IDs.</p><textarea ref="exportBox" class="study-export-text" readonly :value="exportText" aria-label="Selection export text" rows="8" /></details>
+      </section>
       <p role="status">Selected {{ result.learned.length }} of {{ result.requested.learned }} learned characters and {{ result.new.length }} of {{ result.requested.new }} characters to learn.</p>
       <p v-if="result.learned.length < result.requested.learned || result.new.length < result.requested.new" class="corpus-resume-note">Your corpus cannot supply the full requested counts. Mark more characters as Learned or upload more stories to expand the selection.</p>
       <section><h2>Learned · random review</h2><p v-if="!result.learned.length" class="corpus-muted">No learned characters selected.</p>

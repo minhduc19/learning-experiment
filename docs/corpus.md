@@ -422,6 +422,17 @@ grant access to another user's sentences or counts.
 
 ## Saved study history
 
+The loaded selection (including one restored from History) has Copy simplified
+and Copy traditional buttons. They export both groups with the exact header
+`Character|chracter-id|segment|segment-id|sentence|sentence-id`. IDs come from
+the stored records, not display row numbers, and do not change between scripts.
+Learned rows use each popular segment's example; new rows use source-sentence
+segments containing the original character. Duplicate associations are removed.
+Missing examples leave blank columns. Sentence IDs identify stored fragments
+for examples labelled excerpts. Literal backslashes, pipes, CR and LF are escaped
+as `\\`, `\|`, `\r`, and `\n` respectively, keeping one association per text line.
+The clipboard path supports HTTP with a selectable preview if copying is blocked.
+
 `/study-selection` saves each generation through `POST /api/corpus/study-history`
 (with `learned_count` and `new_count` query parameters). The History panel lists
 saved snapshots and opens them without recomputing. New generations always run
