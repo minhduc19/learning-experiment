@@ -46,8 +46,11 @@ test('five mistakes end the attempt and restart clears all session state', () =>
 })
 
 test('mixed answers finish the whole quiz with accurate totals', () => {
-  const quiz = useQuiz({ strict: true, items: strictQuestions })
-  for (const [index, question] of strictQuestions.entries()) {
+  // This scenario needs fewer than five mistakes, regardless of lesson size.
+  const items = strictQuestions.slice(0, 7)
+  assert.equal(items.length, 7)
+  const quiz = useQuiz({ strict: true, items })
+  for (const [index, question] of items.entries()) {
     quiz.choose(question.options.find(option => (option.id === question.answer) === (index % 2 === 0)))
     quiz.check()
     quiz.proceed()
