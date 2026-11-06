@@ -1,5 +1,23 @@
 # Chinese corpus API
 
+## Character sorting and learning filters
+
+`/characters` offers Frequency and Word variety, each with Highest first (`desc`)
+or Lowest first (`asc`). Frequency counts repeated character appearances; word
+variety counts distinct word segments containing the character. Descriptions
+under the controls explain the current choices and update as they change.
+
+`GET /api/corpus/characters` accepts `direction=asc|desc` (default `desc`) and
+`status=all|unmarked|learned_only|learning_only|revision|learned|learning|marked`
+(default `all`). Learned and Learning include revision; the `*_only` filters
+exclude it. Revision requires both flags, marked requires either, and unmarked
+requires neither, including characters with no saved progress row. Flags always
+belong to the authenticated user. Existing story/search/type filters still apply.
+Ties use ascending character IDs in either direction. Cursors are scoped to the
+sort, direction and filters. Change a control to restart pagination; filtered
+lists refresh after saving learning marks. Refresh after importing stories or
+changing marks from another page or device.
+
 ## Sentence practice
 
 `/sentence-practice` lists the current user's completed-story sentences ranked by

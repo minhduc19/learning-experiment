@@ -115,6 +115,8 @@
 .story-reader select { padding:.5rem; margin:.5rem; }
 .practice-legend { display:flex; flex-wrap:wrap; gap:1.5rem; margin-block:1.5rem; }
 .practice-counts { color:#52665d; font-size:.85rem; }
+.corpus-filter-description { color:#52665d; font-size:.85rem; line-height:1.5; margin:.6rem 0 0; }
+.corpus-sort label:not(:first-child) { margin-top:.75rem; }
 .practice-mark { padding-bottom:.16em; background-repeat:no-repeat; background-position:left bottom; background-size:100% 3px; }
 .practice-mark.is-learned { background-image:linear-gradient(#278044,#278044); }
 .practice-mark.is-learning { background-image:linear-gradient(#b77906,#b77906); }
