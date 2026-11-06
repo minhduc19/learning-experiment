@@ -104,6 +104,7 @@ onUnmounted(() => { revision += 1; controller?.abort() })
               <span class="corpus-segment-stats"><span><strong>{{ formatCount(segment.occurrence_count) }}</strong> {{ segment.occurrence_count === 1 ? 'appearance' : 'appearances' }}</span><span><strong>{{ formatCount(segment.sentence_count) }}</strong> {{ segment.sentence_count === 1 ? 'sentence' : 'sentences' }}</span></span>
               <span class="corpus-muted">Practice: {{ formatCount(segment.practice || 0) }}</span><span class="corpus-muted">{{ formatCount(segment.count_in_segment) }} × {{ characterLabel(character.value) }} per segment</span>
             </button>
+            <RouterLink class="corpus-text-button" :to="`/segments/${segment.id}`">Open segment details</RouterLink>
             <VocabularyProgressControls :entry="segment" resource="segments" id-field="segment_id" :label="`Learning marks for segment ${characterLabel(segment.traditional_text || segment.text)}`" />
           </li>
         </ul>

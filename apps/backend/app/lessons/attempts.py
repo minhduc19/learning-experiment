@@ -4,6 +4,7 @@ from uuid import uuid4
 from fastapi import HTTPException
 from psycopg import sql
 from psycopg.types.json import Jsonb
+from pypinyin import Style, lazy_pinyin
 
 from app.auth.dependencies import user_id
 from app.corpus.database import connect
@@ -78,7 +79,7 @@ def finish(identifier, raw):
         if not attempt:
             raise HTTPException(404, "Attempt not found")
         if attempt["result"] is not None:
-            return attempt["result"]
+            return with_pinyin(attempt["result"])
         items = attempt["document"]["items"]
         if (
             not isinstance(raw, dict)
@@ -170,4 +171,13 @@ def finish(identifier, raw):
             "UPDATE corpus.lesson_attempts SET completed_at=now(),result=%s WHERE id=%s",
             (Jsonb(result), identifier),
         )
+    return with_pinyin(result)
+
+
+def with_pinyin(result):
+    for kind in ("characters", "segments"):
+        for target in result[kind]:
+            target["pinyin"] = " ".join(
+                lazy_pinyin(target["original"], style=Style.TONE)
+            )
     return result

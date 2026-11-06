@@ -2,6 +2,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import MultipleChoiceActivity from '../components/MultipleChoiceActivity.vue'
+import PracticeSummaryRow from '../components/PracticeSummaryRow.vue'
 import { authorizedFetch } from '../composables/useAuth'
 const route=useRoute(), attempt=ref(null), answers=ref([]), result=ref(null), busy=ref(false), error=ref(''), retry=ref(null)
 const items=computed(()=>attempt.value?.document.items.map(item=>item.data) || [])
@@ -22,7 +23,7 @@ onMounted(start);onUnmounted(()=>controller.abort())
     <template #completion>
       <p v-if="busy" role="status">Saving practice points…</p>
       <p v-if="error" class="corpus-error" role="alert">{{ error }} <button class="corpus-text-button" :disabled="busy" @click="retry()">Retry</button></p>
-      <section v-if="result" class="lesson-practice-summary"><h2>Practice summary</h2><p>Practice points are saved.</p><section v-for="kind in ['characters','segments']" :key="kind"><h3>{{ kind==='characters'?'Characters':'Segments' }}</h3><p v-if="!result[kind].length">No resolved targets.</p><ul><li v-for="target in result[kind]" :key="target.id"><RouterLink :to="`/${kind}/${target.id}`">{{ target.traditional || target.original }} <small>{{ target.simplified }}</small></RouterLink> · Learned: {{ target.learned?'Yes':'No' }} · Learning: {{ target.learning?'Yes':'No' }} · Practice: {{ target.practice }} (+{{ target.earned }})</li></ul></section><p v-for="(target,i) in result.unresolved" :key="i" class="corpus-resume-note">{{ target.text }}: {{ target.reason }}. No points awarded for this target.</p><RouterLink to="/lessons">My lessons</RouterLink></section>
+      <section v-if="result" class="lesson-practice-summary"><h2>Practice summary</h2><p>Practice points are saved.</p><section v-for="kind in ['characters','segments']" :key="kind"><h3>{{ kind==='characters'?'Characters':'Segments' }}</h3><p v-if="!result[kind].length">No resolved targets.</p><ul class="practice-summary-list"><li v-for="target in result[kind]" :key="target.id"><PracticeSummaryRow :target="target" :resource="kind" /></li></ul></section><p v-for="(target,i) in result.unresolved" :key="i" class="corpus-resume-note">{{ target.text }}: {{ target.reason }}. No points awarded for this target.</p><RouterLink to="/lessons">My lessons</RouterLink></section>
     </template>
   </MultipleChoiceActivity>
   <main v-else class="page corpus-page"><p v-if="busy" role="status">Loading lesson…</p><p v-if="error" class="corpus-error" role="alert">{{ error }} <button class="corpus-text-button" :disabled="busy" @click="start">Retry</button></p><RouterLink to="/lessons">← My lessons</RouterLink></main>
