@@ -12,7 +12,7 @@ from fastapi.routing import APIRoute
 from starlette.concurrency import run_in_threadpool
 
 from app.auth.dependencies import current_user, user_id
-from app.corpus import practice, progress, queries, uploads
+from app.corpus import practice, progress, queries, study, uploads
 from app.corpus.config import MAX_PATCH_BYTES, max_upload_bytes, storage_directory
 from app.corpus.database import connect
 from app.corpus.schemas import (
@@ -55,6 +55,20 @@ class CorpusRoute(APIRoute):
 router = APIRouter(route_class=CorpusRoute, dependencies=[Depends(current_user)])
 Limit = Annotated[int, Query(ge=1, le=100)]
 Cursor = Annotated[str | None, Query(max_length=2048)]
+
+
+@router.get("/study-selection")
+def study_selection(
+    learned_count: Annotated[int, Query(ge=0, le=50)] = 5,
+    new_count: Annotated[int, Query(ge=0, le=50)] = 5,
+):
+    """Random learned review and new characters from sentences ranked by learned occurrences.
+
+    Learned includes revision; new excludes learned and can include learning-only.
+    Candidates within each ranked sentence sort by owned corpus frequency.
+    Generates suggestions without changing marks. Each count is capped at 50.
+    """
+    return study.select_study(learned_count, new_count)
 
 
 @router.get("/practice-sentences")

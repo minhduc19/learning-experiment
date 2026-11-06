@@ -28,26 +28,8 @@ def practice_sentences(cursor=None, limit=20):
             except (ValueError, TypeError, AttributeError):
                 raise HTTPException(422, "Invalid practice cursor") from None
         rows = db.execute(
-            """WITH hits AS (
-                SELECT s.story_id,s.sentence_position,s.position,
-                  (o.start_offset+co.position_in_segment)::integer AS offset,
-                  p.learned,p.learning
-                FROM corpus.user_character_progress p
-                JOIN corpus.characters c ON c.id=p.character_id AND c.is_han
-                JOIN corpus.character_occurrences co ON co.character_id=p.character_id
-                JOIN corpus.segment_occurrences o ON o.id=co.segment_occurrence_id
-                JOIN corpus.sentences s ON s.id=o.sentence_id
-                JOIN corpus.stories d ON d.id=s.story_id AND d.status='completed' AND d.user_id=%s
-                WHERE p.user_id=%s AND (p.learned OR p.learning)
-            ), ranked AS (
-                SELECT story_id,sentence_position,count(*)::bigint AS matched_count,
-                  count(*) FILTER(WHERE learned AND NOT learning)::bigint AS learned_count,
-                  count(*) FILTER(WHERE learning AND NOT learned)::bigint AS learning_count,
-                  count(*) FILTER(WHERE learned AND learning)::bigint AS both_count,
-                  min(position) AS preview_position
-                FROM hits GROUP BY story_id,sentence_position
-            )
-            SELECT r.*,d.title AS story_title,s.id,s.raw_text,s.part_position,s.is_final,
+            ranking_cte()
+            + """            SELECT r.*,d.title AS story_title,s.id,s.raw_text,s.part_position,s.is_final,
               (SELECT min(h.offset) FROM hits h WHERE h.story_id=r.story_id
                 AND h.sentence_position=r.sentence_position AND h.position=r.preview_position) AS first_offset,
               (SELECT count(*) FROM corpus.sentences parts WHERE parts.story_id=r.story_id
@@ -59,6 +41,7 @@ def practice_sentences(cursor=None, limit=20):
             (
                 owner,
                 owner,
+                True,
                 after_count,
                 after_count,
                 after_story,
@@ -91,3 +74,27 @@ def practice_sentences(cursor=None, limit=20):
         scope,
         ["matched_count", "story_id", "sentence_position"],
     )
+
+
+def ranking_cte():
+    """Shared logical sentence ranking; third parameter includes learning-only hits."""
+    return """WITH hits AS (
+                SELECT s.story_id,s.sentence_position,s.position,
+                  (o.start_offset+co.position_in_segment)::integer AS offset,
+                  p.learned,p.learning
+                FROM corpus.user_character_progress p
+                JOIN corpus.characters c ON c.id=p.character_id AND c.is_han
+                JOIN corpus.character_occurrences co ON co.character_id=p.character_id
+                JOIN corpus.segment_occurrences o ON o.id=co.segment_occurrence_id
+                JOIN corpus.sentences s ON s.id=o.sentence_id
+                JOIN corpus.stories d ON d.id=s.story_id AND d.status='completed' AND d.user_id=%s
+                WHERE p.user_id=%s AND (p.learned OR p.learning) AND (%s OR p.learned)
+            ), ranked AS (
+                SELECT story_id,sentence_position,count(*)::bigint AS matched_count,
+                  count(*) FILTER(WHERE learned AND NOT learning)::bigint AS learned_count,
+                  count(*) FILTER(WHERE learning AND NOT learned)::bigint AS learning_count,
+                  count(*) FILTER(WHERE learned AND learning)::bigint AS both_count,
+                  min(position) AS preview_position
+                FROM hits GROUP BY story_id,sentence_position
+            )
+"""

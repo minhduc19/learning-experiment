@@ -1,5 +1,39 @@
 # Chinese corpus API
 
+## Study selection
+
+`/study-selection` accepts counts for random learned review and new characters
+to learn. Both inputs accept 0–50, with at least one positive count. It links from
+`/characters` and requires login. Generating another set resamples the learned
+group and recomputes suggestions without changing any marks.
+
+`GET /api/corpus/study-selection?learned_count=5&new_count=5` returns `learned`,
+`new`, `requested`, and `available`. Counts and examples use only owned completed
+stories and Han characters. Learned includes revision. New means not Learned,
+so Learning-only and unmarked characters are eligible. Results contain distinct
+source character IDs; shortages return the available subset rather than duplicates.
+
+Learned sampling uses PostgreSQL `random()` without replacement. Each character
+includes up to three word segments ranked by their frequency in the user's corpus,
+and an owned example sentence containing each segment.
+
+New selection reuses the SQL ranking CTE behind `/api/corpus/practice-sentences`,
+with Learned-only scoring rather than the practice page's combined marks. It
+scans complete logical sentences by descending Learned occurrence count, with
+stable story-ID/sentence-position ties. Within each sentence it takes unfamiliar
+characters by descending corpus frequency, skipping already-selected characters,
+until the target is met. Sentences with zero learned occurrences come last and
+also allow a fresh user to start. Character ID breaks frequency ties.
+
+Each example includes original, traditional, and simplified sentence text plus
+ordered segment objects with both scripts. Source fragments are bounded by the
+importer's 4,096-character limit; examples from split logical sentences are
+labelled excerpts and link to the complete story. New-character segments are
+expanded by default, and the target's containing segments are highlighted.
+Script forms use stored conversions with the existing OpenCC fallback for legacy
+rows. The selection endpoint shares backend ranking logic rather than making
+loopback HTTP calls or repeatedly fetching full practice pages.
+
 ## Character sorting and learning filters
 
 `/characters` offers Frequency and Word variety, each with Highest first (`desc`)
