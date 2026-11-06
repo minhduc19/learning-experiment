@@ -122,7 +122,7 @@ def characters(
         query = sql.SQL(
             prefix
             + """SELECT c.*,st.occurrence_count,st.distinct_segment_count,st.segment_occurrence_count,
-            coalesce(p.learned,false) AS learned,coalesce(p.learning,false) AS learning
+            coalesce(p.learned,false) AS learned,coalesce(p.learning,false) AS learning,coalesce(p.practice,0) AS practice
             FROM stats st JOIN corpus.characters c ON c.id=st.character_id
             LEFT JOIN corpus.user_character_progress p ON p.character_id=c.id AND p.user_id=%s
             WHERE {} ORDER BY {} {},c.id LIMIT %s"""
@@ -160,7 +160,7 @@ def character_detail(character_id, story_id=None):
         row = db.execute(
             prefix
             + """SELECT c.*,st.occurrence_count,st.distinct_segment_count,st.segment_occurrence_count,
-            coalesce(p.learned,false) AS learned,coalesce(p.learning,false) AS learning
+            coalesce(p.learned,false) AS learned,coalesce(p.learning,false) AS learning,coalesce(p.practice,0) AS practice
             FROM corpus.characters c JOIN stats st ON st.character_id=c.id
             LEFT JOIN corpus.user_character_progress p ON p.character_id=c.id AND p.user_id=%s
             WHERE c.id=%s""",
@@ -195,13 +195,13 @@ def character_segments(
         rows = db.execute(
             """SELECT s.id,s.text,s.traditional_text,s.simplified_text,s.is_word,sc.count_in_segment,
             sum(ss.occurrence_count)::bigint AS occurrence_count,
-            coalesce(p.learned,false) AS learned,coalesce(p.learning,false) AS learning
+            coalesce(p.learned,false) AS learned,coalesce(p.learning,false) AS learning,coalesce(p.practice,0) AS practice
             FROM corpus.segment_characters sc JOIN corpus.segments s ON s.id=sc.segment_id
             JOIN corpus.story_segment_stats ss ON ss.segment_id=s.id
             JOIN corpus.stories d ON d.id=ss.story_id AND d.status='completed'
             LEFT JOIN corpus.user_segment_progress p ON p.segment_id=s.id AND p.user_id=%s
             WHERE d.user_id=%s AND sc.character_id=%s AND s.id>%s AND (%s OR s.is_word)
-            AND (%s::uuid IS NULL OR d.id=%s) GROUP BY s.id,sc.count_in_segment,p.learned,p.learning ORDER BY s.id LIMIT %s""",
+            AND (%s::uuid IS NULL OR d.id=%s) GROUP BY s.id,sc.count_in_segment,p.learned,p.learning,p.practice ORDER BY s.id LIMIT %s""",
             (
                 user_id(),
                 user_id(),

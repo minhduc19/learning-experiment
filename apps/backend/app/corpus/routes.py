@@ -399,3 +399,27 @@ def study_history(before: Annotated[int, Query(ge=0)] = 0):
 @router.get("/study-history/{identifier}")
 def saved_study_selection(identifier: UUID):
     return history.retrieve(identifier)
+
+
+@router.get("/segments/{segment_id}")
+def segment_detail(segment_id: int):
+    from app.corpus.script_forms import hydrate_forms
+
+    with connect() as db:
+        queries.require_vocabulary(db, "segment", segment_id)
+        row = db.execute(
+            """SELECT s.*,coalesce(p.learned,false) AS learned,
+            coalesce(p.learning,false) AS learning,coalesce(p.practice,0) AS practice
+            FROM corpus.segments s LEFT JOIN corpus.user_segment_progress p ON p.segment_id=s.id AND p.user_id=%s
+            WHERE s.id=%s""",
+            (user_id(), segment_id),
+        ).fetchone()
+        row["characters"] = db.execute(
+            """SELECT c.* FROM corpus.segment_characters sc
+            JOIN corpus.characters c ON c.id=sc.character_id WHERE sc.segment_id=%s ORDER BY c.id""",
+            (segment_id,),
+        ).fetchall()
+        row["characters"] = [
+            hydrate_forms(char, "value", vocabulary=True) for char in row["characters"]
+        ]
+    return hydrate_forms(row, "text", vocabulary=True)

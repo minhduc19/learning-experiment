@@ -35,6 +35,12 @@ class Question(Model):
     sentence: str = Field(min_length=1, max_length=20000)
     answer: str
     translation: str | None = None
+    target_character: str | None = Field(
+        default=None, alias="target-character", min_length=1, max_length=1
+    )
+    target_segment: str | None = Field(
+        default=None, alias="target-segment", min_length=1, max_length=256
+    )
     options: list[Option] = Field(min_length=2, max_length=20)
 
     @model_validator(mode="after")
@@ -109,7 +115,12 @@ def create_lesson(raw: Annotated[object, Depends(read_json)]):
         return db.execute(
             """INSERT INTO corpus.lessons(id,user_id,title,document) VALUES (%s,%s,%s,%s)
             RETURNING id,title,document,revision,created_at,updated_at""",
-            (uuid4(), user_id(), document.title, Jsonb(document.model_dump())),
+            (
+                uuid4(),
+                user_id(),
+                document.title,
+                Jsonb(document.model_dump(by_alias=True)),
+            ),
         ).fetchone()
 
 
@@ -156,7 +167,7 @@ def update_lesson(identifier: UUID, raw: Annotated[object, Depends(read_json)]):
             WHERE id=%s AND user_id=%s RETURNING id,title,document,revision,created_at,updated_at""",
             (
                 update.document.title,
-                Jsonb(update.document.model_dump()),
+                Jsonb(update.document.model_dump(by_alias=True)),
                 identifier,
                 user_id(),
             ),
@@ -181,3 +192,17 @@ def delete_lesson(identifier: UUID, revision: int = Query(ge=1)):
             (identifier, user_id()),
         )
     return Response(status_code=204)
+
+
+@router.post("/{identifier}/attempts", status_code=201)
+def start_attempt(identifier: UUID):
+    from app.lessons.attempts import start
+
+    return start(identifier)
+
+
+@router.post("/attempts/{identifier}/complete")
+def complete_attempt(identifier: UUID, raw: Annotated[object, Depends(read_json)]):
+    from app.lessons.attempts import finish
+
+    return finish(identifier, raw)

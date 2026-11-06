@@ -21,3 +21,11 @@ test('invalid JSON, unsupported types, duplicate placement IDs and invalid answe
     assert.throws(()=>parseLesson(JSON.stringify(lesson)))
   }
 })
+
+test('lesson targets preserve hyphenated keys and validate character lengths', () => {
+  const lesson=structuredClone(sampleLesson)
+  lesson.items[0].data['target-character']='心';lesson.items[0].data['target-segment']='道心'
+  assert.equal(parseLesson(JSON.stringify(lesson)).items[0].data['target-segment'],'道心')
+  lesson.items[0].data['target-character']='心中'
+  assert.throws(()=>parseLesson(JSON.stringify(lesson)))
+})

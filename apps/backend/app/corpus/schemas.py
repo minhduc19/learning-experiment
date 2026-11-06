@@ -60,6 +60,7 @@ class Character(BaseModel):
     segment_occurrence_count: int
     learned: bool
     learning: bool
+    practice: int = 0
 
 
 class CharacterProgress(BaseModel):
@@ -108,6 +109,7 @@ class Segment(BaseModel):
     sentence_count: int | None = None
     learned: bool
     learning: bool
+    practice: int = 0
 
 
 class Match(BaseModel):

@@ -5,6 +5,7 @@ import { questions } from '../data/questions.js'
 import { strictQuestions } from '../data/strictQuestions.js'
 
 const props = defineProps({
+  assessment: { type: Boolean, default: false },
   strict: { type: Boolean, default: false },
   embedded: { type: Boolean, default: false },
   showInstructions: { type: Boolean, default: true },
@@ -14,7 +15,7 @@ const props = defineProps({
   textSize: { type: Number, default: null, validator: (value) => value === null || (Number.isFinite(value) && value > 0) },
   translationSize: { type: Number, default: null, validator: (value) => value === null || (Number.isFinite(value) && value > 0) },
 })
-const emit = defineEmits(['passed'])
+const emit = defineEmits(['passed', 'answered'])
 const questionHeadingId = useId()
 const feedbackHeadingId = useId()
 const feedbackDescriptionId = useId()
@@ -34,6 +35,7 @@ function selectOption(option, position) {
 async function checkAnswer() {
   if (!selected.value || checked.value) return
   check()
+  emit('answered', { optionId: selected.value.id })
   if (props.embedded && correct.value) emit('passed')
   await nextTick()
   feedbackHeading.value?.focus()
@@ -126,7 +128,7 @@ async function startAgain() {
         <p v-if="correct && question.translation" class="activity-translation"><strong>{{ translationLabel }}</strong><br>{{ question.translation }}</p>
         <p :id="feedbackDescriptionId">{{ selected.feedback }}</p>
         </div>
-        <div v-if="!embedded || !correct" class="activity-feedback-actions">
+        <div v-if="!assessment && (!embedded || !correct)" class="activity-feedback-actions">
         <button class="button activity-action" autofocus @click="dismissFeedback">{{ strict ? ((failed || index === total - 1) ? 'See results' : 'Continue') : (correct ? 'Continue' : 'Try again') }}</button>
         </div>
       </template>

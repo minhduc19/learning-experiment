@@ -39,3 +39,46 @@ version after confirmation, warns before abandoning edits, and asks for explicit
 confirmation before deleting a lesson. No learner progress or lesson-attempt
 history is stored in this first version. Lesson editing does not alter the static
 question bank or existing quiz routes.
+
+## Lesson practice points
+
+Each multiple-choice question's data may include `"target-character": "心"` and
+`"target-segment": "道心"`. These optional hyphenated keys contain corpus text,
+not IDs. Existing lessons without targets still play and receive a score.
+Targets resolve to the owner's completed corpus: exact original text takes
+precedence, otherwise one unambiguous stored traditional/simplified match is
+accepted. Missing or ambiguous matches are reported without awarding points.
+
+Open a saved lesson and choose Play saved lesson (`/lessons/:lessonId/play`).
+Questions play in placement order. Users can change selections before Check;
+the first checked answer then locks. Every question advances, including incorrect
+answers, and completion submits selected option IDs. The server grades against
+an immutable lesson snapshot taken at attempt start, so editing the saved lesson
+cannot alter an in-progress attempt's answers or targets. Previewing in the
+editor does not record practice.
+
+POST `/api/lessons/{id}/attempts` starts an owned attempt. POST
+`/api/lessons/attempts/{attemptId}/complete` accepts:
+
+```json
+{"answers": [{"item_id": "item-1", "option_id": "correct-option-id"}]}
+```
+
+Supply exactly one valid option per item. The server independently determines
+correctness and increments each resolved target once per correct question in a
+single transaction. Repeated targets on different correct questions earn separate
+points. The attempt row is locked and its result persisted; duplicate/concurrent
+completion requests return the same result without awarding again. A new attempt
+can earn more points. No practice is awarded for unfinished lessons.
+
+Completion returns correct/incorrect totals and deduplicated character/segment
+summaries with IDs, Learned/Learning flags, total `practice` and this attempt's
+`earned` points. Summaries reflect completion time. Targets are clickable;
+`/segments/:segmentId` now shows segment details and sentences, linking back to
+its characters. Character/segment corpus responses expose integer practice totals.
+
+Migration `008_lesson_practice.sql` adds nonnegative bigint `practice` columns to
+personal progress tables, not shared vocabulary definitions, and creates private
+`corpus.lesson_attempts` snapshots/results. Marks and points remain independent;
+changing Learned/Learning flags preserves points. Existing data starts at zero.
+Normal deployment applies the migration without resetting any corpus data.

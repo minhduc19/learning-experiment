@@ -82,7 +82,7 @@ onUnmounted(() => { revision += 1; controller?.abort() })
         <div>
           <p class="corpus-summary-caption">Across all completed stories</p>
           <dl class="corpus-metrics">
-            <div><dt>Character occurrences</dt><dd>{{ formatCount(character.occurrence_count) }}</dd></div>
+            <div><dt>Practice points</dt><dd>{{ formatCount(character.practice || 0) }}</dd></div><div><dt>Character occurrences</dt><dd>{{ formatCount(character.occurrence_count) }}</dd></div>
             <div><dt>Different word segments</dt><dd>{{ formatCount(character.distinct_segment_count) }}</dd></div>
             <div><dt>Word segment appearances</dt><dd>{{ formatCount(character.segment_occurrence_count) }}</dd></div>
             <div><dt>Matching sentences</dt><dd>{{ formatCount(character.sentence_count) }}</dd></div>
@@ -102,7 +102,7 @@ onUnmounted(() => { revision += 1; controller?.abort() })
             <button class="corpus-segment-card" :class="{ 'is-selected': selectedSegment?.id === segment.id }" :aria-pressed="selectedSegment?.id === segment.id" @click="selectSegment(segment)">
               <span class="corpus-segment-text" lang="zh-Hans">{{ characterLabel(segment.traditional_text || segment.text) }}<small v-if="segment.simplified_text && segment.simplified_text !== (segment.traditional_text || segment.text)" class="corpus-script-alternative" lang="zh-Hans">{{ characterLabel(segment.simplified_text) }}</small></span>
               <span class="corpus-segment-stats"><span><strong>{{ formatCount(segment.occurrence_count) }}</strong> {{ segment.occurrence_count === 1 ? 'appearance' : 'appearances' }}</span><span><strong>{{ formatCount(segment.sentence_count) }}</strong> {{ segment.sentence_count === 1 ? 'sentence' : 'sentences' }}</span></span>
-              <span class="corpus-muted">{{ formatCount(segment.count_in_segment) }} × {{ characterLabel(character.value) }} per segment</span>
+              <span class="corpus-muted">Practice: {{ formatCount(segment.practice || 0) }}</span><span class="corpus-muted">{{ formatCount(segment.count_in_segment) }} × {{ characterLabel(character.value) }} per segment</span>
             </button>
             <VocabularyProgressControls :entry="segment" resource="segments" id-field="segment_id" :label="`Learning marks for segment ${characterLabel(segment.traditional_text || segment.text)}`" />
           </li>
