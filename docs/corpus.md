@@ -54,6 +54,13 @@ changing marks from another page or device.
 
 ## Sentence practice
 
+Corpus API database statements currently allow 120 seconds. Nginx waits 130
+seconds for API responses and the character/sentence page fetcher waits 140
+seconds, allowing time for the backend to return a database timeout response.
+This temporary increase applies to corpus page requests; worker statements keep
+their existing unlimited timeout and database health checks keep their short
+connection settings. Rebuild/redeploy both backend and frontend to apply it.
+
 Ranking aggregates matches once per stored fragment, then combines fragment
 counts into logical sentences and retains the first matching fragment's offset.
 It materializes the requested page before loading text and fragment counts.

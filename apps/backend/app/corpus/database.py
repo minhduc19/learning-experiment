@@ -9,7 +9,7 @@ from psycopg.rows import dict_row
 
 @contextmanager
 def connect(*, worker=False):
-    timeout = 0 if worker else 30000
+    timeout = 0 if worker else 120000
     with psycopg.connect(
         os.getenv("DATABASE_URL", ""),
         connect_timeout=5,
