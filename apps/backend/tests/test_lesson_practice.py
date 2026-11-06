@@ -53,6 +53,8 @@ def test_completion_awards_correct_targets_once_and_keeps_marks(client):
     with ThreadPoolExecutor(max_workers=2) as pool:
         results = list(pool.map(complete, range(2)))
     assert results[0] == results[1]
+    assert results[0]["characters"][0]["pinyin"]
+    assert results[0]["segments"][0]["pinyin"]
     assert results[0]["characters"][0]["practice"] == 2
     assert results[0]["characters"][0]["earned"] == 2
     assert results[0]["characters"][0]["learned"] is True
