@@ -139,3 +139,8 @@
 .practice-mark.is-learned { background-image:linear-gradient(#278044,#278044); }
 .practice-mark.is-learning { background-image:linear-gradient(#b77906,#b77906); }
 .practice-mark.is-both { background-image:linear-gradient(to right,#278044 0 50%,#b77906 50% 100%); }
+.lesson-editor-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:1.5rem; margin-top:1.5rem; align-items:start; }
+.lesson-editor-grid > * { min-width:0; }
+#lesson-json { display:block; width:100%; height:65vh; min-height:20rem; margin-top:.5rem; padding:1rem; resize:vertical; font-family:monospace; font-size:.9rem; color:var(--color-text); background:white; border:1px solid #bacdc4; border-radius:.6rem; }
+.lesson-preview-item { margin-block:1.5rem; padding:1rem; background:white; border:1px solid #dce6e0; border-radius:1rem; }
+@media(max-width:760px) { .lesson-editor-grid { grid-template-columns:1fr; } #lesson-json { height:45vh; } }
