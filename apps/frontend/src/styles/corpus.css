@@ -129,6 +129,7 @@
 .study-segments { list-style:none; display:flex; flex-wrap:wrap; gap:.5rem; padding:0; }
 .study-segments li { display:flex; flex-direction:column; padding:.4rem .6rem; border:1px solid #dce6e0; border-radius:.5rem; white-space:pre-wrap; overflow-wrap:anywhere; max-width:100%; }
 .study-segments small { color:#52665d; }
+.study-export-text { display:block; width:100%; margin-top:1rem; padding:.75rem; resize:vertical; white-space:pre; font-family:monospace; border:1px solid #bacdc4; border-radius:.5rem; }
 .study-segments .study-target { border-color:var(--color-primary); background:#edf6ef; }
 .study-sentence details { margin-top:1rem; }
 .study-sentence summary { cursor:pointer; color:var(--color-primary); }
