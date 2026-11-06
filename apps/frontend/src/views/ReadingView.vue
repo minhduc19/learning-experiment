@@ -4,6 +4,8 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import MultipleChoiceActivity from '../components/MultipleChoiceActivity.vue'
 import { useReadingProgress } from '../composables/useReadingProgress.js'
 
+// A supplied document restores the local sample without changing API-backed readings.
+const props = defineProps({ document: { type: Object, default: null } })
 const route = useRoute()
 const router = useRouter()
 const reading = ref(null)
@@ -26,6 +28,7 @@ async function loadReading(id = route.query.reading) {
   reading.value = null
   selected.value = null
   if (popup.value?.matches(':popover-open')) popup.value.hidePopover()
+  if (props.document) { reading.value = props.document; loading.value = false; return }
   if (!id) { loading.value = false; return }
   if (typeof id !== 'string') { loading.value = false; errorMessage.value = 'Invalid reading link.'; return }
   const request = new AbortController()
@@ -173,7 +176,7 @@ onUnmounted(() => {
       </div>
     </header>
 
-    <section class="reading-import" aria-labelledby="reading-import-title">
+    <section v-if="!props.document" class="reading-import" aria-labelledby="reading-import-title">
       <h2 id="reading-import-title">Create a Chinese reading</h2>
       <form class="stack" :aria-busy="generating" @submit.prevent="generateReading">
         <label class="reading-import-label">Title (optional)
