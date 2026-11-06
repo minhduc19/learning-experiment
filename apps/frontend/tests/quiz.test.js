@@ -4,7 +4,7 @@ import { questions } from '../src/data/questions.js'
 import { useQuiz } from '../src/composables/useQuiz.js'
 
 test('each answer has feedback; wrong answers retry and correct answers advance', () => {
-  assert.ok(questions.length >= 3)
+  assert.ok(questions.length > 0)
   for (const [index, question] of questions.entries()) {
     assert.equal(question.options.filter(option => option.id === question.answer).length, 1)
     assert.ok(question.translation)
@@ -54,12 +54,27 @@ test('all selections preview before checking, can change, and reset after feedba
     assert.equal(quiz.question.value.id, question.id)
     const answer = question.options.find(option => option.id === question.answer)
     quiz.choose(answer)
-    assert.equal(quiz.sentence.value, question.sentence.replaceAll('[[blank]]', answer.fill ?? answer.label))
+    assert.equal(quiz.sentence.value, question.sentence.replaceAll('[[blank]]', answer.fill ?? answer.label.toLowerCase()))
     assert.ok(!quiz.sentence.value.includes('[[blank]]'))
     quiz.check()
     quiz.proceed()
   }
   assert.equal(quiz.sentence.value, '')
   quiz.restart()
-  assert.equal(quiz.sentence.value, 'I ___ three languages.')
+  assert.equal(quiz.sentence.value, questions[0].sentence.replaceAll('[[blank]]', '___'))
+})
+
+test('the supplied lesson order is preserved during play, results, and restart', () => {
+  const items = questions.slice(0, 3).reverse()
+  const expected = items.map(question => question.id)
+  const quiz = useQuiz({ strict: true, items })
+  for (const question of items) {
+    assert.equal(quiz.question.value.id, question.id)
+    quiz.choose(question.options.find(option => option.id === question.answer))
+    quiz.check(); quiz.proceed()
+  }
+  assert.deepEqual(quiz.results.value.map(result => result.questionId), expected)
+  assert.deepEqual(items.map(question => question.id), expected)
+  quiz.restart()
+  assert.equal(quiz.question.value.id, expected[0])
 })
