@@ -5,17 +5,19 @@ import { questions } from '../data/questions.js'
 import { strictQuestions } from '../data/strictQuestions.js'
 
 const props = defineProps({
+  restartHandler: { type: Function, default: null },
+  completionBusy: { type: Boolean, default: false },
   assessment: { type: Boolean, default: false },
   strict: { type: Boolean, default: false },
   embedded: { type: Boolean, default: false },
   showInstructions: { type: Boolean, default: true },
   items: { type: Array, default: null },
-  translationLabel: { type: String, default: 'Spanish translation' },
+  translationLabel: { type: String, default: 'Translation' },
   // Pixel values; null keeps the standalone activity's default typography.
   textSize: { type: Number, default: null, validator: (value) => value === null || (Number.isFinite(value) && value > 0) },
   translationSize: { type: Number, default: null, validator: (value) => value === null || (Number.isFinite(value) && value > 0) },
 })
-const emit = defineEmits(['passed', 'answered'])
+const emit = defineEmits(['passed', 'answered', 'completed'])
 const questionHeadingId = useId()
 const feedbackHeadingId = useId()
 const feedbackDescriptionId = useId()
@@ -35,7 +37,7 @@ function selectOption(option, position) {
 async function checkAnswer() {
   if (!selected.value || checked.value) return
   check()
-  emit('answered', { optionId: selected.value.id })
+  emit('answered', { optionId: selected.value.id, index: index.value })
   if (props.embedded && correct.value) emit('passed')
   await nextTick()
   feedbackHeading.value?.focus()
@@ -46,12 +48,14 @@ async function dismissFeedback() {
   if (props.embedded && correct.value) return
   const advance = props.strict || correct.value
   proceed()
+  if (complete.value) emit('completed')
   await nextTick()
   if (advance) (heading.value ?? questionSection.value)?.focus()
   else answerButtons.value[lastAnswer]?.focus()
 }
 
 async function startAgain() {
+  if (props.restartHandler) { await props.restartHandler(); return }
   restart()
   await nextTick()
   heading.value?.focus()
@@ -89,7 +93,8 @@ async function startAgain() {
         </div>
       </template>
       <p v-else>You completed all {{ total }} questions. A little practice goes a long way.</p>
-      <button class="button activity-action" @click="startAgain">{{ strict ? 'Redo quiz' : 'Practice again' }}</button>
+      <slot name="completion" />
+      <button class="button activity-action" :disabled="completionBusy" @click="startAgain">{{ strict ? 'Redo quiz' : 'Practice again' }}</button>
     </section>
 
     <section v-else class="activity-screen-question" ref="questionSection" tabindex="-1" :key="question.id" :aria-labelledby="showInstructions ? questionHeadingId : undefined" :aria-label="showInstructions ? undefined : question.instruction">
