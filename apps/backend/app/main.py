@@ -1,3 +1,5 @@
+import logging
+
 import psycopg
 from fastapi import FastAPI
 from fastapi.openapi.docs import get_swagger_ui_html
@@ -47,6 +49,13 @@ def api_documentation():
 
 @app.exception_handler(psycopg.Error)
 async def database_unavailable(request, error):
+    logging.getLogger("uvicorn.error").error(
+        "Database failure: method=%s path=%s sqlstate=%s",
+        request.method,
+        request.url.path,
+        error.sqlstate,
+        exc_info=(type(error), error, error.__traceback__),
+    )
     return JSONResponse(
         status_code=503, content={"detail": "Database service unavailable"}
     )
