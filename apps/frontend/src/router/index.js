@@ -76,10 +76,10 @@ export const routes = [
     meta: { title: 'API documentation' },
   },
   {
-    path: '/ideas/two',
-    name: 'idea-two',
-    component: () => import('../views/IdeaTwoView.vue'),
-    meta: { title: 'Idea two' },
+    path: '/sample-reading-app',
+    name: 'sample-reading-app',
+    component: () => import('../views/SampleReadingView.vue'),
+    meta: { title: 'Sample reading app', fullscreen: true },
   },
   {
     path: '/:pathMatch(.*)*',

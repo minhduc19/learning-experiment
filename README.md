@@ -66,7 +66,7 @@ The frontend uses Vue Router with browser history and lazy-loaded pages:
   in each sentence; the selected option’s `fill` text replaces the marker immediately (a lowercase
   `label` is used if `fill` is omitted). Students can change their selection,
   then press Check to see feedback.
-- `/ideas/two`: `apps/frontend/src/views/IdeaTwoView.vue`
+- `/sample-reading-app`: `apps/frontend/src/views/SampleReadingView.vue` renders `apps/frontend/src/data/reading.json`, including reading sentences and practice checkpoints (restored from `04d41e030411b0965aa34c597bdd3568d7e8e810`).
 - Unknown URLs show a page with a link back home.
 
 Build each idea in its own view component. To add another idea, create a `.vue`
