@@ -346,7 +346,7 @@ def test_migrations_are_idempotent(client):
             db.execute("SELECT count(*) AS n FROM corpus.schema_migrations").fetchone()[
                 "n"
             ]
-            == 4
+            == 5
         )
 
 

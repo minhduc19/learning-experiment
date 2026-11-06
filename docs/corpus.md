@@ -1,5 +1,27 @@
 # Chinese corpus API
 
+## Personal segment learning marks
+
+On `/characters/:characterId`, every associated segment has separate Learned and
+Learning toggles, outside the button that selects its sentences. Either mark can
+be removed with another click; both selected means revision. Changes save
+automatically, persist after reload, and are shared across that user's character
+association pages for the same segment. They do not change character marks.
+
+`PATCH /api/corpus/segments/{segment_id}/progress` accepts `learned` and/or
+`learning` as strict booleans and returns `{segment_id, learned, learning}`.
+Omitted fields keep their previous values. Empty updates, nulls, unknown fields,
+and non-booleans return 422. Missing login returns 401; segments absent from the
+current user's completed corpus return 404. Concurrent partial updates preserve
+both flags. Segment-list responses include the current user's flags, defaulting
+to false when unmarked. Shared vocabulary and occurrence counts are unchanged.
+
+Migration `005_segment_progress.sql` creates `corpus.user_segment_progress`,
+keyed by `(user_id, segment_id)` with user/segment foreign keys. Normal Compose
+deployment applies it automatically, preserving existing data and character
+progress. No database reset is needed. Character and segment controls share the
+same frontend save, rollback, keyboard, and revision UI behavior.
+
 ## Study selection
 
 `/study-selection` accepts counts for random learned review and new characters
