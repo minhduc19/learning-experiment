@@ -5,7 +5,7 @@ function cell(value) {
   return String(value ?? '').replaceAll('\\', '\\\\').replaceAll('|', '\\|').replaceAll('\r', '\\r').replaceAll('\n', '\\n')
 }
 
-export function buildStudyExport(selection, script = 'simplified') {
+export function studyExportRows(selection, script = 'simplified') {
   const rows = [], seen = new Set()
   const variant = (entry, suffix, source) => entry?.[`${script}_${suffix}`] ?? entry?.[source] ?? ''
   function add(character, segment, sentence) {
@@ -13,7 +13,7 @@ export function buildStudyExport(selection, script = 'simplified') {
       variant(segment, 'text', 'text'), segment?.id,
       variant(sentence, 'text', 'raw_text'), sentence?.id]
     const key = JSON.stringify(row)
-    if (!seen.has(key)) { seen.add(key); rows.push(row.map(cell).join('|')) }
+    if (!seen.has(key)) { seen.add(key); rows.push(row) }
   }
   for (const character of selection?.learned ?? []) {
     if (!character.popular_segments?.length) add(character)
@@ -26,7 +26,17 @@ export function buildStudyExport(selection, script = 'simplified') {
     if (!segments.length) add(character, undefined, sentence)
     for (const segment of segments) add(character, segment, sentence)
   }
-  return [studyExportHeader, ...rows].join('\n')
+  return rows
+}
+
+export function buildStudyExport(selection, script = 'simplified') {
+  return [studyExportHeader, ...studyExportRows(selection, script).map(row => row.map(cell).join('|'))].join('\n')
+}
+
+export function buildVocabularyPrompt(selection, script = 'traditional') {
+  const rows = studyExportRows(selection, script).map(row => [row[0],row[2],row[4],row[5]])
+  const unique = [...new Map(rows.map(row => [JSON.stringify(row),row])).values()]
+  return ['Character|segment|sentence|sentence-id', ...unique.map(row => row.map(cell).join('|'))].join('\n')
 }
 
 export async function copyStudyText(text) {

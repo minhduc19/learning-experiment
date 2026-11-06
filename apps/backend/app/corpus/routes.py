@@ -423,3 +423,12 @@ def segment_detail(segment_id: int):
             hydrate_forms(char, "value", vocabulary=True) for char in row["characters"]
         ]
     return hydrate_forms(row, "text", vocabulary=True)
+
+
+@router.post("/study-selection", status_code=201)
+def generate_and_save_selection(
+    learned_count: Annotated[int, Query(ge=0, le=50)] = 5,
+    new_count: Annotated[int, Query(ge=0, le=50)] = 5,
+):
+    """Generate vocabulary and save its History snapshot in one operation."""
+    return history.generate(learned_count, new_count)

@@ -3,7 +3,7 @@ import { computed, onUnmounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter, RouterLink } from 'vue-router'
 import { authorizedFetch } from '../composables/useAuth'
 import { parseLesson, sampleLesson } from '../composables/lessonJson'
-import LessonPreview from '../components/LessonPreview.vue'
+import LessonJsonWorkspace from '../components/LessonJsonWorkspace.vue'
 const route = useRoute(), router = useRouter()
 const text = ref(''), baseline = ref(''), revision = ref(null), busy = ref(false), error = ref(''), message = ref(''), confirmDelete = ref(false), loaded = ref(false)
 const creating = computed(() => route.name === 'lesson-new')
@@ -55,11 +55,12 @@ watch([() => route.name, () => route.params.lessonId], load, { immediate: true }
   <main class="page corpus-page lesson-editor"><RouterLink to="/lessons">← All lessons</RouterLink><h1>{{ creating ? 'Create a lesson' : 'Edit lesson' }}</h1>
     <p>Paste a lesson object or a JSON array from questions.js (without the JavaScript export declaration). Items stay in array order. Currently supported: multiple-choice.</p>
     <p v-if="error" class="corpus-error" role="alert">{{ error }} <button v-if="!loaded" class="corpus-text-button" @click="load">Retry</button></p><p v-if="message" role="status">{{ message }}</p><p v-if="busy" role="status">Loading or saving lesson…</p>
-    <template v-if="loaded"><div class="cluster"><RouterLink v-if="!creating" class="button" :to="`/lessons/${route.params.lessonId}/play`">Play saved lesson</RouterLink><button class="button" :disabled="busy || !parsed.document" @click="save">{{ creating ? 'Create lesson' : 'Save changes' }}</button><button class="corpus-text-button" :disabled="busy || !parsed.document" @click="text = JSON.stringify(parsed.document,null,2)">Format JSON</button><button v-if="!creating" class="corpus-text-button" :disabled="busy" @click="leaving() && load()">Reload saved lesson</button><button v-if="!creating" class="corpus-text-button" :disabled="busy" @click="confirmDelete = !confirmDelete">Delete lesson</button><span>{{ dirty ? 'Unsaved changes' : creating ? 'Not saved yet' : `Saved · revision ${revision}` }}</span></div>
-      <section v-if="confirmDelete" class="corpus-error" role="alert"><p>Permanently delete this lesson{{ dirty ? ' and discard unsaved changes' : '' }}?</p><button class="button" :disabled="busy" @click="remove">Confirm delete</button><button class="corpus-text-button" @click="confirmDelete=false">Cancel</button></section>
-      <div class="lesson-editor-grid"><section><label for="lesson-json"><strong>Lesson JSON</strong></label><textarea id="lesson-json" v-model="text" :disabled="busy" spellcheck="false" :aria-invalid="Boolean(parsed.error)" aria-describedby="lesson-json-status" /><p id="lesson-json-status" :role="parsed.error ? 'alert' : 'status'">{{ parsed.error || 'Valid lesson JSON. Preview updates as you edit.' }}</p></section>
-        <LessonPreview v-if="parsed.document" :key="text" :lesson="parsed.document" /><section v-else class="corpus-empty"><h2>Preview unavailable</h2><p>Fix the JSON errors to preview and save this lesson.</p></section>
-      </div>
+    <template v-if="loaded">
+      <LessonJsonWorkspace v-model="text" :busy="busy" :creating="creating" @save="save">
+        <template #before-actions><RouterLink v-if="!creating" class="button" :to="`/lessons/${route.params.lessonId}/play`">Play saved lesson</RouterLink></template>
+        <template #actions><button v-if="!creating" class="corpus-text-button" :disabled="busy" @click="leaving() && load()">Reload saved lesson</button><button v-if="!creating" class="corpus-text-button" :disabled="busy" @click="confirmDelete = !confirmDelete">Delete lesson</button><span>{{ dirty ? 'Unsaved changes' : creating ? 'Not saved yet' : `Saved · revision ${revision}` }}</span></template>
+        <template #after-actions><section v-if="confirmDelete" class="corpus-error" role="alert"><p>Permanently delete this lesson{{ dirty ? ' and discard unsaved changes' : '' }}?</p><button class="button" :disabled="busy" @click="remove">Confirm delete</button><button class="corpus-text-button" @click="confirmDelete=false">Cancel</button></section></template>
+      </LessonJsonWorkspace>
     </template>
   </main>
 </template>

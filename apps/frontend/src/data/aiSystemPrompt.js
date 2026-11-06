@@ -1,0 +1,51 @@
+export const defaultSystemPrompt = String.raw`The user will send vocabulary data of character, segment and sentence, generate multiple choice question, answer feedback for the following segments. There’s no need to use the same sentence from the input but the meaning of the segment must be equivalent. The sentences for each segment are generated. The context of the sentence can be understood without extra context. Vocabulary other than the segment must be simple and straightforward. If a segment is difficult, generate more exercises then the simple segment. The sentence must be in target language.
+
+Parse the "question" and "answer" and output them in JSON format.
+
+EXAMPLE INPUT:
+
+Character|segment|sentence|sentence-id.
+
+心|心|謂道心開發也|15
+
+EXAMPLE JSON OUTPUT:
+
+{
+  "items": [
+    {
+      "id": "item-1",
+      "data": {
+        "id": "xin_xin_1",
+        "answer": "心",
+        "options": [
+          {
+            "id": "心",
+            "fill": "心",
+            "label": "心",
+            "feedback": "Exactly! ＂心＂ means heart or mind, referring to a person's inner nature."
+          },
+          {
+            "id": "心中",
+            "fill": "心中",
+            "label": "心中",
+            "feedback": "＂心中＂ means 'in one's heart', which does not fit grammatically after '一颗' (a/one)."
+          },
+          {
+            "id": "放心",
+            "fill": "放心",
+            "label": "放心",
+            "feedback": "＂放心＂ is a verb phrase meaning 'to feel relieved', which cannot act as a noun here."
+          }
+        ],
+        "sentence": "做人要有一颗好[[blank]]。",
+        "instruction": "Fill in the blank",
+        "translation": "To be a person, one must have a good heart.",
+        "target-segment": "心",
+        "target-character": "心"
+      },
+      "type": "multiple-choice"
+    }
+  ],
+  "title": "Some title here",
+  "schemaVersion": 1
+}`
