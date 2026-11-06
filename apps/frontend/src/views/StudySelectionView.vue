@@ -4,6 +4,31 @@ import { RouterLink } from 'vue-router'
 import { authorizedFetch } from '../composables/useAuth'
 import StudySentence from '../components/StudySentence.vue'
 const learnedCount = ref(5), newCount = ref(5), loading = ref(false), error = ref(''), result = ref(null)
+const entries = ref([]), nextHistory = ref(null), historyBusy = ref(false), historyLoaded = ref(false), historyError = ref(''), savedAt = ref(null)
+async function loadHistory(more = false) {
+  if (historyBusy.value) return
+  historyBusy.value = true; historyError.value = ''
+  try {
+    const response = await authorizedFetch('/api/corpus/study-history' + (more && nextHistory.value ? '?before=' + nextHistory.value : ''))
+    if (!response.ok) throw new Error('Could not load history. Try again.')
+    const data = await response.json()
+    entries.value = more ? [...entries.value, ...data.items] : data.items
+    nextHistory.value = data.next; historyLoaded.value = true
+  } catch (failure) { historyError.value = failure.message }
+  finally { historyBusy.value = false }
+}
+async function openSaved(id) {
+  if (loading.value) return
+  loading.value = true; error.value = ''; controller = new AbortController()
+  try {
+    const response = await authorizedFetch('/api/corpus/study-history/' + id, { signal: controller.signal })
+    if (!response.ok) throw new Error('Could not open saved selection. Try again.')
+    const saved = await response.json()
+    result.value = saved.data; savedAt.value = saved.created_at
+    learnedCount.value = saved.data.requested.learned; newCount.value = saved.data.requested.new
+  } catch (failure) { if (!controller.signal.aborted) error.value = failure.message }
+  finally { loading.value = false }
+}
 let controller
 async function generate() {
   if (loading.value) return
@@ -12,9 +37,11 @@ async function generate() {
   }
   controller = new AbortController(); loading.value = true; error.value = ''
   try {
-    const response = await authorizedFetch('/api/corpus/study-selection?' + new URLSearchParams({ learned_count: learnedCount.value, new_count: newCount.value }), { signal: controller.signal })
+    const response = await authorizedFetch('/api/corpus/study-history?' + new URLSearchParams({ learned_count: learnedCount.value, new_count: newCount.value }), { method: 'POST', signal: controller.signal })
     if (!response.ok) throw new Error('Could not generate your selection. Please try again.')
-    result.value = await response.json()
+    const saved = await response.json()
+    result.value = saved.data; savedAt.value = saved.created_at
+    await loadHistory()
   } catch (failure) { if (!controller.signal.aborted) error.value = failure.message }
   finally { loading.value = false }
 }
@@ -24,12 +51,20 @@ onUnmounted(() => controller?.abort())
   <main class="page corpus-page study-page">
     <p class="corpus-eyebrow">A STUDY SET FROM YOUR STORIES</p><h1>Build a study selection</h1>
     <div class="cluster"><RouterLink to="/characters">Learning marks</RouterLink><RouterLink to="/sentence-practice">Sentence practice</RouterLink></div>
+    <details class="corpus-sentence-card" @toggle="$event.target.open && !historyLoaded && loadHistory()"><summary>History</summary>
+      <p class="corpus-muted">Saved snapshots keep their original results even if your marks or stories change. Opening one does not run a new search.</p>
+      <p v-if="historyError" role="alert">{{ historyError }} <button class="corpus-text-button" @click="loadHistory()">Retry</button></p>
+      <p v-if="historyBusy" role="status">Loading history…</p><p v-if="historyLoaded && !entries.length">No saved selections yet.</p>
+      <ul><li v-for="entry in entries" :key="entry.id"><button class="corpus-text-button" :disabled="loading" @click="openSaved(entry.id)">{{ new Date(entry.created_at).toLocaleString() }} · {{ entry.requested.learned }} learned / {{ entry.requested.new }} to learn</button></li></ul>
+      <button v-if="nextHistory" class="button" :disabled="historyBusy" @click="loadHistory(true)">Load more history</button>
+    </details>
+    <p v-if="savedAt" class="corpus-muted">Saved selection: {{ new Date(savedAt).toLocaleString() }}</p>
     <form class="corpus-toolbar study-form" @submit.prevent="generate">
       <div><label for="study-learned">Learned characters to review</label><input id="study-learned" v-model.number="learnedCount" type="number" min="0" max="50" step="1" required aria-describedby="study-learned-help"><p id="study-learned-help" class="corpus-filter-description">A random sample of Learned characters, including revision. Each includes up to three popular word segments and a sentence for each.</p></div>
       <div><label for="study-new">Characters to learn</label><input id="study-new" v-model.number="newCount" type="number" min="0" max="50" step="1" required aria-describedby="study-new-help"><p id="study-new-help" class="corpus-filter-description">Start with sentences containing the most Learned character appearances, then choose their unfamiliar characters by corpus frequency. Learning-only characters are eligible. Sentences with no learned characters come last.</p></div>
       <button class="button" :disabled="loading">{{ loading ? 'Building selection…' : result ? 'Generate another selection' : 'Generate selection' }}</button><p class="corpus-muted">Up to 50 in each group. Suggestions do not change your marks. Traditional and simplified text are shown together.</p>
     </form>
-    <p v-if="error" class="corpus-error" role="alert">{{ error }}</p><p v-if="loading" role="status">Finding characters and examples…</p>
+    <p v-if="error" class="corpus-error" role="alert">{{ error }}</p><p v-if="loading" role="status">Loading your selection…</p>
     <template v-if="result">
       <p role="status">Selected {{ result.learned.length }} of {{ result.requested.learned }} learned characters and {{ result.new.length }} of {{ result.requested.new }} characters to learn.</p>
       <p v-if="result.learned.length < result.requested.learned || result.new.length < result.requested.new" class="corpus-resume-note">Your corpus cannot supply the full requested counts. Mark more characters as Learned or upload more stories to expand the selection.</p>
