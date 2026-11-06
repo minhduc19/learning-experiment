@@ -13,7 +13,7 @@ from fastapi.routing import APIRoute
 from starlette.concurrency import run_in_threadpool
 
 from app.auth.dependencies import current_user, user_id
-from app.corpus import practice, progress, queries, study, uploads
+from app.corpus import history, practice, progress, queries, study, uploads
 from app.corpus.config import MAX_PATCH_BYTES, max_upload_bytes, storage_directory
 from app.corpus.database import connect
 from app.corpus.schemas import (
@@ -381,3 +381,21 @@ def export_story(
         queries.stream_text(story_id, script, owner_id=user_id()),
         media_type="text/plain; charset=utf-8",
     )
+
+
+@router.post("/study-history", status_code=201)
+def save_study_selection(
+    learned_count: Annotated[int, Query(ge=0, le=50)] = 5,
+    new_count: Annotated[int, Query(ge=0, le=50)] = 5,
+):
+    return history.generate(learned_count, new_count)
+
+
+@router.get("/study-history")
+def study_history(before: Annotated[int, Query(ge=0)] = 0):
+    return history.listing(before)
+
+
+@router.get("/study-history/{identifier}")
+def saved_study_selection(identifier: UUID):
+    return history.retrieve(identifier)

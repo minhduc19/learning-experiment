@@ -419,3 +419,19 @@ associations, and sentence/export results include only the current user's data.
 See [authentication.md](authentication.md) for endpoints, HTTPS configuration,
 and assigning existing anonymous records. Shared vocabulary definitions do not
 grant access to another user's sentences or counts.
+
+## Saved study history
+
+`/study-selection` saves each generation through `POST /api/corpus/study-history`
+(with `learned_count` and `new_count` query parameters). The History panel lists
+saved snapshots and opens them without recomputing. New generations always run
+the search and save a new snapshot. Existing GET study-selection callers retain
+their previous read-only behavior.
+
+`GET /api/corpus/study-history` lists the latest 50 metadata records; `before`
+is a nonnegative pagination offset and `next` loads further records. The list
+uses separate count columns rather than loading large JSON payloads.
+`GET /api/corpus/study-history/{id}` returns the original JSON snapshot, including
+sentences and segments, even after marks change. All endpoints are authenticated
+and owner-scoped; foreign IDs return 404. Migration `006_study_history.sql` adds
+JSONB storage in the existing PostgreSQL volume. No data reset is needed.
