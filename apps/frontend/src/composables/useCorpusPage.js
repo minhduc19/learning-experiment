@@ -34,7 +34,7 @@ export function useCorpusPage(pageSize = 30, fetcher = authorizedFetch) {
     controller = requestController
     const signal = requestController.signal
     let timedOut = false
-    const timeout = setTimeout(() => { timedOut = true; requestController.abort() }, 35000)
+    const timeout = setTimeout(() => { timedOut = true; requestController.abort() }, 140000)
     state.loading = true
     state.error = ''
     const params = new URLSearchParams({ limit: String(pageSize) })
