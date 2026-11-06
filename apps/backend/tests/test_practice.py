@@ -7,6 +7,22 @@ from test_corpus import corpus_database, imported, pytestmark  # noqa: F401
 client = corpus_client_fixture
 
 
+def test_excerpt_offset_belongs_to_first_matching_fragment(client):
+    imported(client, "他" * 1500 + "學" + "他" * 3000 + "學。")
+    character = client.get("/api/corpus/characters?character=學").json()["items"][0]
+    client.patch(
+        f"/api/corpus/characters/{character['id']}/progress", json={"learned": True}
+    )
+    result = client.get("/api/corpus/practice-sentences?limit=1")
+    assert result.status_code == 200, result.text
+    row = result.json()["items"][0]
+    assert row["matched_count"] == 2
+    assert row["excerpt_offset"] == 1300
+    assert row["raw_text"][200] == "學"
+    assert [mark["offset"] for mark in row["marks"]] == [200]
+    assert row["is_excerpt"] is True
+
+
 def test_long_logical_sentence_is_ranked_once_with_bounded_excerpt(client):
     imported(client, "學" * 4200 + "。")
     row = client.get("/api/corpus/characters?character=學").json()["items"][0]

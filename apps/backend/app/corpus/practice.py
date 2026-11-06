@@ -29,15 +29,17 @@ def practice_sentences(cursor=None, limit=20):
                 raise HTTPException(422, "Invalid practice cursor") from None
         rows = db.execute(
             ranking_cte()
-            + """            SELECT r.*,d.title AS story_title,s.id,s.raw_text,s.part_position,s.is_final,
-              (SELECT min(h.offset) FROM hits h WHERE h.story_id=r.story_id
-                AND h.sentence_position=r.sentence_position AND h.position=r.preview_position) AS first_offset,
+            + """, selected AS MATERIALIZED (
+                SELECT * FROM ranked
+                WHERE matched_count<%s OR (matched_count=%s AND (story_id,sentence_position)>(%s,%s))
+                ORDER BY matched_count DESC,story_id,sentence_position LIMIT %s
+            )
+            SELECT r.*,d.title AS story_title,s.id,s.raw_text,s.part_position,s.is_final,
               (SELECT count(*) FROM corpus.sentences parts WHERE parts.story_id=r.story_id
                 AND parts.sentence_position=r.sentence_position) AS fragment_count
-            FROM ranked r JOIN corpus.stories d ON d.id=r.story_id
+            FROM selected r JOIN corpus.stories d ON d.id=r.story_id
             JOIN corpus.sentences s ON s.story_id=r.story_id AND s.position=r.preview_position
-            WHERE r.matched_count<%s OR (r.matched_count=%s AND (r.story_id,r.sentence_position)>(%s,%s))
-            ORDER BY r.matched_count DESC,r.story_id,r.sentence_position LIMIT %s""",
+            ORDER BY r.matched_count DESC,r.story_id,r.sentence_position""",
             (
                 owner,
                 owner,
@@ -89,12 +91,20 @@ def ranking_cte():
                 JOIN corpus.sentences s ON s.id=o.sentence_id
                 JOIN corpus.stories d ON d.id=s.story_id AND d.status='completed' AND d.user_id=%s
                 WHERE p.user_id=%s AND (p.learned OR p.learning) AND (%s OR p.learned)
-            ), ranked AS (
-                SELECT story_id,sentence_position,count(*)::bigint AS matched_count,
+            ), fragment_hits AS (
+                SELECT story_id,sentence_position,position,count(*)::bigint AS matched_count,
                   count(*) FILTER(WHERE learned AND NOT learning)::bigint AS learned_count,
                   count(*) FILTER(WHERE learning AND NOT learned)::bigint AS learning_count,
                   count(*) FILTER(WHERE learned AND learning)::bigint AS both_count,
-                  min(position) AS preview_position
-                FROM hits GROUP BY story_id,sentence_position
+                  min(h.offset) AS first_offset
+                FROM hits h GROUP BY story_id,sentence_position,position
+            ), ranked AS (
+                SELECT story_id,sentence_position,sum(matched_count)::bigint AS matched_count,
+                  sum(learned_count)::bigint AS learned_count,
+                  sum(learning_count)::bigint AS learning_count,
+                  sum(both_count)::bigint AS both_count,
+                  min(position) AS preview_position,
+                  (array_agg(first_offset ORDER BY position))[1] AS first_offset
+                FROM fragment_hits GROUP BY story_id,sentence_position
             )
 """
