@@ -49,7 +49,7 @@ watch(() => [sort.value, direction.value, status.value.value, includeOther.value
       <p class="corpus-eyebrow">YOUR CHINESE CORPUS</p>
       <h1>Character explorer</h1>
       <p>Discover characters, the words they form, and the sentences they appear in.</p>
-      <div class="cluster"><RouterLink class="button" to="/corpus-upload">Upload a story</RouterLink><RouterLink to="/my-stories">My stories</RouterLink><RouterLink to="/sentence-practice">Sentence practice</RouterLink></div>
+      <div class="cluster"><RouterLink class="button" to="/corpus-upload">Upload a story</RouterLink><RouterLink to="/my-stories">My stories</RouterLink><RouterLink to="/sentence-practice">Sentence practice</RouterLink><RouterLink to="/study-selection">Build a study selection</RouterLink></div>
     </header>
 
     <section class="corpus-toolbar" aria-label="Character filters">

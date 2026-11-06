@@ -3,6 +3,7 @@ import { auth, initializeAuth } from '../composables/useAuth'
 
 // Routes with a title appear in the Ideas directory automatically.
 export const routes = [
+  { path: '/study-selection', name: 'study-selection', component: () => import('../views/StudySelectionView.vue'), meta: { title: 'Study selection', requiresAuth: true } },
   { path: '/sentence-practice', name: 'sentence-practice', component: () => import('../views/SentencePracticeView.vue'), meta: { title: 'Sentence practice', requiresAuth: true } },
   { path: '/login', name: 'login', component: () => import('../views/AuthView.vue'), meta: { title: 'Log in' } },
   { path: '/register', name: 'register', component: () => import('../views/AuthView.vue'), meta: { title: 'Create account' } },
