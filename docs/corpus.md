@@ -1,5 +1,31 @@
 # Chinese corpus API
 
+## Sentence practice
+
+`/sentence-practice` lists the current user's completed-story sentences ranked by
+marked Han character occurrences. `/characters` links to it. Repetitions count
+each time; a character marked both counts once. Green underlines mean Learned,
+amber means Learning, and split green/amber means both. Unmarked characters keep
+their normal appearance. The page uses original text so marks preserve exact
+source character identities and Unicode code-point offsets.
+
+`GET /api/corpus/practice-sentences?limit=20&cursor=...` requires authentication.
+It joins personal flags to character occurrences, segment occurrences, sentences,
+and owned completed stories using existing indexes. No new table is needed.
+The response has `items` and `next_cursor`. Each item includes the story ID/title,
+logical sentence position, `matched_count`, disjoint `learned_count`,
+`learning_count`, `both_count`, original `raw_text`, and `marks` with excerpt-local
+code-point offsets and both boolean flags. Ties sort by story ID and sentence
+position. Zero-match sentences and other users' sentences are excluded.
+
+Long sentences are ranked across all stored fragments but displayed as an
+excerpt of at most 1,000 characters from the first matching fragment, with
+`is_excerpt=true` and a story link. Counts cover the entire logical sentence.
+The endpoint accepts at most 50 results per page. Ranking uses live indexed joins
+rather than cached scores; large corpora may eventually need a score cache.
+Refresh after changing marks or importing stories. Cursors include the user and
+mark fingerprint, so changed marks invalidate old cursors with HTTP 422.
+
 The corpus API stores UTF-8 `.txt` stories in PostgreSQL, including every character
 occurrence, Jieba segment occurrence, sentence, and source position. It is separate
 from `/api/readings`: this change does not replace reading JSON or generate

@@ -45,7 +45,7 @@ watch(() => [sort.value, includeOther.value, route.query.character], () => {
       <p class="corpus-eyebrow">YOUR CHINESE CORPUS</p>
       <h1>Character explorer</h1>
       <p>Discover characters, the words they form, and the sentences they appear in.</p>
-      <div class="cluster"><RouterLink class="button" to="/corpus-upload">Upload a story</RouterLink><RouterLink to="/my-stories">My stories</RouterLink></div>
+      <div class="cluster"><RouterLink class="button" to="/corpus-upload">Upload a story</RouterLink><RouterLink to="/my-stories">My stories</RouterLink><RouterLink to="/sentence-practice">Sentence practice</RouterLink></div>
     </header>
 
     <section class="corpus-toolbar" aria-label="Character filters">
