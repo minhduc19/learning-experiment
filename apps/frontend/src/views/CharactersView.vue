@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { characterLabel, formatCount, useCorpusPage } from '../composables/useCorpusPage'
 import CharacterProgressControls from '../components/CharacterProgressControls.vue'
+import { learningStatuses, sortDescription } from '../data/characterFilters'
 
 const route = useRoute()
 const router = useRouter()
@@ -10,8 +11,11 @@ const characters = useCorpusPage(48)
 const search = ref('')
 const searchError = ref('')
 const sort = computed(() => route.query.sort === 'distinct_segment_count' ? 'distinct_segment_count' : 'occurrence_count')
+const direction = computed(() => route.query.direction === 'asc' ? 'asc' : 'desc')
+const status = computed(() => learningStatuses.find(option => option.value === route.query.status) || learningStatuses[0])
+const description = computed(() => sortDescription(sort.value, direction.value))
 const includeOther = computed(() => route.query.all === '1')
-const filtered = computed(() => Boolean(route.query.character) || includeOther.value)
+const filtered = computed(() => Boolean(route.query.character) || includeOther.value || status.value.value !== 'all')
 
 function changeQuery(changes) {
   router.replace({ query: { ...route.query, ...changes } })
@@ -27,12 +31,12 @@ function searchCharacter() {
 }
 
 function reload() {
-  const params = new URLSearchParams({ sort: sort.value, include_non_han: String(includeOther.value) })
+  const params = new URLSearchParams({ sort: sort.value, direction: direction.value, status: status.value.value, include_non_han: String(includeOther.value) })
   if (typeof route.query.character === 'string') params.set('character', route.query.character)
   characters.reset(`/api/corpus/characters?${params}`)
 }
 
-watch(() => [sort.value, includeOther.value, route.query.character], () => {
+watch(() => [sort.value, direction.value, status.value.value, includeOther.value, route.query.character], () => {
   search.value = typeof route.query.character === 'string' ? route.query.character : ''
   searchError.value = ''
   reload()
@@ -59,11 +63,15 @@ watch(() => [sort.value, includeOther.value, route.query.character], () => {
       </form>
       <div class="corpus-sort">
         <label for="character-sort">Sort by</label>
-        <select id="character-sort" :value="sort" @change="changeQuery({ sort: $event.target.value })">
-          <option value="occurrence_count">Most frequent</option>
-          <option value="distinct_segment_count">Most word segments</option>
+        <select id="character-sort" :value="sort" aria-describedby="character-sort-description" @change="changeQuery({ sort: $event.target.value })">
+          <option value="occurrence_count">Frequency</option>
+          <option value="distinct_segment_count">Word variety</option>
         </select>
+        <label for="character-direction">Order</label>
+        <select id="character-direction" :value="direction" aria-describedby="character-sort-description" @change="changeQuery({ direction: $event.target.value })"><option value="desc">Highest first</option><option value="asc">Lowest first</option></select>
+        <p id="character-sort-description" class="corpus-filter-description" aria-live="polite">{{ description }}</p>
       </div>
+      <div class="corpus-sort"><label for="character-status">Learning status</label><select id="character-status" :value="status.value" aria-describedby="character-status-description" @change="changeQuery({ status: $event.target.value })"><option v-for="option in learningStatuses" :key="option.value" :value="option.value">{{ option.label }}</option></select><p id="character-status-description" class="corpus-filter-description" aria-live="polite">{{ status.description }}</p></div>
       <label class="corpus-checkbox"><input type="checkbox" :checked="includeOther" @change="changeQuery({ all: $event.target.checked ? '1' : undefined })"> Include punctuation and other characters</label>
     </section>
 
@@ -82,12 +90,12 @@ watch(() => [sort.value, includeOther.value, route.query.character], () => {
           <span class="corpus-muted">{{ formatCount(character.distinct_segment_count) }} word {{ character.distinct_segment_count === 1 ? 'segment' : 'segments' }}</span>
           <svg class="corpus-card-arrow" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 17 17 7M7 7h10v10" /></svg>
         </RouterLink>
-        <CharacterProgressControls :character="character" />
+        <CharacterProgressControls :character="character" @saved="status.value !== 'all' && reload()" />
       </li>
     </ul>
     <section v-else-if="characters.loaded && !characters.error" class="corpus-empty" role="status">
       <h2>{{ filtered ? 'No matching characters' : 'Your corpus is ready for its first story' }}</h2>
-      <p>{{ filtered ? 'Try another character or include punctuation and other characters.' : 'Import a Chinese story to explore its characters, segments, and sentences here.' }}</p>
+      <p>{{ filtered ? 'Try another learning status, search character, or include punctuation and other characters.' : 'Import a Chinese story to explore its characters, segments, and sentences here.' }}</p>
       <button v-if="filtered" class="button" @click="router.replace({ query: {} })">Clear filters</button>
       <RouterLink v-else class="button" to="/corpus-upload">Upload your first story</RouterLink>
     </section>

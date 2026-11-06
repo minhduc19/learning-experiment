@@ -227,6 +227,17 @@ def story_detail(story_id: UUID):
 @router.get("/characters", response_model=Page[Character])
 def characters(
     sort: Literal["occurrence_count", "distinct_segment_count"] = "occurrence_count",
+    direction: Literal["asc", "desc"] = "desc",
+    status: Literal[
+        "all",
+        "unmarked",
+        "learned",
+        "learning",
+        "learned_only",
+        "learning_only",
+        "revision",
+        "marked",
+    ] = "all",
     story_id: UUID | None = None,
     include_non_han: bool = False,
     character: Annotated[str | None, Query(min_length=1, max_length=1)] = None,
@@ -238,7 +249,9 @@ def characters(
     Cursor pages are stable while the corpus is unchanged. Restart pagination
     when publishing new stories, which can change ranking values.
     """
-    return queries.characters(sort, story_id, include_non_han, cursor, limit, character)
+    return queries.characters(
+        sort, story_id, include_non_han, cursor, limit, character, direction, status
+    )
 
 
 @router.get("/characters/{character_id}", response_model=CharacterDetail)

@@ -80,15 +80,35 @@ def statistics(owner, story_id):
     )
 
 
-def characters(sort, story_id, include_non_han, cursor, limit, character):
+def characters(
+    sort,
+    story_id,
+    include_non_han,
+    cursor,
+    limit,
+    character,
+    direction="desc",
+    status="all",
+):
     owner = user_id()
-    scope = f"{owner}:{story_id}:{include_non_han}:{character}"
+    scope = f"{owner}:{story_id}:{include_non_han}:{character}:{direction}:{status}"
     values = decode_cursor(cursor, sort, scope, 2)
     with connect() as db:
         require_story(db, story_id)
         prefix, params = statistics(owner, story_id)
         params.append(owner)
-        conditions = ["true"]
+        conditions = [
+            {
+                "all": "true",
+                "unmarked": "NOT coalesce(p.learned,false) AND NOT coalesce(p.learning,false)",
+                "learned": "coalesce(p.learned,false)",
+                "learning": "coalesce(p.learning,false)",
+                "learned_only": "coalesce(p.learned,false) AND NOT coalesce(p.learning,false)",
+                "learning_only": "coalesce(p.learning,false) AND NOT coalesce(p.learned,false)",
+                "revision": "coalesce(p.learned,false) AND coalesce(p.learning,false)",
+                "marked": "coalesce(p.learned,false) OR coalesce(p.learning,false)",
+            }[status]
+        ]
         if not include_non_han:
             conditions.append("c.is_han")
         if character:
@@ -96,7 +116,8 @@ def characters(sort, story_id, include_non_han, cursor, limit, character):
             params.append(character)
         if values:
             count, identifier = integer_values(values)
-            conditions.append(f"(st.{sort}<%s OR (st.{sort}=%s AND c.id>%s))")
+            operator = ">" if direction == "asc" else "<"
+            conditions.append(f"(st.{sort}{operator}%s OR (st.{sort}=%s AND c.id>%s))")
             params.extend([count, count, identifier])
         query = sql.SQL(
             prefix
@@ -104,8 +125,12 @@ def characters(sort, story_id, include_non_han, cursor, limit, character):
             coalesce(p.learned,false) AS learned,coalesce(p.learning,false) AS learning
             FROM stats st JOIN corpus.characters c ON c.id=st.character_id
             LEFT JOIN corpus.user_character_progress p ON p.character_id=c.id AND p.user_id=%s
-            WHERE {} ORDER BY {} DESC,c.id LIMIT %s"""
-        ).format(sql.SQL(" AND ".join(conditions)), sql.Identifier("st", sort))
+            WHERE {} ORDER BY {} {},c.id LIMIT %s"""
+        ).format(
+            sql.SQL(" AND ".join(f"({condition})" for condition in conditions)),
+            sql.Identifier("st", sort),
+            sql.SQL("ASC" if direction == "asc" else "DESC"),
+        )
         rows = db.execute(query, params + [limit + 1]).fetchall()
     for row in rows:
         hydrate_forms(row, "value", vocabulary=True)

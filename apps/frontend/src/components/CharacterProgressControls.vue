@@ -4,8 +4,12 @@ import { characterLabel } from '../composables/useCorpusPage'
 import { useCharacterProgress } from '../composables/useCharacterProgress'
 
 const props = defineProps({ character: { type: Object, required: true } })
+const emit = defineEmits(['saved'])
 const progress = useCharacterProgress(props.character)
 const options = [{ key: 'learned', label: 'Learned' }, { key: 'learning', label: 'Learning' }]
+watch(() => progress.busy.learned || progress.busy.learning, (busy, previous) => {
+  if (previous && !busy && !progress.errors.learned && !progress.errors.learning) emit('saved')
+})
 watch(() => [props.character.learned, props.character.learning], () => {
   for (const { key } of options) {
     if (!progress.busy[key]) progress[key] = Boolean(props.character[key])
