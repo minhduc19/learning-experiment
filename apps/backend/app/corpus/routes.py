@@ -1,5 +1,6 @@
 """Resumable raw-byte uploads and paginated corpus concordance APIs."""
 
+import logging
 from functools import wraps
 from tempfile import TemporaryFile
 from typing import Annotated, Literal
@@ -31,6 +32,9 @@ from app.corpus.schemas import (
 )
 
 
+logger = logging.getLogger("uvicorn.error")
+
+
 class CorpusRoute(APIRoute):
     def get_route_handler(self):
         handler = super().get_route_handler()
@@ -41,12 +45,23 @@ class CorpusRoute(APIRoute):
                 response = await handler(request)
                 response.headers["Cache-Control"] = "private, no-store"
                 return response
-            except psycopg.Error:
+            except psycopg.Error as error:
+                logger.exception(
+                    "Corpus database failure: method=%s path=%s sqlstate=%s",
+                    request.method,
+                    request.url.path,
+                    error.sqlstate,
+                )
                 raise HTTPException(
                     503,
                     "Corpus database unavailable; check migrations and database health",
                 ) from None
             except OSError:
+                logger.exception(
+                    "Corpus storage failure: method=%s path=%s",
+                    request.method,
+                    request.url.path,
+                )
                 raise HTTPException(503, "Corpus file storage unavailable") from None
 
         return safe
