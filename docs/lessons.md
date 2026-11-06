@@ -50,9 +50,10 @@ precedence, otherwise one unambiguous stored traditional/simplified match is
 accepted. Missing or ambiguous matches are reported without awarding points.
 
 Open a saved lesson and choose Play saved lesson (`/lessons/:lessonId/play`).
-Questions play in placement order. Users can change selections before Check;
-the first checked answer then locks. Every question advances, including incorrect
-answers, and completion submits selected option IDs. The server grades against
+Questions play in placement order using the same full-screen activity as
+`/multiple-choice`. Users can change selections before Check; wrong answers show
+Try again and correct answers show Continue. Completion submits the successful
+option ID for each item, including questions corrected after a retry. The server grades against
 an immutable lesson snapshot taken at attempt start, so editing the saved lesson
 cannot alter an in-progress attempt's answers or targets. Previewing in the
 editor does not record practice.

@@ -144,3 +144,4 @@
 #lesson-json { display:block; width:100%; height:65vh; min-height:20rem; margin-top:.5rem; padding:1rem; resize:vertical; font-family:monospace; font-size:.9rem; color:var(--color-text); background:white; border:1px solid #bacdc4; border-radius:.6rem; }
 .lesson-preview-item { margin-block:1.5rem; padding:1rem; background:white; border:1px solid #dce6e0; border-radius:1rem; }
 @media(max-width:760px) { .lesson-editor-grid { grid-template-columns:1fr; } #lesson-json { height:45vh; } }
+.lesson-practice-summary { width:100%; max-width:48rem; text-align:left; overflow-wrap:anywhere; }
