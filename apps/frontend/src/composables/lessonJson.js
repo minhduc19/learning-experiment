@@ -1,0 +1,43 @@
+export const sampleLesson = { schemaVersion: 1, title: 'Chinese practice', items: [{ id: 'item-1', type: 'multiple-choice', data: { id: 'study', instruction: 'Fill in the blank', sentence: '我[[blank]]中文。', answer: 'learn', translation: 'I study Chinese.', options: [{ id: 'learn', label: '学习', feedback: 'Correct! 学习 means study or learn.' }, { id: 'walk', label: '走路', feedback: '走路 means walk.' }] } }] }
+
+export function parseLesson(text) {
+  if (new TextEncoder().encode(text).length > 1048576) throw new Error('Lesson JSON must be at most 1 MiB.')
+  let value
+  try { value = JSON.parse(text) } catch (error) { throw new Error('Invalid JSON: ' + error.message) }
+  if (Array.isArray(value)) value = { schemaVersion: 1, title: 'Imported lesson', items: value.map((data, index) => ({ id: `item-${index + 1}`, type: 'multiple-choice', data })) }
+  const object = (v, path, keys) => {
+    if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error(`${path} must be an object.`)
+    for (const key of Object.keys(v)) if (!keys.includes(key)) throw new Error(`${path}.${key} is unsupported.`)
+  }
+  const string = (v, path, max = 20000) => { if (typeof v !== 'string' || !v.trim() || v.length > max) throw new Error(`${path} must be nonempty text, at most ${max} characters.`) }
+  object(value, 'Lesson', ['schemaVersion', 'title', 'items'])
+  if (value.schemaVersion !== 1) throw new Error('schemaVersion must be 1.')
+  string(value.title, 'title', 200)
+  if (!Array.isArray(value.items) || !value.items.length || value.items.length > 200) throw new Error('items must contain 1–200 ordered items.')
+  const ids = new Set()
+  for (const [i, item] of value.items.entries()) {
+    const path = `items[${i}]`
+    object(item, path, ['id', 'type', 'data']); string(item.id, path + '.id', 200)
+    if (ids.has(item.id)) throw new Error(`${path}.id must be unique.`)
+    ids.add(item.id)
+    if (item.type !== 'multiple-choice') throw new Error(`${path}.type is unsupported. Currently supported: multiple-choice.`)
+    const q = item.data
+    object(q, path + '.data', ['id','instruction','sentence','answer','translation','options'])
+    string(q.id, path + '.data.id', 200); string(q.sentence, path + '.data.sentence')
+    if (q.sentence.split('[[blank]]').length !== 2) throw new Error(`${path}.data.sentence needs exactly one [[blank]].`)
+    if (q.instruction !== undefined && typeof q.instruction !== 'string') throw new Error(`${path}.data.instruction must be text.`)
+    if (q.instruction === undefined) q.instruction = 'Fill in the blank'
+    if (q.translation != null && typeof q.translation !== 'string') throw new Error(`${path}.data.translation must be text.`)
+    if (!Array.isArray(q.options) || q.options.length < 2 || q.options.length > 20) throw new Error(`${path}.data.options needs 2–20 options.`)
+    const options = new Set()
+    for (const option of q.options) {
+      object(option, path + '.option', ['id','label','feedback','fill'])
+      string(option.id, path + '.option.id', 200); string(option.label, path + '.option.label', 2000); string(option.feedback, path + '.option.feedback', 10000)
+      if (options.has(option.id)) throw new Error(`${path} has duplicate option IDs.`)
+      options.add(option.id)
+      if (option.fill != null && typeof option.fill !== 'string') throw new Error(`${path}.option.fill must be text.`)
+    }
+    if (!options.has(q.answer)) throw new Error(`${path}.data.answer must reference an option ID.`)
+  }
+  return value
+}

@@ -8,9 +8,11 @@ from fastapi.responses import JSONResponse
 from app.auth.routes import router as auth_router
 from app.corpus.routes import router as corpus_router
 from app.db.connection import connect_database
+from app.lessons.routes import router as lessons_router
 from app.readings.routes import router as readings_router
 
 app = FastAPI(title="Monorepo API")
+app.include_router(lessons_router, prefix="/api/lessons", tags=["lessons"])
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 app.include_router(corpus_router, prefix="/api/corpus", tags=["corpus"])
 app.include_router(readings_router, prefix="/api/readings", tags=["readings"])

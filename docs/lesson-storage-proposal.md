@@ -1,7 +1,8 @@
 # Proposed lesson storage
 
-This is a design proposal; lesson saving and mixed-type playback are not yet
-implemented. The current quiz accepts the legacy array in questions.js.
+This records the original storage proposal. JSONB lesson saving, editing and
+multiple-choice previews are now implemented; see `lessons.md`. Mixed-type
+playback remains future work. The static quiz still accepts questions.js.
 
 ## Options
 
