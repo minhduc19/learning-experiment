@@ -12,7 +12,7 @@ from fastapi.routing import APIRoute
 from starlette.concurrency import run_in_threadpool
 
 from app.auth.dependencies import current_user, user_id
-from app.corpus import progress, queries, uploads
+from app.corpus import practice, progress, queries, uploads
 from app.corpus.config import MAX_PATCH_BYTES, max_upload_bytes, storage_directory
 from app.corpus.database import connect
 from app.corpus.schemas import (
@@ -55,6 +55,18 @@ class CorpusRoute(APIRoute):
 router = APIRouter(route_class=CorpusRoute, dependencies=[Depends(current_user)])
 Limit = Annotated[int, Query(ge=1, le=100)]
 Cursor = Annotated[str | None, Query(max_length=2048)]
+
+
+@router.get("/practice-sentences")
+def practice_sentences(
+    cursor: Cursor = None, limit: Annotated[int, Query(ge=1, le=50)] = 20
+):
+    """Rank owned logical sentences by marked Han occurrences; return bounded original-text excerpts.
+
+    Both flags count once in matched_count. The three breakdown counts are disjoint.
+    Refresh pagination after changing marks or importing stories.
+    """
+    return practice.practice_sentences(cursor, limit)
 
 
 @router.get("/limits")
