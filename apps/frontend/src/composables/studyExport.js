@@ -33,10 +33,23 @@ export function buildStudyExport(selection, script = 'simplified') {
   return [studyExportHeader, ...studyExportRows(selection, script).map(row => row.map(cell).join('|'))].join('\n')
 }
 
+export function vocabularyPromptRows(selection, script = 'traditional') {
+  const rows = studyExportRows(selection, script).map(row => [row[0], row[2], row[4], row[5]])
+  const unique = [...new Map(rows.map(row => [JSON.stringify(row), row])).values()]
+  return unique.map(([character, segment, sentence, sentenceId]) => ({
+    character: String(character ?? ''), segment: String(segment ?? ''),
+    sentence: String(sentence ?? ''), sentenceId: String(sentenceId ?? ''),
+  }))
+}
+
+export function serializeVocabularyPrompt(rows) {
+  return ['Character|segment|sentence|sentence-id', ...rows.map(row =>
+    [row.character, row.segment, row.sentence, row.sentenceId].map(cell).join('|'),
+  )].join('\n')
+}
+
 export function buildVocabularyPrompt(selection, script = 'traditional') {
-  const rows = studyExportRows(selection, script).map(row => [row[0],row[2],row[4],row[5]])
-  const unique = [...new Map(rows.map(row => [JSON.stringify(row),row])).values()]
-  return ['Character|segment|sentence|sentence-id', ...unique.map(row => row.map(cell).join('|'))].join('\n')
+  return serializeVocabularyPrompt(vocabularyPromptRows(selection, script))
 }
 
 export async function copyStudyText(text) {

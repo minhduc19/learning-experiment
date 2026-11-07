@@ -159,3 +159,4 @@
 .ai-prompt-dialog { width:min(56rem,calc(100vw - 2rem)); max-height:90vh; overflow:auto; padding:1.5rem; border:1px solid #bacdc4; border-radius:1rem; color:var(--color-text); }
 .ai-prompt-dialog::backdrop { background:#102d2666; }
 .ai-prompt-dialog textarea { max-height:55vh; }
+.ai-user-prompt-preview { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 24rem; overflow: auto; padding: 1rem; border: 1px solid #bacdc4; border-radius: .6rem; background: #f7faf8; color: var(--color-text); font: .9rem/1.5 monospace; }

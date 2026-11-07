@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { buildVocabularyPrompt } from '../src/composables/studyExport.js'
+import { buildVocabularyPrompt, vocabularyPromptRows, serializeVocabularyPrompt } from '../src/composables/studyExport.js'
 import { defaultSystemPrompt } from '../src/data/aiSystemPrompt.js'
 import { parseLesson } from '../src/composables/lessonJson.js'
 
@@ -18,4 +18,26 @@ test('the default system prompt includes the supplied valid targeted lesson exam
   const example=JSON.parse(defaultSystemPrompt.split('EXAMPLE JSON OUTPUT:')[1].trim())
   assert.equal(parseLesson(JSON.stringify(example)).items[0].data['target-character'],'心')
   assert.equal(example.items[0].data.sentence,'做人要有一颗好[[blank]]。')
+})
+
+
+test('editable vocabulary rows preserve field text, escape it once, and serialize the displayed order', () => {
+  const selection = { learned: [
+    { id: 1, value: '心', popular_segments: [{ id: 10, text: '開心', sentence: { id: 20, raw_text: '很開心。' } }] },
+    { id: 2, value: '水' },
+  ] }
+  const original = JSON.stringify(selection)
+  const rows = vocabularyPromptRows(selection)
+  assert.deepEqual(rows[0], { character: '心', segment: '開心', sentence: '很開心。', sentenceId: '20' })
+  assert.deepEqual(rows[1], { character: '水', segment: '', sentence: '', sentenceId: '' })
+  rows[0].segment = 'A|B'
+  rows[0].sentence = 'line 1\nline 2\\end'
+  rows[0].sentenceId = '99'
+  rows.reverse()
+  const prompt = serializeVocabularyPrompt(rows)
+  assert.equal(prompt, 'Character|segment|sentence|sentence-id\n水|||\n心|A\\|B|line 1\\nline 2\\\\end|99')
+  rows.splice(1, 1)
+  assert.equal(serializeVocabularyPrompt(rows), 'Character|segment|sentence|sentence-id\n水|||')
+  assert.equal(serializeVocabularyPrompt([]), 'Character|segment|sentence|sentence-id')
+  assert.equal(JSON.stringify(selection), original)
 })
