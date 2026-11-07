@@ -16,6 +16,7 @@ from pydantic import (
 from app.auth.dependencies import current_user, user_id
 from app.corpus.database import connect
 from app.corpus.routes import CorpusRoute
+from app.lessons.prompts import PromptFields
 
 
 class Model(BaseModel):
@@ -38,10 +39,9 @@ class Option(Model):
         return self
 
 
-class Question(Model):
+class Question(PromptFields, Model):
     id: str = Field(min_length=1, max_length=200)
     instruction: str = "Fill in the blank"
-    sentence: str = Field(min_length=1, max_length=20000)
     answer: str
     translation: str | None = None
     target_character: str | None = Field(
@@ -55,9 +55,9 @@ class Question(Model):
     @model_validator(mode="after")
     def valid_question(self):
         ids = [option.id for option in self.options]
-        if self.sentence.count("[[blank]]") != 1:
+        if self.text_prompt.count("[[blank]]") != 1:
             raise ValueError(
-                "Each multiple-choice sentence needs exactly one [[blank]]"
+                "Each multiple-choice text-prompt needs exactly one [[blank]]"
             )
         if len(set(ids)) != len(ids) or self.answer not in ids:
             raise ValueError(

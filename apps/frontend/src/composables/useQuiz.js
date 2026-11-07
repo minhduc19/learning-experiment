@@ -1,11 +1,12 @@
 import { computed, ref, shallowRef } from 'vue'
+import { normalizeActivityPrompt } from './activityPrompt.js'
 import { shuffle } from './shuffle.js'
 import { questions } from '../data/questions.js'
 
 export function useQuiz({ strict = false, items = questions } = {}) {
   const shuffledItems = shallowRef([])
   function shuffleOptions() {
-    shuffledItems.value = items.map(item => ({ ...item, options: shuffle(item.options) }))
+    shuffledItems.value = items.map(item => ({ ...normalizeActivityPrompt(item), options: shuffle(item.options) }))
   }
   shuffleOptions()
   const index = ref(0)
@@ -25,7 +26,7 @@ export function useQuiz({ strict = false, items = questions } = {}) {
 
   const sentence = computed(() => {
     if (!question.value) return ''
-    return question.value.sentence.replaceAll('[[blank]]', answerText.value)
+    return question.value['text-prompt'].replaceAll('[[blank]]', answerText.value)
   })
 
   function choose(option) {

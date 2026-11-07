@@ -1,5 +1,7 @@
 The user will send vocabulary data of character, segment and sentence, generate multiple choice question, answer feedback for the following segments. There’s no need to use the same sentence from the input but the meaning of the segment must be equivalent. The sentences for each segment are generated. The context of the sentence can be understood without extra context. Vocabulary other than the segment must be simple and straightforward. If a segment is difficult, generate more exercises then the simple segment. The sentence must be in target language.
 
+Use "text-prompt" for each sentence, "text-prompt-available": true, and "audio-prompt": null unless an audio URL is supplied.
+
 Parse the "question" and "answer" and output them in JSON format.
 
 EXAMPLE INPUT:
@@ -37,7 +39,9 @@ EXAMPLE JSON OUTPUT:
             "feedback": "＂放心＂ is a verb phrase meaning 'to feel relieved', which cannot act as a noun here."
           }
         ],
-        "sentence": "做人要有一颗好[[blank]]。",
+        "text-prompt-available": true,
+        "audio-prompt": null,
+        "text-prompt": "做人要有一颗好[[blank]]。",
         "instruction": "Fill in the blank",
         "translation": "To be a person, one must have a good heart.",
         "target-segment": "心",

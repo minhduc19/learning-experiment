@@ -16,6 +16,38 @@ placements. Items never sort by ID or type. Future types need a validator and
 preview renderer before being accepted; unsupported types are rejected explicitly.
 See `lesson-storage-proposal.md` for the format example and design background.
 
+Activity questions now use three shared prompt fields:
+
+```json
+{
+  "text-prompt": "我[[blank]]中文。",
+  "text-prompt-available": true,
+  "audio-prompt": null
+}
+```
+
+`text-prompt` replaces multiple choice's `sentence` and sentence jumble's `prompt`.
+Multiple-choice text retains exactly one `[[blank]]`; jumble text can be null for
+an ordering-only exercise. `text-prompt-available: false` keeps that text out of
+the question UI and accessibility tree until Check, then reveals it during
+feedback (including incorrect answers). Try again hides it again.
+
+`audio-prompt` is an optional HTTP(S) URL. A speaker button appears when provided;
+playback begins only on click, supports replay/stop, and stops on question changes
+or when option audio starts. It is separate from generated option `audio_id`
+recordings. Playback errors leave the quiz usable. The sample data uses the
+supplied music track over HTTPS and labels it as demo music, not spoken question
+content. The sample routes demonstrate combined, hidden-text/audio, text-only,
+and no-prompt configurations.
+
+Frontend loaders and backend validation accept legacy `sentence`/`prompt` fields
+and default missing availability to true for text questions. New imports and saves
+write canonical hyphenated keys; conflicting old/new values are rejected. Older
+stored lessons and practice attempts continue to play without rewriting the
+whole database. Reading checkpoints and new AI prompt examples use the same
+fields. Existing saved system prompts remain unchanged and their legacy JSON
+output is still accepted. No new database migration is required.
+
 Authenticated endpoints:
 
 - POST `/api/lessons`: create from the canonical document.

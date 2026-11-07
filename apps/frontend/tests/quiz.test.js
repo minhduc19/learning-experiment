@@ -45,8 +45,8 @@ test('unanswered questions cannot advance; lesson completes and restarts', () =>
 test('all selections preview before checking, can change, and reset after feedback', () => {
   const quiz = useQuiz()
   for (const question of questions) {
-    assert.ok(question.sentence.includes('[[blank]]'))
-    assert.equal(quiz.sentence.value, question.sentence.replaceAll('[[blank]]', '___'))
+    assert.ok(question['text-prompt'].includes('[[blank]]'))
+    assert.equal(quiz.sentence.value, question['text-prompt'].replaceAll('[[blank]]', '___'))
     quiz.choose(question.options.find(option => option.id !== question.answer))
     assert.equal(quiz.checked.value, false)
     assert.ok(!quiz.sentence.value.includes('___'))
@@ -54,14 +54,14 @@ test('all selections preview before checking, can change, and reset after feedba
     assert.equal(quiz.question.value.id, question.id)
     const answer = question.options.find(option => option.id === question.answer)
     quiz.choose(answer)
-    assert.equal(quiz.sentence.value, question.sentence.replaceAll('[[blank]]', answer.fill ?? answer.label.toLowerCase()))
+    assert.equal(quiz.sentence.value, question['text-prompt'].replaceAll('[[blank]]', answer.fill ?? answer.label.toLowerCase()))
     assert.ok(!quiz.sentence.value.includes('[[blank]]'))
     quiz.check()
     quiz.proceed()
   }
   assert.equal(quiz.sentence.value, '')
   quiz.restart()
-  assert.equal(quiz.sentence.value, questions[0].sentence.replaceAll('[[blank]]', '___'))
+  assert.equal(quiz.sentence.value, questions[0]['text-prompt'].replaceAll('[[blank]]', '___'))
 })
 
 test('the supplied lesson order is preserved during play, results, and restart', () => {

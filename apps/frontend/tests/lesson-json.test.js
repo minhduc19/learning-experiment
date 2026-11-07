@@ -16,7 +16,7 @@ test('ordered items keep placement IDs and can reuse one question', () => {
 })
 test('invalid JSON, unsupported types, duplicate placement IDs and invalid answers are rejected', () => {
   assert.throws(() => parseLesson('{'))
-  for (const change of [lesson => { lesson.items[0].type='future' }, lesson => { lesson.items.push(lesson.items[0]) }, lesson => { lesson.items[0].data.answer='missing' }, lesson => { lesson.items[0].data.sentence='no blank' }]) {
+  for (const change of [lesson => { lesson.items[0].type='future' }, lesson => { lesson.items.push(lesson.items[0]) }, lesson => { lesson.items[0].data.answer='missing' }, lesson => { lesson.items[0].data['text-prompt']='no blank' }]) {
     const lesson=structuredClone(sampleLesson);change(lesson)
     assert.throws(()=>parseLesson(JSON.stringify(lesson)))
   }

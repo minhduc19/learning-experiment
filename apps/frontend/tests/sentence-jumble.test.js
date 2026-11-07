@@ -22,7 +22,7 @@ test('every declared alternative is constructible and accepted; completion and r
       game.check(); assert.equal(game.correct.value, true)
     }
   }
-  assert.ok(items.some(item => !item.prompt))
+  assert.ok(items.some(item => !item['text-prompt']))
   const game = useSentenceJumble(items)
   for (const item of items) {
     item.answers[0].forEach(game.choose); game.check(); game.proceed()

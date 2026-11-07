@@ -4,7 +4,8 @@ export const strictQuestions = [
   ...questions,
   {
     id: 'water', instruction: 'Fill in the blank',
-    sentence: 'They [[blank]] water after exercise.', answer: 'drink',
+    'text-prompt-available': true, 'audio-prompt': null,
+    'text-prompt': 'They [[blank]] water after exercise.', answer: 'drink',
     translation: 'Beben agua después de hacer ejercicio.',
     options: [
       { id: 'drink', label: 'Drink', feedback: 'Correct! Use “drink” with liquids such as water.' },
@@ -14,7 +15,8 @@ export const strictQuestions = [
   },
   {
     id: 'reading', instruction: 'Fill in the blank',
-    sentence: 'He is [[blank]] a book right now.', answer: 'reading',
+    'text-prompt-available': true, 'audio-prompt': null,
+    'text-prompt': 'He is [[blank]] a book right now.', answer: 'reading',
     translation: 'Está leyendo un libro ahora mismo.',
     options: [
       { id: 'read', label: 'Read', feedback: 'After “is”, use the -ing form to describe an action happening now.' },
@@ -24,7 +26,8 @@ export const strictQuestions = [
   },
   {
     id: 'apple', instruction: 'Fill in the blank',
-    sentence: 'I have [[blank]] apple in my bag.', answer: 'an',
+    'text-prompt-available': true, 'audio-prompt': null,
+    'text-prompt': 'I have [[blank]] apple in my bag.', answer: 'an',
     translation: 'Tengo una manzana en mi bolso.',
     options: [
       { id: 'a', label: 'A', feedback: '“Apple” begins with a vowel sound, so use “an”.' },
@@ -34,7 +37,8 @@ export const strictQuestions = [
   },
   {
     id: 'tomorrow', instruction: 'Fill in the blank',
-    sentence: 'We [[blank]] visit our friends tomorrow.', answer: 'will',
+    'text-prompt-available': true, 'audio-prompt': null,
+    'text-prompt': 'We [[blank]] visit our friends tomorrow.', answer: 'will',
     translation: 'Visitaremos a nuestros amigos mañana.',
     options: [
       { id: 'did', label: 'Did', feedback: '“Did” refers to the past. “Tomorrow” points to the future.' },

@@ -61,7 +61,6 @@
       "question": {
         "id": "park-verb",
         "instruction": "Fill in the blank",
-        "sentence": "我喜欢在公园[[blank]]。",
         "answer": "walk",
         "translation": "I like taking walks in the park.",
         "options": [
@@ -83,7 +82,10 @@
             "fill": "坐",
             "feedback": "坐 means to sit. Look for the phrase meaning to take a walk."
           }
-        ]
+        ],
+        "text-prompt": "我喜欢在公园[[blank]]。",
+        "text-prompt-available": true,
+        "audio-prompt": null
       }
     },
     {
@@ -130,7 +132,6 @@
       "question": {
         "id": "weather-word",
         "instruction": "Fill in the blank",
-        "sentence": "今天[[blank]]很好。",
         "answer": "weather",
         "translation": "The weather is very nice today.",
         "options": [
@@ -152,7 +153,10 @@
             "fill": "天气",
             "feedback": "Awesome! 天气 means weather, so 今天 means today and 天气很好 means the weather is very nice."
           }
-        ]
+        ],
+        "text-prompt": "今天[[blank]]很好。",
+        "text-prompt-available": true,
+        "audio-prompt": null
       }
     },
     {

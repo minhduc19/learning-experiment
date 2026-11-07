@@ -3,6 +3,9 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
 
 
+from app.lessons.prompts import PromptFields
+
+
 ReadingId = Annotated[str, StringConstraints(pattern=r"^[A-Za-z0-9][A-Za-z0-9_-]{0,99}$")]
 
 
@@ -48,10 +51,9 @@ class QuestionOption(BaseModel):
     feedback: str = ""
 
 
-class MultipleChoiceQuestion(BaseModel):
+class MultipleChoiceQuestion(PromptFields):
     id: str
     instruction: str = "Fill in the blank"
-    sentence: str
     answer: str
     translation: str | None = None
     options: list[QuestionOption] = Field(min_length=2)
