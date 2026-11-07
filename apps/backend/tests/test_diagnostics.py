@@ -53,3 +53,23 @@ def test_deepseek_backend_connection_failure_details(monkeypatch):
             assert 'test-key' not in response.text
     finally:
         app.dependency_overrides.pop(current_user, None)
+
+
+def test_diagnostics_custom_and_omitted_voice(monkeypatch):
+    real = httpx.Client
+    urls = []
+    def handler(request):
+        urls.append(str(request.url))
+        return httpx.Response(422, json={'detail':'test'})
+    monkeypatch.setenv('ELEVEN', 'test')
+    monkeypatch.setattr(diagnostics.httpx, 'Client', lambda **kwargs: real(transport=httpx.MockTransport(handler), **kwargs))
+    app.dependency_overrides[current_user] = lambda: {'id':'test'}
+    try:
+        with TestClient(app) as client:
+            client.post('/api/ai/diagnostics/elevenlabs?voice_id=customVoice', json={'text':'hello'})
+            client.post('/api/ai/diagnostics/elevenlabs?voice_id=', json={'text':'hello'})
+            assert '/text-to-speech/customVoice?' in urls[0]
+            assert '/text-to-speech?' in urls[1]
+            assert client.post('/api/ai/diagnostics/elevenlabs?voice_id=../bad', json={}).status_code == 422
+    finally:
+        app.dependency_overrides.pop(current_user, None)

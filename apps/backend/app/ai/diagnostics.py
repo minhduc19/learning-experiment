@@ -4,23 +4,29 @@ from time import monotonic
 from typing import Annotated, Literal
 
 import httpx
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query, HTTPException
 from app.auth.dependencies import current_user
 from app.corpus.routes import CorpusRoute
 from app.lessons.routes import read_json
+
+from app.ai.voice import DEFAULT_VOICE, voice_id as normalize_voice
 
 router = APIRouter(route_class=CorpusRoute, dependencies=[Depends(current_user)])
 MAX_RESPONSE = 65536
 
 
 @router.post('/{provider}')
-def diagnose(provider: Literal['deepseek', 'elevenlabs'], body: Annotated[object, Depends(read_json)]):
+def diagnose(provider: Literal['deepseek', 'elevenlabs'], body: Annotated[object, Depends(read_json)], voice_id: str | None = Query(default=DEFAULT_VOICE, max_length=128)):
     if provider == 'deepseek':
         url = 'https://api.deepseek.com/chat/completions'
         secret = os.getenv('DEEPSEEK', '').strip()
         auth = {'Authorization': 'Bearer ' + secret}
     else:
-        url = 'https://api.elevenlabs.io/v1/text-to-speech/MI36FIkp9wRP7cpWKPTl?output_format=mp3_44100_128'
+        try:
+            voice = normalize_voice(voice_id)
+        except ValueError as error:
+            raise HTTPException(422, str(error)) from None
+        url = 'https://api.elevenlabs.io/v1/text-to-speech' + ('/' + voice if voice else '') + '?output_format=mp3_44100_128'
         secret = os.getenv('ELEVEN', '').strip()
         auth = {'xi-api-key': secret}
     result = {'request': {'method': 'POST', 'url': url, 'headers': {**{key: '[REDACTED]' for key in auth}, 'Content-Type': 'application/json'}, 'body': body}, 'configured': bool(secret), 'backend_endpoint': '/api/ai/diagnostics/' + provider}

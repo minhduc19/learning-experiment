@@ -85,7 +85,7 @@ then opens the saved lesson editor.
 
 After generating exercises, choose **Generate option audio** beside **Create lesson**.
 This sends every option's visible `label` (including distractors) to ElevenLabs,
-using voice `MI36FIkp9wRP7cpWKPTl`, model `eleven_multilingual_v2`, and MP3 output.
+using the editable voice ID (initially `MI36FIkp9wRP7cpWKPTl`), model `eleven_multilingual_v2`, and MP3 output.
 The sentence, fill text, and feedback are not spoken. Generation runs one unique
 text at a time with progress; repeated option labels reuse a recording.
 
@@ -159,3 +159,19 @@ it) or process environment. Never put it in VITE variables, frontend source, or
 committed files. Real provider access/model availability is verified by a live
 request after deployment; automated checks use a mocked provider with the real
 SDK and do not consume API credits.
+
+### Changing the ElevenLabs voice
+
+Both `/api-diagnostics` and the option audio controls in `/AI-exercise-generator`
+have a voice ID field and Remove voice ID action. The initial voice remains
+`MI36FIkp9wRP7cpWKPTl`. Empty input explicitly omits the voice; it never silently
+falls back to the initial voice. ElevenLabs may reject a speech request without a
+voice ID; use diagnostics to inspect the provider response.
+
+Changing the generator voice clears the draft's audio references and local error
+state, allowing generation with the new voice. Files already stored on the server
+and saved lessons are unchanged. Cache identity and the one-retry limit are
+separate for each text/voice/model combination. API clients can supply `voice_id`
+in option-audio JSON, or the diagnostics `voice_id` query parameter; omitted
+parameters preserve the initial voice for older clients, while null/empty values
+explicitly remove it. Voice IDs are validated before being inserted into paths.
