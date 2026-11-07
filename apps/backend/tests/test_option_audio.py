@@ -101,7 +101,7 @@ def test_successful_retry_keeps_one_record_and_validates_inputs(client, monkeypa
     result = client.post(ROOT, json={'text': 'word', 'retry': True}).json()
     assert result['status'] == 'ready' and result['attempts'] == 2
     assert len(attempts) == 2
-    for payload in [{'text': ''}, {'text': ' '}, {'text': 'x'*2001}, {'text': 'word', 'retry': 'yes'}, {'text': 'word', 'voice_id': 'other'}]:
+    for payload in [{'text': ''}, {'text': ' '}, {'text': 'x'*2001}, {'text': 'word', 'retry': 'yes'}, {'text': 'word', 'voice_id': '../invalid'}]:
         assert client.post(ROOT, json=payload).status_code == 422
     assert client.post(ROOT, json={'text': 'not-generated', 'retry': True}).status_code == 422
     monkeypatch.delenv('ELEVEN')
@@ -122,7 +122,7 @@ def test_pending_generation_does_not_duplicate_paid_calls(client, monkeypatch):
     from concurrent.futures import ThreadPoolExecutor
     from threading import Event
     entered, release = Event(), Event()
-    def synthesize(text, path, key):
+    def synthesize(text, path, key, voice_id=audio.VOICE):
         entered.set()
         assert release.wait(5)
         path.write_bytes(b'ID3-ready')
@@ -137,3 +137,21 @@ def test_pending_generation_does_not_duplicate_paid_calls(client, monkeypatch):
             assert client.post(ROOT, json={'text': 'concurrent', 'retry': True}).status_code == 409
         finally: release.set()
         assert first.result().json()['attempts'] == 1
+
+
+def test_voice_changes_have_separate_caches_and_missing_voice_is_not_defaulted(client, monkeypatch):
+    calls = []
+    def synthesize(text, path, key, voice_id=audio.VOICE):
+        calls.append(voice_id)
+        if voice_id is None:
+            raise ValueError('Missing voice')
+        path.write_bytes(b'ID3-ready')
+        return (None, None, None)
+    monkeypatch.setenv('ELEVEN', 'test')
+    monkeypatch.setattr(audio, 'synthesize', synthesize)
+    first = client.post(ROOT, json={'text':'voice test'}).json()
+    second = client.post(ROOT, json={'text':'voice test','voice_id':'anotherVoice'}).json()
+    assert first['audio_id'] != second['audio_id']
+    assert client.post(ROOT, json={'text':'voice test','voice_id':'anotherVoice'}).json()['audio_id'] == second['audio_id']
+    assert client.post(ROOT, json={'text':'voice test','voice_id':None}).json()['status'] == 'failed'
+    assert calls == [audio.VOICE, 'anotherVoice', None]

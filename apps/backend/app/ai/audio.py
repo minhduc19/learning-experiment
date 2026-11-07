@@ -11,7 +11,7 @@ import httpx
 from elevenlabs.client import ElevenLabs
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from app.auth.dependencies import current_user, user_id
 from app.corpus.config import storage_directory
@@ -19,7 +19,9 @@ from app.corpus.database import connect
 from app.corpus.routes import CorpusRoute
 from app.lessons.routes import Model, read_json, validate
 
-VOICE = "MI36FIkp9wRP7cpWKPTl"
+from app.ai.voice import DEFAULT_VOICE, voice_id as normalize_voice
+
+VOICE = DEFAULT_VOICE
 MODEL = "eleven_multilingual_v2"
 MAX_BYTES = 5 * 1024 * 1024
 slots = BoundedSemaphore(2)
@@ -29,6 +31,12 @@ router = APIRouter(route_class=CorpusRoute, dependencies=[Depends(current_user)]
 class AudioRequest(Model):
     text: str = Field(min_length=1, max_length=2000)
     retry: bool = False
+    voice_id: str | None = VOICE
+
+    @field_validator('voice_id')
+    @classmethod
+    def validate_voice(cls, value):
+        return normalize_voice(value)
 
     @model_validator(mode="after")
     def nonblank(self):
@@ -47,12 +55,12 @@ def result(row):
             "can_retry": row["status"] == "failed" and row["attempts"] == 1}
 
 
-def synthesize(text, path, key):
+def synthesize(text, path, key, voice_id=VOICE):
     started = monotonic()
     with httpx.Client(timeout=45) as transport:
         client = ElevenLabs(api_key=key, httpx_client=transport)
         with client.text_to_speech.with_raw_response.convert(
-            text=text, voice_id=VOICE, model_id=MODEL, output_format="mp3_44100_128",
+            text=text, voice_id=voice_id or "", model_id=MODEL, output_format="mp3_44100_128",
             request_options={"max_retries": 0, "timeout_in_seconds": 45},
         ) as response:
             size = 0
@@ -79,7 +87,7 @@ def generate_audio(raw: Annotated[object, Depends(read_json)]):
 
 
 def generate(request):
-    fingerprint = hashlib.sha256((VOICE + "\0" + MODEL + "\0" + request.text).encode()).hexdigest()
+    fingerprint = hashlib.sha256(((request.voice_id or "") + "\0" + MODEL + "\0" + request.text).encode()).hexdigest()
     # A transaction-level lock also works across backend processes. Commit the attempt
     # before contacting the provider so a crash cannot reset the paid-attempt counter.
     with connect() as db:
@@ -108,12 +116,12 @@ def generate(request):
         if row:
             row = db.execute("UPDATE corpus.option_audio SET attempts=attempts+1,status='pending',updated_at=now() WHERE id=%s RETURNING *", (row["id"],)).fetchone()
         else:
-            row = db.execute("INSERT INTO corpus.option_audio(id,user_id,fingerprint,text,voice_id,model_id,status,attempts) VALUES (%s,%s,%s,%s,%s,%s,'pending',1) RETURNING *", (uuid4(), user_id(), fingerprint, request.text, VOICE, MODEL)).fetchone()
+            row = db.execute("INSERT INTO corpus.option_audio(id,user_id,fingerprint,text,voice_id,model_id,status,attempts) VALUES (%s,%s,%s,%s,%s,%s,'pending',1) RETURNING *", (uuid4(), user_id(), fingerprint, request.text, request.voice_id or "", MODEL)).fetchone()
     path = audio_path(row["id"])
     temporary = path.with_suffix(".tmp")
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        cost, request_id, trace_id = synthesize(request.text, temporary, key)
+        cost, request_id, trace_id = synthesize(request.text, temporary, key, request.voice_id)
         temporary.replace(path)
     except Exception:
         temporary.unlink(missing_ok=True)

@@ -5,6 +5,7 @@ const providers = ref([
   { id: 'deepseek', name: 'DeepSeek', body: JSON.stringify({ model: 'deepseek-flash', messages: [{role:'system',content:'Reply briefly.'},{role:'user',content:'Say hello.'}], max_tokens: 64 }, null, 2), result: '', error: '', busy: false },
   { id: 'elevenlabs', name: 'ElevenLabs', body: JSON.stringify({text:'Hello, world!',model_id:'eleven_multilingual_v2'}, null, 2), result: '', error: '', busy: false },
 ])
+const voiceId = ref('MI36FIkp9wRP7cpWKPTl')
 const controllers = new Set()
 onUnmounted(() => controllers.forEach(controller => controller.abort()))
 async function test(provider) {
@@ -14,7 +15,7 @@ async function test(provider) {
   const controller = new AbortController(); controllers.add(controller)
   provider.busy = true; provider.error = ''; provider.result = ''
   try {
-    const response = await authorizedFetch('/api/ai/diagnostics/' + provider.id, {method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    const response = await authorizedFetch('/api/ai/diagnostics/' + provider.id + (provider.id === 'elevenlabs' ? '?voice_id=' + encodeURIComponent(voiceId.value.trim()) : ''), {method:'POST',signal:controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
     const data = await response.json()
     provider.result = JSON.stringify(data, null, 2)
     if (!response.ok) provider.error = `Diagnostic endpoint returned HTTP ${response.status}.`
@@ -29,6 +30,12 @@ async function test(provider) {
     <section v-for="provider in providers" :key="provider.id" class="corpus-sentence-card">
       <h2>{{ provider.name }}</h2>
       <p class="corpus-muted">Backend endpoint: <code>POST /api/ai/diagnostics/{{ provider.id }}</code>. Responses below come from the backend and the external provider.</p>
+      <div v-if="provider.id === 'elevenlabs'">
+        <label for="diagnostic-voice">ElevenLabs voice ID (optional)</label>
+        <input id="diagnostic-voice" v-model="voiceId" :disabled="provider.busy" maxlength="128">
+        <button type="button" class="corpus-text-button" :disabled="provider.busy" @click="voiceId = ''">Remove voice ID</button>
+        <p class="corpus-muted">Leave empty to test the endpoint without a voice ID. ElevenLabs may reject this; the response details will show why.</p>
+      </div>
       <label :for="provider.id">Request JSON body</label>
       <textarea :id="provider.id" v-model="provider.body" class="ai-prompt-text" rows="12" :disabled="provider.busy" spellcheck="false" />
       <button class="button" :disabled="provider.busy" @click="test(provider)">{{ provider.busy ? 'Waiting for response…' : `Test ${provider.name}` }}</button>
