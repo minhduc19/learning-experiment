@@ -3,6 +3,7 @@ import { auth, initializeAuth } from '../composables/useAuth'
 
 // Routes with a title appear in the Ideas directory automatically.
 export const routes = [
+  { path: '/sample-sentence-jumple', name: 'sample-sentence-jumple', component: () => import('../views/SampleSentenceJumpleView.vue'), meta: { title: 'Sentence jumble', fullscreen: true } },
   { path: '/AI-exercise-generator', name: 'ai-exercise-generator', component: () => import('../views/StudySelectionView.vue'), props: { aiMode: true }, meta: { title: 'AI exercise generator', requiresAuth: true } },
   { path: '/lessons/:lessonId/play', name: 'lesson-play', component: () => import('../views/LessonPlayView.vue'), meta: { requiresAuth: true, fullscreen: true } },
   { path: '/segments/:segmentId', name: 'segment-detail', component: () => import('../views/SegmentDetailView.vue'), meta: { requiresAuth: true } },

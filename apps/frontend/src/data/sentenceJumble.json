@@ -1,0 +1,20 @@
+[
+  {
+    "id": "apple", "instruction": "Build the translation", "prompt": "I eat an apple.", "sourceLanguage": "English", "targetLanguage": "Spanish",
+    "tiles": [{"id":"i","text":"Yo"},{"id":"eat","text":"como"},{"id":"an","text":"una"},{"id":"apple","text":"manzana"},{"id":"drink","text":"bebo"},{"id":"a","text":"un"}],
+    "answers": [["i","eat","an","apple"],["eat","an","apple"]],
+    "translation": "Yo como una manzana.", "explanation": "Como means ‘I eat’, so Yo is optional. Manzana is feminine and takes una."
+  },
+  {
+    "id": "morning", "instruction": "Build the translation", "prompt": "She drinks water every morning.", "sourceLanguage": "English", "targetLanguage": "Spanish",
+    "tiles": [{"id":"she","text":"Ella"},{"id":"drinks","text":"bebe"},{"id":"water","text":"agua"},{"id":"morning","text":"cada mañana"},{"id":"eats","text":"come"}],
+    "answers": [["she","drinks","water","morning"],["morning","she","drinks","water"]],
+    "translation": "Ella bebe agua cada mañana.", "explanation": "Bebe agrees with ella. The time phrase cada mañana can come at the beginning or the end."
+  },
+  {
+    "id": "order", "instruction": "Build a sensible sentence", "prompt": null, "targetLanguage": "English",
+    "tiles": [{"id":"we","text":"We"},{"id":"read","text":"read"},{"id":"books","text":"books"},{"id":"library","text":"at the library"},{"id":"reads","text":"reads"},{"id":"quick","text":"quick"}],
+    "answers": [["we","read","books","library"],["library","we","read","books"]],
+    "translation": "We read books at the library.", "explanation": "Use read with we. The place phrase can go before or after the main clause. Capitalization and punctuation are supplied when reading the completed sentence."
+  }
+]
