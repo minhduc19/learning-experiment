@@ -1,8 +1,9 @@
 <script setup>
-import { nextTick, ref, useId } from 'vue'
+import { computed, nextTick, onUnmounted, ref, useId, watch } from 'vue'
 import { useQuiz } from '../composables/useQuiz'
 import { questions } from '../data/questions.js'
 import { strictQuestions } from '../data/strictQuestions.js'
+import { playOptionAudio, stopOptionAudio } from '../composables/optionPlayback.js'
 
 const props = defineProps({
   restartHandler: { type: Function, default: null },
@@ -28,10 +29,21 @@ const heading = ref(null)
 const questionSection = ref(null)
 const answerButtons = ref([])
 let lastAnswer = 0
+const audioOwner = Symbol('quiz-audio')
+const audioError = ref('')
+const hasSelectedAudio = computed(() => selected.value?.audio_id && selected.value?.audio_text === selected.value?.label)
+async function playAudio(option) {
+  audioError.value = ''
+  try { await playOptionAudio(option, audioOwner, message => { audioError.value = message }) }
+  catch (failure) { audioError.value = failure.message }
+}
+watch(index, () => { stopOptionAudio(audioOwner); audioError.value = '' })
+onUnmounted(() => stopOptionAudio(audioOwner))
 
 function selectOption(option, position) {
   lastAnswer = position
   choose(option)
+  playAudio(option)
 }
 
 async function checkAnswer() {
@@ -55,6 +67,7 @@ async function dismissFeedback() {
 }
 
 async function startAgain() {
+  stopOptionAudio(audioOwner)
   if (props.restartHandler) { await props.restartHandler(); return }
   restart()
   await nextTick()
@@ -114,10 +127,11 @@ async function startAgain() {
           @click="selectOption(option, position)"
         >
           <span class="activity-option-number" aria-hidden="true">{{ position + 1 }}</span>
-          {{ option.label }}
+          {{ option.label }} <span v-if="option.audio_id && option.audio_text === option.label" aria-hidden="true">♪</span>
         </button>
       </div>
-
+      <button v-if="hasSelectedAudio" type="button" class="corpus-text-button" @click="playAudio(selected)">Replay audio</button>
+      <p v-if="audioError" role="status" class="activity-footer">{{ audioError }}</p>
     </section>
 
     <footer v-if="!complete && !checked" class="activity-screen-actions">

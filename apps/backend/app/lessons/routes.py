@@ -27,6 +27,15 @@ class Option(Model):
     label: str = Field(min_length=1, max_length=2000)
     feedback: str = Field(min_length=1, max_length=10000)
     fill: str | None = None
+    audio_id: str | None = Field(default=None, pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+    audio_text: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def current_audio(self):
+        if self.audio_text != self.label:
+            self.audio_id = None
+            self.audio_text = None
+        return self
 
 
 class Question(Model):
@@ -105,6 +114,16 @@ def validate(model, raw):
         raise HTTPException(422, "; ".join(messages)) from None
 
 
+def validate_audio_ownership(db, document):
+    for item in document.items:
+        for option in item.data.options:
+            if option.audio_id and not db.execute(
+                "SELECT id FROM corpus.option_audio WHERE id=%s AND user_id=%s AND text=%s AND status='ready'",
+                (UUID(option.audio_id), user_id(), option.label),
+            ).fetchone():
+                raise HTTPException(422, "An option audio reference is unavailable or does not match its text.")
+
+
 router = APIRouter(route_class=CorpusRoute, dependencies=[Depends(current_user)])
 
 
@@ -112,6 +131,7 @@ router = APIRouter(route_class=CorpusRoute, dependencies=[Depends(current_user)]
 def create_lesson(raw: Annotated[object, Depends(read_json)]):
     document = validate(Lesson, raw)
     with connect() as db:
+        validate_audio_ownership(db, document)
         return db.execute(
             """INSERT INTO corpus.lessons(id,user_id,title,document) VALUES (%s,%s,%s,%s)
             RETURNING id,title,document,revision,created_at,updated_at""",
@@ -162,6 +182,7 @@ def update_lesson(identifier: UUID, raw: Annotated[object, Depends(read_json)]):
                 409,
                 "This lesson changed elsewhere. Reload it before saving; keep a copy of your JSON first.",
             )
+        validate_audio_ownership(db, update.document)
         return db.execute(
             """UPDATE corpus.lessons SET title=%s,document=%s,revision=revision+1,updated_at=now()
             WHERE id=%s AND user_id=%s RETURNING id,title,document,revision,created_at,updated_at""",

@@ -6,6 +6,7 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import JSONResponse
 
 from app.ai.routes import router as ai_router
+from app.ai.audio import router as audio_router
 from app.ai.prompts import router as ai_prompts_router
 from app.auth.routes import router as auth_router
 from app.corpus.routes import router as corpus_router
@@ -15,6 +16,7 @@ from app.readings.routes import router as readings_router
 
 app = FastAPI(title="Monorepo API")
 app.include_router(ai_router, prefix="/api/ai", tags=["ai"])
+app.include_router(audio_router, prefix="/api/ai/option-audio", tags=["ai"])
 app.include_router(ai_prompts_router, prefix="/api/ai/system-prompts", tags=["ai"])
 app.include_router(lessons_router, prefix="/api/lessons", tags=["lessons"])
 app.include_router(auth_router, prefix="/api/auth", tags=["auth"])

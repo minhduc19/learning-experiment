@@ -13,6 +13,7 @@ dependencies = [
     "pyjwt>=2.10,<3",
     "email-validator>=2,<3",
     "openai>=2,<3",
+    "elevenlabs>=2.77.0",
 ]
 
 [dependency-groups]

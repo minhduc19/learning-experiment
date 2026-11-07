@@ -7,6 +7,7 @@ import VocabularyPromptEditor from './VocabularyPromptEditor.vue'
 import { parseLesson } from '../composables/lessonJson'
 import SystemPromptLibrary from './SystemPromptLibrary.vue'
 import LessonJsonWorkspace from './LessonJsonWorkspace.vue'
+import { useOptionAudio } from '../composables/useOptionAudio.js'
 const props = defineProps({ selection: { type: Object, required: true }, sourceBusy: Boolean })
 const emit = defineEmits(['busy'])
 const router = useRouter()
@@ -20,13 +21,14 @@ function resetVocabulary(selection) {
   generatedPrompt.value = userPrompt.value
 }
 const text = ref(''), busy = ref(false), saving = ref(false), error = ref(''), warning = ref(''), saved = ref(false)
+const { busy: audioBusy, progress: audioProgress, error: audioError, failures: audioFailures, canGenerate: canGenerateAudio, canRetry: canRetryAudio, generate: generateAudio, dispose: disposeAudio } = useOptionAudio(text)
 let controller
-const externallyBlocked = computed(() => busy.value || saving.value || props.sourceBusy)
+const externallyBlocked = computed(() => busy.value || saving.value || audioBusy.value || props.sourceBusy)
 const blocked = computed(() => externallyBlocked.value || promptLibraryBusy.value)
 const canSend = computed(() => Boolean(!promptLibraryDirty.value && rows.value.length && systemPrompt.value.trim() && userPrompt.value.length <= 100000 && systemPrompt.value.length <= 50000 && userPrompt.value.trim() !== 'Character|segment|sentence|sentence-id'))
 const dirty = computed(() => promptLibraryDirty.value || (!saved.value && (Boolean(text.value) || userPrompt.value !== generatedPrompt.value)))
 watch(() => props.selection, value => { resetVocabulary(value); if (text.value) warning.value = 'Vocabulary changed. The existing lesson draft is unchanged; send the prompt again to generate new exercises.' }, { immediate:true })
-watch([busy,saving,promptLibraryBusy], () => emit('busy',busy.value || saving.value || promptLibraryBusy.value))
+watch([busy,saving,promptLibraryBusy,audioBusy], () => emit('busy',busy.value || saving.value || promptLibraryBusy.value || audioBusy.value))
 watch(text, () => { saved.value = false })
 function changeScript(event) {
   if (userPrompt.value !== generatedPrompt.value && !window.confirm('Replace your edited vocabulary prompt with the selected writing system?')) { event.target.value = script.value; return }
@@ -62,7 +64,7 @@ function leaving() { return !dirty.value || window.confirm('Leave without saving
 onBeforeRouteLeave(leaving)
 function unload(event) { if (dirty.value) {event.preventDefault();event.returnValue=''} }
 window.addEventListener('beforeunload',unload)
-onUnmounted(()=>{controller?.abort();window.removeEventListener('beforeunload',unload);emit('busy',false)})
+onUnmounted(()=>{disposeAudio();controller?.abort();window.removeEventListener('beforeunload',unload);emit('busy',false)})
 </script>
 <template>
   <section class="corpus-sentence-card" aria-labelledby="ai-prompt-title">
@@ -82,5 +84,16 @@ onUnmounted(()=>{controller?.abort();window.removeEventListener('beforeunload',u
     <p v-if="error" class="corpus-error" role="alert">{{ error }}</p><p v-if="warning" class="corpus-resume-note" role="status">{{ warning }}</p>
 
   </section>
-  <section v-if="text" class="corpus-sentence-card" aria-label="Generated lesson"><h2>Review generated exercises</h2><p>Edit the JSON and test the questions. Nothing is saved until you choose Create lesson.</p><LessonJsonWorkspace v-model="text" :busy="blocked" creating @save="createLesson" /></section>
+  <section v-if="text" class="corpus-sentence-card" aria-label="Generated lesson"><h2>Review generated exercises</h2><p>Edit the JSON and test the questions. Nothing is saved until you choose Create lesson.</p><LessonJsonWorkspace v-model="text" :busy="blocked" creating @save="createLesson">
+    <template #actions>
+      <button class="button" :disabled="blocked || !canGenerateAudio" @click="generateAudio(false)">{{ audioBusy ? 'Generating option audio…' : 'Generate option audio' }}</button>
+      <button v-if="canRetryAudio" class="button" :disabled="blocked" @click="generateAudio(true)">Retry failed audio once</button>
+    </template>
+    <template #after-actions>
+      <p class="corpus-muted">Generate speech for every option’s visible text. Successful recordings are reused; failed recordings can be retried once. You can save the lesson with some options silent.</p>
+      <p v-if="audioProgress" role="status">{{ audioProgress }}</p>
+      <p v-if="audioError" class="corpus-error" role="alert">{{ audioError }}</p>
+      <ul v-if="audioFailures.length"><li v-for="failure in audioFailures" :key="failure.label">{{ failure.label }} — {{ failure.can_retry ? 'Failed; one retry available.' : 'Failed; retry used.' }} {{ failure.message || '' }}</li></ul>
+    </template>
+  </LessonJsonWorkspace></section>
 </template>
