@@ -41,7 +41,7 @@ def save_reading(document: ReadingDocument) -> None:
     try:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=directory, suffix=".tmp", delete=False) as file:
             temporary = file.name
-            file.write(document.model_dump_json(indent=2, exclude_unset=True))
+            file.write(document.model_dump_json(indent=2, exclude_unset=True, by_alias=True))
             file.flush()
             os.fsync(file.fileno())
         os.replace(temporary, directory / f"{document.id}.json")

@@ -2,7 +2,6 @@ export const questions = [
   {
     "id": "xin_daoxin",
     "instruction": "Fill in the blank",
-    "sentence": "谓[[blank]]开发也。",
     "answer": "道心",
     "translation": "This refers to the development of the Dao Mind.",
     "options": [
@@ -22,12 +21,14 @@ export const questions = [
         "label": "放心",
         "feedback": "＂放心＂ means to set one's mind at ease or relax. The correct term here is ＂道心＂."
       }
-    ]
+    ],
+    "text-prompt": "谓[[blank]]开发也。",
+    "text-prompt-available": true,
+    "audio-prompt": "https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Kangaroo_MusiQue_-_The_Neverwritten_Role_Playing_Game.mp3"
   },
   {
     "id": "xin_daqin",
     "instruction": "Fill in the blank",
-    "sentence": "悟空闻说，[[blank]]大怒，道：「是",
     "answer": "心中",
     "translation": "Hearing this, Wukong became furious in his heart and said...",
     "options": [
@@ -47,12 +48,14 @@ export const questions = [
         "label": "放心",
         "feedback": "＂放心＂ means feeling relieved, which contradicts Wukong becoming furious."
       }
-    ]
+    ],
+    "text-prompt": "悟空闻说，[[blank]]大怒，道：「是",
+    "text-prompt-available": false,
+    "audio-prompt": "https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Kangaroo_MusiQue_-_The_Neverwritten_Role_Playing_Game.mp3"
   },
   {
     "id": "xin_fangxin",
     "instruction": "Fill in the blank",
-    "sentence": "师奏云：「大王[[blank]]。」",
     "answer": "放心",
     "translation": "The master reported, 'Your Majesty, set your mind at ease.'",
     "options": [
@@ -72,12 +75,14 @@ export const questions = [
         "label": "道心",
         "feedback": "＂道心＂ refers to spiritual mindset, not reassurance given to a king."
       }
-    ]
+    ],
+    "text-prompt": "师奏云：「大王[[blank]]。」",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "gong_gongzhu",
     "instruction": "Fill in the blank",
-    "sentence": "我是那国王的第三个[[blank]]，乳名叫做百花羞。",
     "answer": "公主",
     "translation": "I am the third princess of that king, and my childhood name is Baihuaxiu.",
     "options": [
@@ -97,12 +102,14 @@ export const questions = [
         "label": "雷公",
         "feedback": "＂雷公＂ refers to the God of Thunder, which makes no sense here."
       }
-    ]
+    ],
+    "text-prompt": "我是那国王的第三个[[blank]]，乳名叫做百花羞。",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "gong_liegong",
     "instruction": "Fill in the blank",
-    "sentence": "列[[blank]]将",
     "answer": "公",
     "translation": "Gentlemen/Lords, take...",
     "options": [
@@ -122,12 +129,14 @@ export const questions = [
         "label": "雷公",
         "feedback": "＂雷公＂ refers to the Thunder God, which doesn't fit a group address."
       }
-    ]
+    ],
+    "text-prompt": "列[[blank]]将",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "gong_leigong",
     "instruction": "Fill in the blank",
-    "sentence": "外面有一个毛脸[[blank]]打将",
     "answer": "雷公",
     "translation": "Outside, there is a hairy-faced Thunder God fighting his way...",
     "options": [
@@ -147,12 +156,14 @@ export const questions = [
         "label": "公",
         "feedback": "＂公＂ is incomplete here; the full title for the deity is ＂雷公＂."
       }
-    ]
+    ],
+    "text-prompt": "外面有一个毛脸[[blank]]打将",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "de_zishi",
     "instruction": "Fill in the blank",
-    "sentence": "一日而论：子时[[blank]]阳气，而丑则鸡鸣﹔寅不通光，而卯则日出",
     "answer": "得",
     "translation": "Discussed by the day: the Zi hour receives the yang energy, and at Chou the rooster crows...",
     "options": [
@@ -172,12 +183,14 @@ export const questions = [
         "label": "只得",
         "feedback": "＂只得＂ means have no choice but to, which doesn't fit the temporal process."
       }
-    ]
+    ],
+    "text-prompt": "一日而论：子时[[blank]]阳气，而丑则鸡鸣﹔寅不通光，而卯则日出",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "de_zushi",
     "instruction": "Fill in the blank",
-    "sentence": "祖师道：「此亦无难，只是你比他人不同，故传[[blank]]。」",
     "answer": "不得",
     "translation": "The patriarch said, 'This is not difficult, but you are different from others, so it cannot be transmitted to you.'",
     "options": [
@@ -197,12 +210,14 @@ export const questions = [
         "label": "只得",
         "feedback": "＂只得＂ means forced to, which doesn't fit the grammatical ending of ＂传不得＂."
       }
-    ]
+    ],
+    "text-prompt": "祖师道：「此亦无难，只是你比他人不同，故传[[blank]]。」",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "de_tianyuan",
     "instruction": "Fill in the blank",
-    "sentence": "却又田园荒芜，衣食不足，[[blank]]斫两束柴薪，挑向市廛之间",
     "answer": "只得",
     "translation": "However, the fields were barren, food and clothing were insufficient, so he had no choice but to chop two bundles of firewood and carry them to the market.",
     "options": [
@@ -223,12 +238,14 @@ export const questions = [
         "label": "不得",
         "feedback": "＂不得＂ means cannot, which contradicts him cutting firewood to survive."
       }
-    ]
+    ],
+    "text-prompt": "却又田园荒芜，衣食不足，[[blank]]斫两束柴薪，挑向市廛之间",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "zhen_haoshan",
     "instruction": "Fill in the blank",
-    "sentence": "[[blank]]个好山！",
     "answer": "真",
     "translation": "Truly a fine mountain!",
     "options": [
@@ -248,12 +265,14 @@ export const questions = [
         "label": "真假",
         "feedback": "＂真假＂ means true or false, which makes no sense here."
       }
-    ]
+    ],
+    "text-prompt": "[[blank]]个好山！",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "zhen_shanzhong",
     "instruction": "Fill in the blank",
-    "sentence": "[[blank]]：「山中",
     "answer": "真是",
     "translation": "It truly is: 'In the mountains...'",
     "options": [
@@ -273,12 +292,14 @@ export const questions = [
         "label": "真假",
         "feedback": "＂真假＂ means true and false, which is incorrect for introducing a description."
       }
-    ]
+    ],
+    "text-prompt": "[[blank]]：「山中",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "zhen_guai",
     "instruction": "Fill in the blank",
-    "sentence": "那怪不识[[blank]]，走进房，一把搂住，就要亲嘴。",
     "answer": "真假",
     "translation": "The monster, not knowing the truth from falsehood, walked into the room, grabbed her in an embrace, and tried to kiss her.",
     "options": [
@@ -298,12 +319,14 @@ export const questions = [
         "label": "真是",
         "feedback": "＂真是＂ means \"truly is,\" which doesn't fit the object of ＂不识\" (not knowing)."
       }
-    ]
+    ],
+    "text-prompt": "那怪不识[[blank]]，走进房，一把搂住，就要亲嘴。",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "jin_xiuqi",
     "instruction": "Fill in the blank",
-    "sentence": "也不计其数，见[[blank]]还有三四十人从他修行。",
     "answer": "今",
     "translation": "There were countless, and even now there are still thirty or forty people following him in cultivation.",
     "options": [
@@ -323,12 +346,14 @@ export const questions = [
         "label": "如今",
         "feedback": "＂如今＂ is a common variant, but the text specifically uses ＂见今＂."
       }
-    ]
+    ],
+    "text-prompt": "也不计其数，见[[blank]]还有三四十人从他修行。",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "jin_women",
     "instruction": "Fill in the blank",
-    "sentence": "我们[[blank]]",
     "answer": "今日",
     "translation": "We today...",
     "options": [
@@ -348,12 +373,14 @@ export const questions = [
         "label": "今",
         "feedback": "＂今＂ is usually part of a compound like ＂今日＂ in this context."
       }
-    ]
+    ],
+    "text-prompt": "我们[[blank]]",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "jin_fuer",
     "instruction": "Fill in the blank",
-    "sentence": "[[blank]]服饵水食，金光将潜息矣。」",
     "answer": "如今",
     "translation": "Now taking elixirs and water-food, the golden light is about to submerge and rest.",
     "options": [
@@ -373,12 +400,14 @@ export const questions = [
         "label": "今",
         "feedback": "＂今＂ alone is too brief; ＂如今＂ is the proper multi-character time word here."
       }
-    ]
+    ],
+    "text-prompt": "[[blank]]服饵水食，金光将潜息矣。」",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "na_huo",
     "instruction": "Fill in the blank",
-    "sentence": "[[blank]]火不是天上火，不是炉中火，也不是山头火，也不是灶底火，乃是五行中自然",
     "answer": "那",
     "translation": "That fire is not heavenly fire, nor furnace fire, nor mountain fire, nor stove-bottom fire; it is naturally...",
     "options": [
@@ -398,12 +427,14 @@ export const questions = [
         "label": "炉",
         "feedback": "＂炉＂ refers to a furnace, which is part of the listing of fire types later in the sentence."
       }
-    ]
+    ],
+    "text-prompt": "[[blank]]火不是天上火，不是炉中火，也不是山头火，也不是灶底火，乃是五行中自然",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "ran_ziran",
     "instruction": "Fill in the blank",
-    "sentence": "那火不是天上火，不是炉中火，也不是山头火，也不是灶底火，乃是五行中[[blank]]",
     "answer": "自然",
     "translation": "That fire is not heavenly fire... it is naturally [arising] from the five elements.",
     "options": [
@@ -423,12 +454,14 @@ export const questions = [
         "label": "灶底",
         "feedback": "＂灶底＂ means stove bottom, which is a different type of fire mentioned earlier."
       }
-    ]
+    ],
+    "text-prompt": "那火不是天上火，不是炉中火，也不是山头火，也不是灶底火，乃是五行中[[blank]]",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "nai_naishi",
     "instruction": "Fill in the blank",
-    "sentence": "那火不是天上火，不是炉中火，也不是山头火，也不是灶底火，[[blank]]五行中自然",
     "answer": "乃是",
     "translation": "That fire is not heavenly fire... it is [rather] naturally from the five elements.",
     "options": [
@@ -448,12 +481,14 @@ export const questions = [
         "label": "炉",
         "feedback": "＂炉＂ refers to a furnace and doesn't fit this grammatical connector role."
       }
-    ]
+    ],
+    "text-prompt": "那火不是天上火，不是炉中火，也不是山头火，也不是灶底火，[[blank]]五行中自然",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "di_zaodi",
     "instruction": "Fill in the blank",
-    "sentence": "那火不是天上火，不是炉中火，也不是山头火，也不是灶[[blank]]火，乃是五行中自然",
     "answer": "底",
     "translation": "That fire is not heavenly fire, nor furnace fire, nor mountain fire, nor stove-bottom fire...",
     "options": [
@@ -473,12 +508,14 @@ export const questions = [
         "label": "那",
         "feedback": "＂那＂ is a demonstrative pronoun, not part of the word ＂灶底＂."
       }
-    ]
+    ],
+    "text-prompt": "那火不是天上火，不是炉中火，也不是山头火，也不是灶[[blank]]火，乃是五行中自然",
+    "text-prompt-available": true,
+    "audio-prompt": null
   },
   {
     "id": "lu_luzhong",
     "instruction": "Fill in the blank",
-    "sentence": "那火不是天上火，不是[[blank]]中火，也不是山头火，也不是灶底火，乃是五行中自然",
     "answer": "炉",
     "translation": "That fire is not heavenly fire, nor furnace fire...",
     "options": [
@@ -498,6 +535,9 @@ export const questions = [
         "label": "乃是",
         "feedback": "＂乃是＂ is a connecting verb phrase, not a noun like ＂炉＂."
       }
-    ]
+    ],
+    "text-prompt": "那火不是天上火，不是[[blank]]中火，也不是山头火，也不是灶底火，乃是五行中自然",
+    "text-prompt-available": true,
+    "audio-prompt": null
   }
 ]

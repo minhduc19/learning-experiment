@@ -1,20 +1,185 @@
 [
   {
-    "id": "apple", "instruction": "Build the translation", "prompt": "I eat an apple.", "sourceLanguage": "English", "targetLanguage": "Spanish",
-    "tiles": [{"id":"i","text":"Yo"},{"id":"eat","text":"como"},{"id":"an","text":"una"},{"id":"apple","text":"manzana"},{"id":"drink","text":"bebo"},{"id":"a","text":"un"}],
-    "answers": [["i","eat","an","apple"],["eat","an","apple"]],
-    "translation": "Yo como una manzana.", "explanation": "Como means ‘I eat’, so Yo is optional. Manzana is feminine and takes una."
+    "id": "apple",
+    "instruction": "Build the translation",
+    "sourceLanguage": "English",
+    "targetLanguage": "Spanish",
+    "tiles": [
+      {
+        "id": "i",
+        "text": "Yo"
+      },
+      {
+        "id": "eat",
+        "text": "como"
+      },
+      {
+        "id": "an",
+        "text": "una"
+      },
+      {
+        "id": "apple",
+        "text": "manzana"
+      },
+      {
+        "id": "drink",
+        "text": "bebo"
+      },
+      {
+        "id": "a",
+        "text": "un"
+      }
+    ],
+    "answers": [
+      [
+        "i",
+        "eat",
+        "an",
+        "apple"
+      ],
+      [
+        "eat",
+        "an",
+        "apple"
+      ]
+    ],
+    "translation": "Yo como una manzana.",
+    "explanation": "Como means ‘I eat’, so Yo is optional. Manzana is feminine and takes una.",
+    "text-prompt": "I eat an apple.",
+    "text-prompt-available": true,
+    "audio-prompt": "https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Kangaroo_MusiQue_-_The_Neverwritten_Role_Playing_Game.mp3"
   },
   {
-    "id": "morning", "instruction": "Build the translation", "prompt": "She drinks water every morning.", "sourceLanguage": "English", "targetLanguage": "Spanish",
-    "tiles": [{"id":"she","text":"Ella"},{"id":"drinks","text":"bebe"},{"id":"water","text":"agua"},{"id":"morning","text":"cada mañana"},{"id":"eats","text":"come"}],
-    "answers": [["she","drinks","water","morning"],["morning","she","drinks","water"]],
-    "translation": "Ella bebe agua cada mañana.", "explanation": "Bebe agrees with ella. The time phrase cada mañana can come at the beginning or the end."
+    "id": "morning",
+    "instruction": "Build the translation",
+    "sourceLanguage": "English",
+    "targetLanguage": "Spanish",
+    "tiles": [
+      {
+        "id": "she",
+        "text": "Ella"
+      },
+      {
+        "id": "drinks",
+        "text": "bebe"
+      },
+      {
+        "id": "water",
+        "text": "agua"
+      },
+      {
+        "id": "morning",
+        "text": "cada mañana"
+      },
+      {
+        "id": "eats",
+        "text": "come"
+      }
+    ],
+    "answers": [
+      [
+        "she",
+        "drinks",
+        "water",
+        "morning"
+      ],
+      [
+        "morning",
+        "she",
+        "drinks",
+        "water"
+      ]
+    ],
+    "translation": "Ella bebe agua cada mañana.",
+    "explanation": "Bebe agrees with ella. The time phrase cada mañana can come at the beginning or the end.",
+    "text-prompt": "She drinks water every morning.",
+    "text-prompt-available": false,
+    "audio-prompt": "https://commondatastorage.googleapis.com/codeskulptor-demos/DDR_assets/Kangaroo_MusiQue_-_The_Neverwritten_Role_Playing_Game.mp3"
   },
   {
-    "id": "order", "instruction": "Build a sensible sentence", "prompt": null, "targetLanguage": "English",
-    "tiles": [{"id":"we","text":"We"},{"id":"read","text":"read"},{"id":"books","text":"books"},{"id":"library","text":"at the library"},{"id":"reads","text":"reads"},{"id":"quick","text":"quick"}],
-    "answers": [["we","read","books","library"],["library","we","read","books"]],
-    "translation": "We read books at the library.", "explanation": "Use read with we. The place phrase can go before or after the main clause. Capitalization and punctuation are supplied when reading the completed sentence."
+    "id": "order",
+    "instruction": "Build a sensible sentence",
+    "targetLanguage": "English",
+    "tiles": [
+      {
+        "id": "we",
+        "text": "We"
+      },
+      {
+        "id": "read",
+        "text": "read"
+      },
+      {
+        "id": "books",
+        "text": "books"
+      },
+      {
+        "id": "library",
+        "text": "at the library"
+      },
+      {
+        "id": "reads",
+        "text": "reads"
+      },
+      {
+        "id": "quick",
+        "text": "quick"
+      }
+    ],
+    "answers": [
+      [
+        "we",
+        "read",
+        "books",
+        "library"
+      ],
+      [
+        "library",
+        "we",
+        "read",
+        "books"
+      ]
+    ],
+    "translation": "We read books at the library.",
+    "explanation": "Use read with we. The place phrase can go before or after the main clause. Capitalization and punctuation are supplied when reading the completed sentence.",
+    "text-prompt": null,
+    "text-prompt-available": false,
+    "audio-prompt": null
+  },
+  {
+    "id": "book",
+    "instruction": "Build the translation",
+    "text-prompt": "Ella lee un libro.",
+    "text-prompt-available": true,
+    "audio-prompt": null,
+    "sourceLanguage": "Spanish",
+    "targetLanguage": "English",
+    "tiles": [
+      {
+        "id": "she",
+        "text": "She"
+      },
+      {
+        "id": "reads",
+        "text": "reads"
+      },
+      {
+        "id": "book",
+        "text": "a book"
+      },
+      {
+        "id": "write",
+        "text": "write"
+      }
+    ],
+    "answers": [
+      [
+        "she",
+        "reads",
+        "book"
+      ]
+    ],
+    "translation": "She reads a book.",
+    "explanation": "Use reads with she. The phrase a book is the object."
   }
 ]

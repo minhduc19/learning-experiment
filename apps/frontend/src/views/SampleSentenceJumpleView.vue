@@ -1,6 +1,7 @@
 <script setup>
 import { nextTick, ref, watch } from 'vue'
 import Draggable from 'vuedraggable'
+import AudioPrompt from '../components/AudioPrompt.vue'
 import items from '../data/sentenceJumble.json'
 import { useSentenceJumble } from '../composables/useSentenceJumble.js'
 const { index, selected, checked, correct, total, complete, question, answer, bank, choose, remove, move, check, proceed, restart } = useSentenceJumble(items)
@@ -56,8 +57,9 @@ async function again() { restart(); syncTiles(true); await nextTick(); heading.v
     <section v-else class="activity-screen-question" aria-labelledby="jumble-heading">
       <div class="activity-mascot" aria-hidden="true">✦</div>
       <h1 id="jumble-heading" ref="heading" tabindex="-1" class="activity-title">{{ question.instruction }}</h1>
-      <p class="activity-hint">{{ question.prompt ? `Translate into ${question.targetLanguage}.` : `Arrange the tiles into a sensible ${question.targetLanguage} sentence.` }} Extra tiles may be left over.</p>
-      <p v-if="question.prompt" class="activity-sentence">{{ question.prompt }}</p>
+      <p class="activity-hint">{{ question['text-prompt-available'] && question['text-prompt'] ? `Translate into ${question.targetLanguage}.` : question['audio-prompt'] ? `Play the audio prompt, then build the ${question.targetLanguage} sentence.` : `Arrange the tiles into a sensible ${question.targetLanguage} sentence.` }} Extra tiles may be left over.</p>
+      <AudioPrompt v-if="question['audio-prompt']" :key="question.id" :src="question['audio-prompt']" />
+      <p v-if="question['text-prompt'] && (question['text-prompt-available'] || checked)" class="activity-sentence">{{ question['text-prompt'] }}</p>
       <Draggable v-model="answerTiles" item-key="id" group="sentence-tiles" class="jumble-answer" data-drop-zone="answer"
         :class="{ 'is-correct': checked && correct, 'is-incorrect': checked && !correct }"
         :animation="180" :disabled="checked" :force-fallback="true" :fallback-on-body="true" :fallback-tolerance="5"

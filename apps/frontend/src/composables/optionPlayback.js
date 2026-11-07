@@ -7,6 +7,7 @@ export function stopOptionAudio(owner) {
     current.controller.abort()
     current.player?.pause()
     if (current.url) URL.revokeObjectURL(current.url)
+    current.onStop?.()
     current = null
   }
 }
@@ -29,5 +30,21 @@ export async function playOptionAudio(option, owner, onError = () => {}) {
     if (current !== state || state.controller.signal.aborted) return
     stopOptionAudio(owner)
     throw new Error('Could not play audio. Try Replay audio; you can still answer the question.')
+  }
+}
+
+export async function playPromptAudio(url, owner, onError = () => {}, onEnd = () => {}) {
+  stopOptionAudio()
+  if (!url) return
+  const state = { owner, controller: new AbortController(), player: new Audio(url), url: null, onStop: onEnd }
+  current = state
+  state.player.preload = 'none'
+  state.player.onended = () => { if (current === state) { stopOptionAudio(owner); onEnd() } }
+  state.player.onerror = () => { if (current === state) { stopOptionAudio(owner); onError('Could not play the audio prompt. Try again.') } }
+  try { await state.player.play() }
+  catch (failure) {
+    if (current !== state) return
+    stopOptionAudio(owner)
+    throw failure
   }
 }

@@ -1,7 +1,9 @@
 import { computed, ref } from 'vue'
+import { normalizeActivityPrompt } from './activityPrompt.js'
 import { shuffle } from './shuffle.js'
 
 export function useSentenceJumble(items) {
+  items = items.map(normalizeActivityPrompt)
   const index = ref(0), selected = ref([]), checked = ref(false), correct = ref(false)
   const banks = ref(items.map(item => shuffle(item.tiles)))
   const total = items.length

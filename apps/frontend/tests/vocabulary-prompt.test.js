@@ -17,7 +17,7 @@ test('the default system prompt includes the supplied valid targeted lesson exam
   assert.ok(defaultSystemPrompt.startsWith('The user will send vocabulary data'))
   const example=JSON.parse(defaultSystemPrompt.split('EXAMPLE JSON OUTPUT:')[1].trim())
   assert.equal(parseLesson(JSON.stringify(example)).items[0].data['target-character'],'心')
-  assert.equal(example.items[0].data.sentence,'做人要有一颗好[[blank]]。')
+  assert.equal(example.items[0].data['text-prompt'],'做人要有一颗好[[blank]]。')
 })
 
 

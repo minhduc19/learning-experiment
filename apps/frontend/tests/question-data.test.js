@@ -10,7 +10,10 @@ for (const [name, items] of [['questions', questions], ['strictQuestions', stric
     for (const question of items) {
       assert.ok(typeof question.id === 'string' && question.id.trim())
       assert.ok(typeof question.instruction === 'string' && question.instruction.trim())
-      assert.equal(question.sentence.split('[[blank]]').length, 2, question.id)
+      assert.equal(typeof question['text-prompt-available'], 'boolean')
+      assert.ok(Object.hasOwn(question, 'audio-prompt'))
+      assert.equal(Object.hasOwn(question, 'sentence'), false)
+      assert.equal(question['text-prompt'].split('[[blank]]').length, 2, question.id)
       assert.ok(Array.isArray(question.options) && question.options.length >= 2, question.id)
       assert.equal(new Set(question.options.map(option => option.id)).size, question.options.length, question.id)
       assert.equal(question.options.filter(option => option.id === question.answer).length, 1, question.id)

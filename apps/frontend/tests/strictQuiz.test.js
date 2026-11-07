@@ -11,7 +11,7 @@ test('strict selections can change before Check, then lock and count once', () =
   quiz.choose(wrong)
   quiz.choose(right)
   assert.equal(quiz.selected.value.id, right.id)
-  assert.equal(quiz.sentence.value, question.sentence.replaceAll('[[blank]]', right.fill ?? right.label.toLowerCase()))
+  assert.equal(quiz.sentence.value, question['text-prompt'].replaceAll('[[blank]]', right.fill ?? right.label.toLowerCase()))
   assert.equal(quiz.results.value.length, 0)
   assert.equal(quiz.hearts.value, 5)
   quiz.choose(wrong)

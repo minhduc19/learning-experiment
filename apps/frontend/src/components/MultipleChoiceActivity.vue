@@ -1,5 +1,6 @@
 <script setup>
 import { computed, nextTick, onUnmounted, ref, useId, watch } from 'vue'
+import AudioPrompt from './AudioPrompt.vue'
 import { useQuiz } from '../composables/useQuiz'
 import { questions } from '../data/questions.js'
 import { strictQuestions } from '../data/strictQuestions.js'
@@ -113,8 +114,9 @@ async function startAgain() {
     <section v-else class="activity-screen-question" ref="questionSection" tabindex="-1" :key="question.id" :aria-labelledby="showInstructions ? questionHeadingId : undefined" :aria-label="showInstructions ? undefined : question.instruction">
       <div class="activity-mascot" aria-hidden="true">✦</div>
       <h1 v-if="showInstructions" class="activity-title" :id="questionHeadingId" ref="heading" tabindex="-1">{{ question.instruction }}</h1>
-      <p v-if="showInstructions" class="activity-hint">{{ strict ? 'Choose an answer, then press Check to submit. You cannot retry after checking.' : 'Choose the word that completes the sentence.' }}</p>
-      <p class="activity-sentence" aria-live="polite"><template v-for="(part, position) in question.sentence.split('[[blank]]')" :key="position">{{ part }}<span v-if="position < question.sentence.split('[[blank]]').length - 1" class="activity-answer" :class="{ 'is-correct': checked && correct, 'is-incorrect': checked && !correct }">{{ answerText }}<span v-if="checked" class="activity-answer-icon" aria-hidden="true">{{ correct ? ' ✓' : ' ✗' }}</span><span v-if="checked" class="activity-sr-only">{{ correct ? ' (correct)' : ' (incorrect)' }}</span></span></template></p>
+      <p v-if="showInstructions" class="activity-hint">{{ strict ? 'Choose an answer, then press Check to submit. You cannot retry after checking.' : (question['text-prompt-available'] ? 'Choose the word that completes the sentence.' : 'Choose an answer. The text prompt is revealed after checking.') }}</p>
+      <AudioPrompt v-if="question['audio-prompt']" :key="index" :src="question['audio-prompt']" />
+      <p v-if="question['text-prompt-available'] || checked" class="activity-sentence" aria-live="polite"><template v-for="(part, position) in question['text-prompt'].split('[[blank]]')" :key="position">{{ part }}<span v-if="position < question['text-prompt'].split('[[blank]]').length - 1" class="activity-answer" :class="{ 'is-correct': checked && correct, 'is-incorrect': checked && !correct }">{{ answerText }}<span v-if="checked" class="activity-answer-icon" aria-hidden="true">{{ correct ? ' ✓' : ' ✗' }}</span><span v-if="checked" class="activity-sr-only">{{ correct ? ' (correct)' : ' (incorrect)' }}</span></span></template></p>
       <div class="activity-options" role="group" aria-label="Answer options">
         <button
           v-for="(option, position) in question.options"
