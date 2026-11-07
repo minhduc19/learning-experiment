@@ -18,6 +18,7 @@ jobs:
     env:
       DEPLOY_SHA: ${{ github.sha }}
       DEEPSEEK: ${{ secrets.DEEPSEEK }}
+      ELEVEN: ${{ secrets.ELEVEN }}
       SSH_HOST: 144.126.225.254
       SSH_PORT: ${{ vars.SSH_PORT || '22' }}
       SSH_USER: ${{ secrets.SSH_USER }}
@@ -64,6 +65,16 @@ jobs:
             chmod 600 "$secret_tmp"
             mv -f -- "$secret_tmp" "$secret_file"
           '
+          printf '%s' "$ELEVEN" | ssh_droplet '
+            set -eu
+            umask 077
+            mkdir -p "$HOME/github-actions"
+            secret_file="$HOME/github-actions/learning-experiment.eleven"
+            secret_tmp=$(mktemp "$secret_file.XXXXXX")
+            cat > "$secret_tmp"
+            chmod 600 "$secret_tmp"
+            mv -f -- "$secret_tmp" "$secret_file"
+          '
           ssh_droplet "bash -s -- $DEPLOY_SHA" <<'REMOTE'
           set -euo pipefail
           deploy_sha="$1"
@@ -97,6 +108,7 @@ jobs:
           }
           trap 'status=$?; deployment_diagnostics; exit "$status"' ERR
           export DEEPSEEK="$(cat "$HOME/github-actions/learning-experiment.deepseek")"
+          export ELEVEN="$(cat "$HOME/github-actions/learning-experiment.eleven")"
           docker compose -p learning-experiment up --build -d --wait --wait-timeout 180
           curl --fail --silent --show-error --retry 5 --retry-connrefused --retry-delay 2 \
             http://127.0.0.1:8080/api/health/db

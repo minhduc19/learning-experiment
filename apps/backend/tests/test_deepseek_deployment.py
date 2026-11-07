@@ -1,18 +1,20 @@
+import pytest
 import shlex
 import stat
 import subprocess
 from pathlib import Path
 
 
-def test_secret_transfer_script_preserves_value_and_private_permissions(tmp_path):
+@pytest.mark.parametrize("secret,filename", [("DEEPSEEK", "deepseek"), ("ELEVEN", "eleven")])
+def test_secret_transfer_script_preserves_value_and_private_permissions(tmp_path, secret, filename):
     workflow = (
         Path(__file__).parents[3] / ".github/workflows/ssh-check.yml"
     ).read_text()
-    quoted = workflow.split("printf '%s' \"$DEEPSEEK\" | ssh_droplet ", 1)[1].split(
+    quoted = workflow.split(f"printf '%s' \"${secret}\" | ssh_droplet ", 1)[1].split(
         '\n          ssh_droplet "bash -s', 1
     )[0]
     command = shlex.split(quoted)[0].replace("$HOME/github-actions", str(tmp_path))
-    path = tmp_path / "learning-experiment.deepseek"
+    path = tmp_path / f"learning-experiment.{filename}"
     for value in (b'test-key-with-$-and-quotes"\nsecond-line', b""):
         result = subprocess.run(
             ["bash", "-c", command], input=value, capture_output=True, check=True

@@ -34,8 +34,11 @@ export function parseLesson(text) {
     if (!Array.isArray(q.options) || q.options.length < 2 || q.options.length > 20) throw new Error(`${path}.data.options needs 2–20 options.`)
     const options = new Set()
     for (const option of q.options) {
-      object(option, path + '.option', ['id','label','feedback','fill'])
+      object(option, path + '.option', ['id','label','feedback','fill','audio_id','audio_text'])
       string(option.id, path + '.option.id', 200); string(option.label, path + '.option.label', 2000); string(option.feedback, path + '.option.feedback', 10000)
+      if (option.audio_id != null && (typeof option.audio_id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(option.audio_id))) throw new Error(`${path}.option.audio_id must be a valid audio ID.`)
+      if (option.audio_text != null && (typeof option.audio_text !== 'string' || option.audio_text.length > 2000)) throw new Error(`${path}.option.audio_text must be text, at most 2000 characters.`)
+      if (option.audio_text !== option.label) { delete option.audio_id; delete option.audio_text }
       if (options.has(option.id)) throw new Error(`${path} has duplicate option IDs.`)
       options.add(option.id)
       if (option.fill != null && typeof option.fill !== 'string') throw new Error(`${path}.option.fill must be text.`)

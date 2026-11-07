@@ -81,6 +81,58 @@ item order, and allows manual changes/formatting. Create lesson stays disabled
 until the draft is valid. Only this explicit action POSTs to `/api/lessons` and
 then opens the saved lesson editor.
 
+## Option audio
+
+After generating exercises, choose **Generate option audio** beside **Create lesson**.
+This sends every option's visible `label` (including distractors) to ElevenLabs,
+using voice `MI36FIkp9wRP7cpWKPTl`, model `eleven_multilingual_v2`, and MP3 output.
+The sentence, fill text, and feedback are not spoken. Generation runs one unique
+text at a time with progress; repeated option labels reuse a recording.
+
+Successful options receive `audio_id` and `audio_text` in the editable lesson JSON.
+The preview updates immediately: selecting an option plays its recording, and
+**Replay audio** repeats it. Selecting another option stops previous playback.
+Silent options and playback failures never prevent answering a question. The
+same behavior works in saved lessons, strict quizzes, and embedded previews.
+
+Partial failures preserve successful recordings. **Retry failed audio once**
+only retries failed texts that still have one attempt available. There are no
+automatic provider retries. The server persists a maximum of two provider
+attempts per account/text/voice/model, including attempts interrupted by a server
+restart. Refreshing or resubmitting cannot reset that limit. Existing successful
+recordings are reused without another provider call. A pending request cannot be
+started concurrently; after two minutes an interrupted request can be checked
+again and, if needed, explicitly retried within the same two-attempt limit.
+
+You can save a lesson with some options silent. Editing an option's label removes
+outdated audio references during validation, so it never plays the old word.
+Generate audio again for the new text. Audio references are checked against the
+signed-in account and recorded text when saving a lesson.
+
+Authenticated POST `/api/ai/option-audio` accepts `{text, retry:false}` (or
+`retry:true` for the single explicit retry). It returns status, attempt count,
+retry availability, and an `audio_id` on success. Authenticated GET
+`/api/ai/option-audio/{audio_id}` serves the owned recording; playback fetches it
+with authorization and uses a temporary browser blob URL. No public file URLs or
+credentials are inserted into lesson JSON.
+
+Migration `010_option_audio.sql` stores recording ownership, status, attempt
+counts, and provider character-cost/request-id/trace-id headers when present.
+Files are atomically written to `CORPUS_DATA_DIR/option-audio/{audio_id}.mp3`
+(`/app/data/corpus/option-audio` in Compose), using the existing persistent
+`corpus_data` volume. Include that directory and the database in backups.
+Recordings remain available for reuse even if a draft is not saved or a lesson is
+deleted. Generation is bounded to two requests per backend process, 2,000
+characters per option, and 5 MiB per recording.
+
+Configure the Actions secret **ELEVEN**. Deployment transfers it through encrypted
+stdin to a private `learning-experiment.eleven` file beside the existing DeepSeek
+secret file, then passes it only to the backend container. An absent secret leaves
+quizzes and existing recordings usable, but disables new provider generation.
+For manual Compose deployments, export `ELEVEN` from that private file alongside
+`DEEPSEEK`; for local development use the ignored `.env`. Never use a VITE variable.
+Tests mock the provider and do not spend ElevenLabs credits.
+
 ## GitHub Actions secret and deployment
 
 Configure the repository's Actions secret named `DEEPSEEK` with the DeepSeek key.
