@@ -1,16 +1,18 @@
 <script setup>
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import { authorizedFetch } from '../composables/useAuth'
 import { serializeVocabularyPrompt, vocabularyPromptRows } from '../composables/studyExport'
 import VocabularyPromptEditor from './VocabularyPromptEditor.vue'
 import { parseLesson } from '../composables/lessonJson'
-import { defaultSystemPrompt } from '../data/aiSystemPrompt'
+import SystemPromptLibrary from './SystemPromptLibrary.vue'
 import LessonJsonWorkspace from './LessonJsonWorkspace.vue'
 const props = defineProps({ selection: { type: Object, required: true }, sourceBusy: Boolean })
 const emit = defineEmits(['busy'])
 const router = useRouter()
-const script = ref('traditional'), rows = ref([]), generatedPrompt = ref(''), systemPrompt = ref(defaultSystemPrompt)
+const script = ref('traditional'), rows = ref([]), generatedPrompt = ref('')
+const selectedSystemPrompt = ref(null), promptLibraryBusy = ref(false), promptLibraryDirty = ref(false)
+const systemPrompt = computed(() => selectedSystemPrompt.value?.content ?? '')
 const userPrompt = computed(() => serializeVocabularyPrompt(rows.value))
 let nextRowId = 0
 function resetVocabulary(selection) {
@@ -18,20 +20,18 @@ function resetVocabulary(selection) {
   generatedPrompt.value = userPrompt.value
 }
 const text = ref(''), busy = ref(false), saving = ref(false), error = ref(''), warning = ref(''), saved = ref(false)
-const modal = ref(null), promptButton = ref(null)
 let controller
-const blocked = computed(() => busy.value || saving.value || props.sourceBusy)
-const canSend = computed(() => Boolean(rows.value.length && systemPrompt.value.trim() && userPrompt.value.length <= 100000 && systemPrompt.value.length <= 50000 && userPrompt.value.trim() !== 'Character|segment|sentence|sentence-id'))
-const dirty = computed(() => !saved.value && (Boolean(text.value) || userPrompt.value !== generatedPrompt.value || systemPrompt.value !== defaultSystemPrompt))
+const externallyBlocked = computed(() => busy.value || saving.value || props.sourceBusy)
+const blocked = computed(() => externallyBlocked.value || promptLibraryBusy.value)
+const canSend = computed(() => Boolean(!promptLibraryDirty.value && rows.value.length && systemPrompt.value.trim() && userPrompt.value.length <= 100000 && systemPrompt.value.length <= 50000 && userPrompt.value.trim() !== 'Character|segment|sentence|sentence-id'))
+const dirty = computed(() => promptLibraryDirty.value || (!saved.value && (Boolean(text.value) || userPrompt.value !== generatedPrompt.value)))
 watch(() => props.selection, value => { resetVocabulary(value); if (text.value) warning.value = 'Vocabulary changed. The existing lesson draft is unchanged; send the prompt again to generate new exercises.' }, { immediate:true })
-watch([busy,saving], () => emit('busy',busy.value || saving.value))
+watch([busy,saving,promptLibraryBusy], () => emit('busy',busy.value || saving.value || promptLibraryBusy.value))
 watch(text, () => { saved.value = false })
 function changeScript(event) {
   if (userPrompt.value !== generatedPrompt.value && !window.confirm('Replace your edited vocabulary prompt with the selected writing system?')) { event.target.value = script.value; return }
   script.value = event.target.value; resetVocabulary(props.selection)
 }
-async function showSystemPrompt() { await nextTick(); modal.value?.showModal() }
-function closeSystemPrompt() { modal.value?.close(); promptButton.value?.focus() }
 async function send() {
   if (blocked.value || !canSend.value) return
   if (text.value && !window.confirm('Replace the current unsaved lesson draft with a new AI response?')) return
@@ -74,12 +74,13 @@ onUnmounted(()=>{controller?.abort();window.removeEventListener('beforeunload',u
     <p class="corpus-muted">This is the exact text sent to AI. Pipes and line breaks inside fields are escaped to keep one association per line.</p>
     <pre class="ai-user-prompt-preview" tabindex="0" aria-labelledby="ai-user-prompt-title">{{ userPrompt }}</pre>
     <p class="corpus-muted">{{ userPrompt.length.toLocaleString() }} / 100,000 characters. Shorten the vocabulary if this limit is exceeded.</p>
+    <SystemPromptLibrary :disabled="externallyBlocked" @selected="selectedSystemPrompt=$event" @busy="promptLibraryBusy=$event" @dirty="promptLibraryDirty=$event" />
+    <p v-if="promptLibraryDirty" class="corpus-resume-note">Save or cancel your system prompt edits before sending.</p>
     <button class="button" :disabled="blocked || !canSend" @click="send">{{ busy ? 'Generating exercises…' : 'Send prompt' }}</button>
-    <div><button ref="promptButton" class="corpus-text-button" :disabled="blocked" @click="showSystemPrompt">Edit system prompt</button></div>
     <p class="corpus-muted">Only Send prompt contacts AI. Creating a lesson is a separate step after reviewing the JSON.</p>
     <p v-if="busy" role="status">Waiting for DeepSeek. This may take up to two minutes.</p>
     <p v-if="error" class="corpus-error" role="alert">{{ error }}</p><p v-if="warning" class="corpus-resume-note" role="status">{{ warning }}</p>
-    <dialog ref="modal" class="ai-prompt-dialog" aria-labelledby="ai-system-title" @click="$event.target === modal && closeSystemPrompt()"><h2 id="ai-system-title">System prompt</h2><p>The text below is sent as system_prompt, exactly as edited.</p><label for="ai-system-prompt">System prompt text</label><textarea id="ai-system-prompt" v-model="systemPrompt" maxlength="50000" class="ai-prompt-text" rows="20" :disabled="blocked" /><div class="cluster"><button class="button" @click="closeSystemPrompt">Done</button><button class="corpus-text-button" :disabled="blocked" @click="systemPrompt=defaultSystemPrompt">Restore default prompt</button></div></dialog>
+
   </section>
   <section v-if="text" class="corpus-sentence-card" aria-label="Generated lesson"><h2>Review generated exercises</h2><p>Edit the JSON and test the questions. Nothing is saved until you choose Create lesson.</p><LessonJsonWorkspace v-model="text" :busy="blocked" creating @save="createLesson" /></section>
 </template>

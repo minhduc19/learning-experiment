@@ -7,7 +7,9 @@ POST `/api/corpus/study-selection` with `learned_count` and `new_count`; this
 handler generates and saves a History snapshot once, using the same service as
 POST `/api/corpus/study-history`. Existing GET study-selection remains read-only.
 
-Vocabulary becomes an editable `user_prompt` with exactly these columns:
+Vocabulary appears as editable rows with character, segment, sentence, and sentence ID
+fields. Move up/down changes their order; Delete removes a row. The live text
+preview below the editor shows the exact `user_prompt` with these columns:
 
 ```text
 Character|segment|sentence|sentence-id
@@ -20,12 +22,43 @@ popular segment examples for learned characters and containing segments for new
 characters, deduplicates associations, and escapes literal pipes/backslashes and
 line breaks. The prompt is reviewable before any AI request.
 
-Send prompt sends the current user prompt and current system prompt to POST
-`/api/ai/exercises`. Edit system prompt opens an accessible native modal with the
-exact supplied default prompt and JSON example. Done or Escape closes it; edited
-text remains the active system prompt. Restore default prompt resets it. Prompts
-and generated drafts remain in memory rather than shared localStorage. Navigating
-away from unsaved draft/prompt edits warns before discarding them.
+The System prompts library is private to the signed-in account and persists in
+PostgreSQL, including the chosen prompt. On first use it contains the original
+prompt and JSON example titled **First multiple choice quiz**, selected for
+sending. The default is seeded once, so deleting it (or the entire library) does
+not recreate it on later visits.
+
+Choose New system prompt to create a title and instructions, or Read/Edit/Delete
+on an existing prompt. Read shows the saved text without changing the selection.
+Use prompt changes the selection explicitly; both the selected card and the
+library header show **Selected for sending**. Creating a prompt does not select
+it. Editing the selected prompt updates the saved text used for sending. Deleting
+the selected prompt clears the selection and requires another explicit choice.
+
+Save or cancel pending system-prompt edits before sending. Unsaved vocabulary,
+lesson, and system-prompt drafts warn before navigation; saved system prompts do
+not. Failed saves preserve the editor. Revision checks reject stale edits or
+deletions with HTTP 409, so another tab cannot silently overwrite saved changes.
+Reload prompts refreshes the library while retaining the draft text for copying.
+
+Authenticated library endpoints under `/api/ai/system-prompts` return
+`{items, selected_id}` with saved prompt IDs, titles, content, revisions, and
+timestamps:
+
+- GET lists the library; POST creates a prompt with `{title, content}`.
+- PUT `/{id}` updates `{title, content, revision}`.
+- PUT `/{id}/select` selects an owned prompt.
+- DELETE `/{id}?revision=N` deletes an owned prompt.
+
+Titles accept 1–200 characters; instructions accept 1–50,000, with whitespace-only
+values rejected. Every operation checks ownership and returns private, no-store
+responses. Migration `009_system_prompts.sql` adds the library and prompt tables;
+the normal deployment migration service applies it without changing corpus data.
+
+Send prompt sends the live user prompt and the selected prompt's saved content
+to POST `/api/ai/exercises`. Vocabulary edits and generated lesson drafts remain
+in memory; saved prompt titles are for organization and are not appended to the
+AI request.
 
 The backend uses the official OpenAI Python SDK with
 `base_url=https://api.deepseek.com`, `model=deepseek-flash`, two separate messages
@@ -46,7 +79,7 @@ The response text populates the same LessonJsonWorkspace used by `/lessons/new`
 and `/lessons/:id`. It validates JSON, shows the interactive lesson preview in
 item order, and allows manual changes/formatting. Create lesson stays disabled
 until the draft is valid. Only this explicit action POSTs to `/api/lessons` and
-then opens the saved lesson editor. No new database migration is needed.
+then opens the saved lesson editor.
 
 ## GitHub Actions secret and deployment
 
