@@ -84,8 +84,11 @@ then opens the saved lesson editor.
 ## Option audio
 
 After generating exercises, choose **Generate option audio** beside **Create lesson**.
-This sends every option's visible `label` (including distractors) to ElevenLabs,
-using the editable voice ID (initially `MI36FIkp9wRP7cpWKPTl`), model `eleven_multilingual_v2`, and MP3 output.
+Choose **Piper** (the default) for local Mandarin speech, or **ElevenLabs** for
+the external service. Both generate every option's visible `label`, including
+distractors. Piper uses `zh_CN-huayan-medium` and writes WAV recordings; ElevenLabs
+uses the editable voice ID (initially `MI36FIkp9wRP7cpWKPTl`), model
+`eleven_multilingual_v2`, and MP3 output.
 The sentence, fill text, and feedback are not spoken. Generation runs one unique
 text at a time with progress; repeated option labels reuse a recording.
 
@@ -97,8 +100,8 @@ same behavior works in saved lessons, strict quizzes, and embedded previews.
 
 Partial failures preserve successful recordings. **Retry failed audio once**
 only retries failed texts that still have one attempt available. There are no
-automatic provider retries. The server persists a maximum of two provider
-attempts per account/text/voice/model, including attempts interrupted by a server
+automatic provider retries. The server persists a maximum of two generation
+attempts per account/text/provider/voice/model, including attempts interrupted by a server
 restart. Refreshing or resubmitting cannot reset that limit. Existing successful
 recordings are reused without another provider call. A pending request cannot be
 started concurrently; after two minutes an interrupted request can be checked
@@ -109,7 +112,7 @@ outdated audio references during validation, so it never plays the old word.
 Generate audio again for the new text. Audio references are checked against the
 signed-in account and recorded text when saving a lesson.
 
-Authenticated POST `/api/ai/option-audio` accepts `{text, retry:false}` (or
+Authenticated POST `/api/ai/option-audio` accepts `{text, provider:"piper", retry:false}` (or
 `retry:true` for the single explicit retry). It returns status, attempt count,
 retry availability, and an `audio_id` on success. Authenticated GET
 `/api/ai/option-audio/{audio_id}` serves the owned recording; playback fetches it
@@ -118,12 +121,15 @@ credentials are inserted into lesson JSON.
 
 Migration `010_option_audio.sql` stores recording ownership, status, attempt
 counts, and provider character-cost/request-id/trace-id headers when present.
-Files are atomically written to `CORPUS_DATA_DIR/option-audio/{audio_id}.mp3`
+Files are atomically written to `CORPUS_DATA_DIR/option-audio/{audio_id}.wav`
+for Piper or `{audio_id}.mp3` for ElevenLabs
 (`/app/data/corpus/option-audio` in Compose), using the existing persistent
 `corpus_data` volume. Include that directory and the database in backups.
 Recordings remain available for reuse even if a draft is not saved or a lesson is
-deleted. Generation is bounded to two requests per backend process, 2,000
-characters per option, and 5 MiB per recording.
+deleted. ElevenLabs generation is bounded to two requests per backend process and 2,000
+characters per option. Piper is limited to one generation across backend
+processes sharing corpus storage and 200 characters per option. Both have a
+5 MiB recording limit.
 
 Configure the Actions secret **ELEVEN**. Deployment transfers it through encrypted
 stdin to a private `learning-experiment.eleven` file beside the existing DeepSeek
@@ -175,3 +181,52 @@ separate for each text/voice/model combination. API clients can supply `voice_id
 in option-audio JSON, or the diagnostics `voice_id` query parameter; omitted
 parameters preserve the initial voice for older clients, while null/empty values
 explicitly remove it. Voice IDs are validated before being inserted into paths.
+
+## Local Piper speech (default)
+
+Piper is selected initially in the option audio controls. It requires no external
+API key or provider credits. Switching provider clears audio references in the
+current draft for regeneration, while stored recordings and saved lessons remain
+unchanged. Audio IDs, ownership checks, quiz playback, and the explicit single
+retry work with either provider. Set `provider:"elevenlabs"` for API clients that
+want the previous external service; omitted provider now means Piper.
+
+Migration `011_audio_providers.sql` adds provider, file extension, and media type.
+Existing recordings default to ElevenLabs/MP3 and their cache fingerprints and
+files remain valid. New cache keys distinguish the Piper model version from all
+ElevenLabs voices. Switching providers does not silently reuse the other voice's
+recording or fall back to a paid service when Piper fails.
+
+The Docker backend image includes the Piper runtime and a verified copy of
+`zh_CN-huayan-medium` (about 63 MB for the ONNX model). The separate model-download
+layer is cached independently of application source. Building requires HTTPS
+access to Hugging Face and its download redirects. The source revision is pinned and files are checked against checked-in sizes and
+digests, downloaded atomically, and
+the voice's `MODEL_CARD` is included in `/app/models/piper`. Piper itself is
+GPL-3.0 software. The Huayan model card identifies its source dataset as
+PlayVoice/HuaYan_TTS and lists its dataset license as **Unknown**. No API credits
+are required, but the card does not establish commercial-use rights for this
+voice. The model card is retained in the image for review.
+Generation makes no model download requests at runtime.
+
+For the 1-vCPU/1-GB server, the API starts an isolated, CPU-only subprocess for each
+uncached option and releases the model memory on exit. It uses one ONNX/BLAS
+thread, lower CPU scheduling priority, a 30-second CPU budget, a 60-second wall
+timeout, and a 5-MiB file-size limit. A file lock on shared corpus storage prevents
+concurrent Piper generations across backend processes. The API never imports
+Piper/ONNX into its long-lived process. These controls limit concurrency and CPU;
+they do not guarantee a particular peak RAM usage for the full deployed stack.
+The Docker CI smoke test synthesizes Mandarin using the actual installed model.
+
+Local setup from the repository root:
+
+```sh
+PYTHONPATH=apps/backend uv run --project apps/backend python -m app.ai.piper_models --directory apps/backend/data/piper
+PIPER_MODEL_DIR="$PWD/apps/backend/data/piper" npm run dev
+```
+
+The default model directory in Docker is `/app/models/piper`. `PIPER_MODEL_DIR`
+can point to a manually prepared directory containing the model, its JSON config,
+and model card for local development. Missing models report an actionable error
+without consuming a generation attempt. Recordings remain in the existing
+persistent corpus volume; include them and PostgreSQL in backups.

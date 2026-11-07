@@ -16,6 +16,10 @@ client = corpus_client_fixture
 ROOT = '/api/ai/option-audio'
 
 
+def post_audio(client, payload):
+    return client.post(ROOT, json={'provider': 'elevenlabs', **payload})
+
+
 def provider(monkeypatch, handler):
     monkeypatch.setenv('ELEVEN', 'test-eleven-secret')
     monkeypatch.setattr(audio, 'ElevenLabs', lambda **kwargs: RealClient(
@@ -33,7 +37,7 @@ def test_real_sdk_stores_bytes_headers_and_reuses_matching_text(client, monkeypa
         return httpx.Response(200, content=b'ID3-recording', headers={
             'content-type': 'audio/mpeg', 'character-cost': '2', 'request-id': 'provider-id', 'x-trace-id': 'trace'})
     provider(monkeypatch, respond)
-    generated = client.post(ROOT, json={'text': '学习'})
+    generated = post_audio(client, {'text': '学习'})
     assert generated.status_code == 200, generated.text
     data = generated.json()
     assert data['status'] == 'ready' and data['attempts'] == 1
@@ -42,8 +46,8 @@ def test_real_sdk_stores_bytes_headers_and_reuses_matching_text(client, monkeypa
     assert response.content == b'ID3-recording'
     assert response.headers['content-type'] == 'audio/mpeg'
     assert response.headers['cache-control'] == 'private, no-store'
-    assert client.post(ROOT, json={'text': '学习'}).json() == data
-    assert client.post(ROOT, json={'text': '学习', 'retry': True}).json() == data
+    assert post_audio(client, {'text': '学习'}).json() == data
+    assert post_audio(client, {'text': '学习', 'retry': True}).json() == data
     assert len(requests) == 1
     with connect() as db:
         row = db.execute('SELECT * FROM corpus.option_audio WHERE id=%s', (data['audio_id'],)).fetchone()
@@ -73,19 +77,19 @@ def test_real_sdk_stores_bytes_headers_and_reuses_matching_text(client, monkeypa
 def test_failed_options_get_only_one_explicit_retry_and_never_sdk_retries(client, monkeypatch):
     calls = []
     provider(monkeypatch, lambda request: (calls.append(1) or httpx.Response(500, json={'secret': 'test-eleven-secret'})))
-    initial = client.post(ROOT, json={'text': 'bad'}).json()
+    initial = post_audio(client, {'text': 'bad'}).json()
     assert initial['status'] == 'failed' and initial['can_retry']
     assert len(calls) == 1
     for _ in range(3):
-        assert client.post(ROOT, json={'text': 'bad'}).json()['attempts'] == 1
+        assert post_audio(client, {'text': 'bad'}).json()['attempts'] == 1
     assert len(calls) == 1
-    retry = client.post(ROOT, json={'text': 'bad', 'retry': True})
+    retry = post_audio(client, {'text': 'bad', 'retry': True})
     assert retry.json()['status'] == 'failed' and retry.json()['attempts'] == 2
     assert not retry.json()['can_retry']
     assert 'test-eleven-secret' not in retry.text
     assert len(calls) == 2
     for _ in range(3):
-        assert client.post(ROOT, json={'text': 'bad', 'retry': True}).json()['attempts'] == 2
+        assert post_audio(client, {'text': 'bad', 'retry': True}).json()['attempts'] == 2
     assert len(calls) == 2
     assert list(audio.audio_path(uuid4()).parent.glob('*.tmp')) == []
 
@@ -97,25 +101,25 @@ def test_successful_retry_keeps_one_record_and_validates_inputs(client, monkeypa
         if len(attempts) == 1: return httpx.Response(429, json={'detail': 'quota'})
         return httpx.Response(200, content=b'ID3-ok')
     provider(monkeypatch, respond)
-    client.post(ROOT, json={'text': 'word'})
-    result = client.post(ROOT, json={'text': 'word', 'retry': True}).json()
+    post_audio(client, {'text': 'word'})
+    result = post_audio(client, {'text': 'word', 'retry': True}).json()
     assert result['status'] == 'ready' and result['attempts'] == 2
     assert len(attempts) == 2
     for payload in [{'text': ''}, {'text': ' '}, {'text': 'x'*2001}, {'text': 'word', 'retry': 'yes'}, {'text': 'word', 'voice_id': '../invalid'}]:
-        assert client.post(ROOT, json=payload).status_code == 422
-    assert client.post(ROOT, json={'text': 'not-generated', 'retry': True}).status_code == 422
+        assert post_audio(client, payload).status_code == 422
+    assert post_audio(client, {'text': 'not-generated', 'retry': True}).status_code == 422
     monkeypatch.delenv('ELEVEN')
-    assert client.post(ROOT, json={'text': 'new'}).status_code == 503
+    assert post_audio(client, {'text': 'new'}).status_code == 503
     # Existing successful recordings still work when the provider is unconfigured.
-    assert client.post(ROOT, json={'text': 'word'}).json()['audio_id'] == result['audio_id']
+    assert post_audio(client, {'text': 'word'}).json()['audio_id'] == result['audio_id']
 
 
 def test_empty_or_oversized_audio_never_becomes_playable(client, monkeypatch):
     provider(monkeypatch, lambda _: httpx.Response(200, content=b''))
-    assert client.post(ROOT, json={'text': 'empty'}).json()['status'] == 'failed'
+    assert post_audio(client, {'text': 'empty'}).json()['status'] == 'failed'
     monkeypatch.setattr(audio, 'MAX_BYTES', 4)
     provider(monkeypatch, lambda _: httpx.Response(200, content=b'ID3-too-large'))
-    assert client.post(ROOT, json={'text': 'large'}).json()['status'] == 'failed'
+    assert post_audio(client, {'text': 'large'}).json()['status'] == 'failed'
 
 
 def test_pending_generation_does_not_duplicate_paid_calls(client, monkeypatch):
@@ -130,11 +134,11 @@ def test_pending_generation_does_not_duplicate_paid_calls(client, monkeypatch):
     monkeypatch.setenv('ELEVEN', 'test')
     monkeypatch.setattr(audio, 'synthesize', synthesize)
     with ThreadPoolExecutor() as pool:
-        first = pool.submit(lambda: client.post(ROOT, json={'text': 'concurrent'}))
+        first = pool.submit(lambda: post_audio(client, {'text': 'concurrent'}))
         assert entered.wait(5)
         try:
-            assert client.post(ROOT, json={'text': 'concurrent'}).status_code == 409
-            assert client.post(ROOT, json={'text': 'concurrent', 'retry': True}).status_code == 409
+            assert post_audio(client, {'text': 'concurrent'}).status_code == 409
+            assert post_audio(client, {'text': 'concurrent', 'retry': True}).status_code == 409
         finally: release.set()
         assert first.result().json()['attempts'] == 1
 
@@ -149,9 +153,9 @@ def test_voice_changes_have_separate_caches_and_missing_voice_is_not_defaulted(c
         return (None, None, None)
     monkeypatch.setenv('ELEVEN', 'test')
     monkeypatch.setattr(audio, 'synthesize', synthesize)
-    first = client.post(ROOT, json={'text':'voice test'}).json()
-    second = client.post(ROOT, json={'text':'voice test','voice_id':'anotherVoice'}).json()
+    first = post_audio(client, {'text':'voice test'}).json()
+    second = post_audio(client, {'text':'voice test','voice_id':'anotherVoice'}).json()
     assert first['audio_id'] != second['audio_id']
-    assert client.post(ROOT, json={'text':'voice test','voice_id':'anotherVoice'}).json()['audio_id'] == second['audio_id']
-    assert client.post(ROOT, json={'text':'voice test','voice_id':None}).json()['status'] == 'failed'
+    assert post_audio(client, {'text':'voice test','voice_id':'anotherVoice'}).json()['audio_id'] == second['audio_id']
+    assert post_audio(client, {'text':'voice test','voice_id':None}).json()['status'] == 'failed'
     assert calls == [audio.VOICE, 'anotherVoice', None]

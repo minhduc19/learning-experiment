@@ -25,7 +25,7 @@ test('all options including distractors get audio; duplicate texts reuse one req
   })
   const audio = useOptionAudio(text)
   await audio.generate()
-  assert.deepEqual(requests, [{ text: '学习', retry: false, voice_id: 'MI36FIkp9wRP7cpWKPTl' }, { text: '走路', retry: false, voice_id: 'MI36FIkp9wRP7cpWKPTl' }])
+  assert.deepEqual(requests, [{ text: '学习', retry: false, provider: 'piper', voice_id: null }, { text: '走路', retry: false, provider: 'piper', voice_id: null }])
   const document = parseLesson(text.value)
   assert.equal(document.items[0].data.options[0].audio_id, id)
   assert.equal(document.items[1].data.options[0].audio_id, id)
@@ -33,7 +33,7 @@ test('all options including distractors get audio; duplicate texts reuse one req
   assert.equal(audio.canRetry.value, true)
   await audio.generate(); assert.equal(requests.length, 2)
   await audio.generate(true)
-  assert.deepEqual(requests.at(-1), { text: '走路', retry: true, voice_id: 'MI36FIkp9wRP7cpWKPTl' })
+  assert.deepEqual(requests.at(-1), { text: '走路', retry: true, provider: 'piper', voice_id: null })
   assert.equal(audio.canRetry.value, false)
   await audio.generate(true); assert.equal(requests.length, 3)
   assert.equal(parseLesson(text.value).items[0].data.options[0].audio_id, id)
@@ -106,4 +106,38 @@ test('playback errors are recoverable and stale fetches cannot play after a newe
   assert.equal(players.length, 1)
   mock(() => ({ ok: false }))
   await assert.rejects(playOptionAudio(option, owner), /Could not play audio/)
+})
+
+test('Piper is default; changing provider invalidates draft recordings and sends ElevenLabs settings', async () => {
+  const { nextTick } = await import('vue')
+  const text = ref(JSON.stringify(sampleLesson)), bodies = []
+  mock((_, options) => { bodies.push(JSON.parse(options.body)); return json({ status:'ready', audio_id:id, attempts:1 }) })
+  const audio = useOptionAudio(text)
+  assert.equal(audio.provider.value, 'piper')
+  await audio.generate()
+  assert.ok(bodies.every(body => body.provider === 'piper' && body.voice_id === null))
+  audio.provider.value = 'elevenlabs'
+  await nextTick()
+  assert.equal(parseLesson(text.value).items[0].data.options[0].audio_id, undefined)
+  assert.equal(audio.canGenerate.value, true)
+  await audio.generate()
+  assert.equal(bodies.at(-1).provider, 'elevenlabs')
+  assert.equal(bodies.at(-1).voice_id, 'MI36FIkp9wRP7cpWKPTl')
+})
+
+test('one explicit retry after a busy rejection can start the unattempted job', async () => {
+  const text = ref(JSON.stringify(sampleLesson)), requests = []
+  let busy = true
+  mock((_, options) => {
+    requests.push(JSON.parse(options.body))
+    return busy ? { ok:false, status:429, json:async()=>({ detail:'Piper is busy' }) }
+      : json({ status:'ready', audio_id:id, attempts:1 })
+  })
+  const audio = useOptionAudio(text)
+  await audio.generate()
+  busy = false
+  await audio.generate(true)
+  assert.ok(requests.every(body => body.retry === false))
+  assert.equal(audio.canRetry.value, false)
+  assert.ok(parseLesson(text.value).items[0].data.options[0].audio_id)
 })
