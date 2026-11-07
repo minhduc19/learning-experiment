@@ -1,0 +1,13 @@
+{
+  "title": "Tap the Pairs",
+  "instruction": "Tap the matching pairs",
+  "sourceLanguage": "English",
+  "targetLanguage": "Spanish",
+  "pairs": [
+    { "id": "bread", "source": "bread", "target": "pan" },
+    { "id": "water", "source": "water", "target": "agua" },
+    { "id": "house", "source": "house", "target": "casa" },
+    { "id": "book", "source": "book", "target": "libro" },
+    { "id": "cat", "source": "cat", "target": "gato" }
+  ]
+}
