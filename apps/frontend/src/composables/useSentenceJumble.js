@@ -16,6 +16,19 @@ export function useSentenceJumble(items) {
   function remove(id) {
     if (!checked.value) selected.value = selected.value.filter(value => value !== id)
   }
+  function move(id, destination, position) {
+    if (complete.value || checked.value || !question.value.tiles.some(tile => tile.id === id)) return
+    if (destination === 'answer') {
+      const remaining = selected.value.filter(value => value !== id)
+      remaining.splice(Math.max(0, Math.min(position, remaining.length)), 0, id)
+      selected.value = remaining
+    } else if (destination === 'bank') {
+      remove(id)
+      const remaining = banks.value[index.value].filter(tile => tile.id !== id)
+      remaining.splice(Math.max(0, Math.min(position, remaining.length)), 0, question.value.tiles.find(tile => tile.id === id))
+      banks.value[index.value] = remaining
+    }
+  }
   function check() {
     if (complete.value || checked.value || !selected.value.length) return
     correct.value = question.value.answers.some(ids => ids.length === selected.value.length && ids.every((id, position) => id === selected.value[position]))
@@ -30,5 +43,5 @@ export function useSentenceJumble(items) {
     index.value = 0; selected.value = []; checked.value = false; correct.value = false
     banks.value = items.map(item => shuffle(item.tiles))
   }
-  return { index, selected, checked, correct, total, complete, question, answer, bank, choose, remove, check, proceed, restart }
+  return { index, selected, checked, correct, total, complete, question, answer, bank, choose, remove, move, check, proceed, restart }
 }
