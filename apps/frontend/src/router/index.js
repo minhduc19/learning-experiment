@@ -34,6 +34,12 @@ export const routes = [
     meta: { title: 'Multiple choice', fullscreen: true },
   },
   {
+    path: '/sample-matching-pair',
+    name: 'sample-matching-pair',
+    component: () => import('../views/SampleMatchingPairView.vue'),
+    meta: { title: 'Tap the Pairs', fullscreen: true },
+  },
+  {
     path: '/multiple-choice-strict-quiz',
     name: 'strict-quiz',
     component: () => import('../views/StrictQuizView.vue'),

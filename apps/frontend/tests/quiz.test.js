@@ -78,3 +78,25 @@ test('the supplied lesson order is preserved during play, results, and restart',
   quiz.restart()
   assert.equal(quiz.question.value.id, expected[0])
 })
+
+test('options shuffle once per attempt, preserve answer IDs and leave source data unchanged', () => {
+  const original = JSON.stringify(questions)
+  const random = Math.random
+  try {
+    Math.random = () => 0
+    const quiz = useQuiz()
+    const firstOrder = quiz.question.value.options.map(option => option.id)
+    assert.notDeepEqual(firstOrder, questions[0].options.map(option => option.id))
+    const answer = quiz.question.value.options.find(option => option.id === quiz.question.value.answer)
+    quiz.choose(answer)
+    quiz.check()
+    assert.equal(quiz.correct.value, true)
+    assert.deepEqual(quiz.question.value.options.map(option => option.id), firstOrder)
+    Math.random = () => 0.999999
+    quiz.restart()
+    assert.deepEqual(quiz.question.value.options.map(option => option.id), questions[0].options.map(option => option.id))
+    assert.equal(JSON.stringify(questions), original)
+  } finally {
+    Math.random = random
+  }
+})

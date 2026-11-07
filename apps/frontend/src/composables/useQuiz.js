@@ -1,7 +1,13 @@
-import { computed, ref } from 'vue'
+import { computed, ref, shallowRef } from 'vue'
+import { shuffle } from './shuffle.js'
 import { questions } from '../data/questions.js'
 
 export function useQuiz({ strict = false, items = questions } = {}) {
+  const shuffledItems = shallowRef([])
+  function shuffleOptions() {
+    shuffledItems.value = items.map(item => ({ ...item, options: shuffle(item.options) }))
+  }
+  shuffleOptions()
   const index = ref(0)
   const results = ref([])
   const ended = ref(false)
@@ -12,7 +18,7 @@ export function useQuiz({ strict = false, items = questions } = {}) {
   const selected = ref(null)
   const checked = ref(false)
   const complete = computed(() => ended.value || index.value === items.length)
-  const question = computed(() => items[index.value])
+  const question = computed(() => shuffledItems.value[index.value])
   const correct = computed(() => checked.value && selected.value?.id === question.value?.answer && selected.value !== null)
 
   const answerText = computed(() => selected.value ? selected.value.fill ?? selected.value.label.toLowerCase() : '___')
@@ -41,6 +47,7 @@ export function useQuiz({ strict = false, items = questions } = {}) {
   }
 
   function restart() {
+    shuffleOptions()
     index.value = 0
     results.value = []
     ended.value = false
