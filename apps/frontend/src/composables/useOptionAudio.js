@@ -3,6 +3,7 @@ import { authorizedFetch } from './useAuth.js'
 import { parseLesson } from './lessonJson.js'
 
 export function useOptionAudio(text) {
+  const provider = ref('piper')
   const voiceId = ref('MI36FIkp9wRP7cpWKPTl')
   const busy = ref(false), states = ref(new Map()), progress = ref(''), error = ref('')
   let controller, disposed = false
@@ -15,7 +16,7 @@ export function useOptionAudio(text) {
   const canGenerate = computed(() => missing.value.some(label => (!states.value.has(label) || states.value.get(label).status === 'ready')))
   const canRetry = computed(() => failures.value.some(item => item.can_retry))
 
-  watch(voiceId, () => {
+  watch([provider, voiceId], () => {
     states.value = new Map(); progress.value = ''; error.value = ''
     try {
       const document = parseLesson(text.value)
@@ -36,17 +37,22 @@ export function useOptionAudio(text) {
         try {
           const response = await authorizedFetch('/api/ai/option-audio', {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
-            body: JSON.stringify({ text: label, retry, voice_id: voiceId.value.trim() || null }),
+            body: JSON.stringify({ text: label, retry: retry && states.value.get(label)?.retry_request !== false, provider: provider.value, voice_id: provider.value === 'elevenlabs' ? voiceId.value.trim() || null : null }),
           })
           const data = await response.json().catch(() => null)
-          if (!response.ok) throw new Error(typeof data?.detail === 'string' ? data.detail : 'Could not generate audio.')
+          if (!response.ok) {
+            const failure = new Error(typeof data?.detail === 'string' ? data.detail : 'Could not generate audio.')
+            failure.notAttempted = [429, 503].includes(response.status)
+            throw failure
+          }
           if (!['ready', 'failed'].includes(data?.status) || (data.status === 'ready' && typeof data.audio_id !== 'string')) throw new Error('Unexpected audio response.')
           result = data
         } catch (failure) {
           if (disposed || controller.signal.aborted) break
-          result = { status: 'failed', can_retry: !retry, message: failure.message }
+          result = { status: 'failed', can_retry: !retry, retry_request: !failure.notAttempted, message: failure.message }
         }
         if (disposed) break
+        if (retry && result.status === 'failed') result.can_retry = false
         states.value.set(label, result)
         if (result.status === 'ready') {
           const document = parseLesson(text.value)
@@ -63,5 +69,5 @@ export function useOptionAudio(text) {
     finally { if (!disposed) busy.value = false }
   }
   function dispose() { disposed = true; controller?.abort() }
-  return { voiceId, busy, progress, error, failures, canGenerate, canRetry, generate, dispose }
+  return { provider, voiceId, busy, progress, error, failures, canGenerate, canRetry, generate, dispose }
 }

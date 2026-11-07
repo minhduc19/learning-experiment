@@ -21,7 +21,7 @@ function resetVocabulary(selection) {
   generatedPrompt.value = userPrompt.value
 }
 const text = ref(''), busy = ref(false), saving = ref(false), error = ref(''), warning = ref(''), saved = ref(false)
-const { voiceId: audioVoiceId, busy: audioBusy, progress: audioProgress, error: audioError, failures: audioFailures, canGenerate: canGenerateAudio, canRetry: canRetryAudio, generate: generateAudio, dispose: disposeAudio } = useOptionAudio(text)
+const { provider: audioProvider, voiceId: audioVoiceId, busy: audioBusy, progress: audioProgress, error: audioError, failures: audioFailures, canGenerate: canGenerateAudio, canRetry: canRetryAudio, generate: generateAudio, dispose: disposeAudio } = useOptionAudio(text)
 let controller
 const externallyBlocked = computed(() => busy.value || saving.value || audioBusy.value || props.sourceBusy)
 const blocked = computed(() => externallyBlocked.value || promptLibraryBusy.value)
@@ -90,10 +90,15 @@ onUnmounted(()=>{disposeAudio();controller?.abort();window.removeEventListener('
       <button v-if="canRetryAudio" class="button" :disabled="blocked" @click="generateAudio(true)">Retry failed audio once</button>
     </template>
     <template #after-actions>
+      <label for="option-audio-provider">Audio provider</label>
+      <select id="option-audio-provider" v-model="audioProvider" :disabled="blocked"><option value="piper">Piper — local Mandarin (default)</option><option value="elevenlabs">ElevenLabs</option></select>
+      <p v-if="audioProvider === 'piper'" class="corpus-muted">Local Mandarin speech with no API credits. One recording at a time; up to 200 characters per option.</p>
+      <div v-if="audioProvider === 'elevenlabs'">
       <label for="option-audio-voice">ElevenLabs voice ID (optional)</label>
       <input id="option-audio-voice" v-model="audioVoiceId" maxlength="128" :disabled="blocked">
       <button type="button" class="corpus-text-button" :disabled="blocked" @click="audioVoiceId = ''">Remove voice ID</button>
       <p class="corpus-muted">Changing voice clears the draft’s audio references so you can regenerate them. Stored recordings are kept. An empty ID sends no voice ID; ElevenLabs may reject it.</p>
+      </div>
       <p class="corpus-muted">Generate speech for every option’s visible text. Successful recordings are reused; failed recordings can be retried once. You can save the lesson with some options silent.</p>
       <p v-if="audioProgress" role="status">{{ audioProgress }}</p>
       <p v-if="audioError" class="corpus-error" role="alert">{{ audioError }}</p>

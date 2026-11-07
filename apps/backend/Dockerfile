@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1
 FROM ghcr.io/astral-sh/uv:0.9.5 AS uv
-FROM python:3.12-slim
+FROM python:3.12-slim AS dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends libstdc++6 libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=uv /uv /usr/local/bin/uv
 WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy PATH="/app/.venv/bin:$PATH"
@@ -8,6 +10,12 @@ COPY apps/backend/pyproject.toml apps/backend/uv.lock ./
 RUN --mount=type=secret,id=proxy_ca \
     if [ -f /run/secrets/proxy_ca ]; then export SSL_CERT_FILE=/run/secrets/proxy_ca; fi; \
     uv sync --locked --no-dev
+FROM dependencies AS runtime
+# Voice download is a separate cached layer; ordinary source edits do not repeat it.
+COPY apps/backend/app/ai/piper_models.py /tmp/piper_models.py
+RUN --mount=type=secret,id=proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then export SSL_CERT_FILE=/run/secrets/proxy_ca; fi; \
+    python /tmp/piper_models.py --directory /app/models/piper
 COPY --chown=10001:10001 apps/backend/app ./app
 RUN mkdir -p /app/data/readings /app/data/corpus && chown -R 10001:10001 /app/data
 ENV READING_DATA_DIR=/app/data/readings CORPUS_DATA_DIR=/app/data/corpus

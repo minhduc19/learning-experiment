@@ -4,7 +4,7 @@ import hashlib
 import os
 from time import monotonic
 from threading import BoundedSemaphore
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
 import httpx
@@ -19,6 +19,8 @@ from app.corpus.database import connect
 from app.corpus.routes import CorpusRoute
 from app.lessons.routes import Model, read_json, validate
 
+from app.ai import piper_service
+from app.ai.piper_models import VOICE as PIPER_VOICE, MODEL_VERSION as PIPER_VERSION
 from app.ai.voice import DEFAULT_VOICE, voice_id as normalize_voice
 
 VOICE = DEFAULT_VOICE
@@ -31,6 +33,7 @@ router = APIRouter(route_class=CorpusRoute, dependencies=[Depends(current_user)]
 class AudioRequest(Model):
     text: str = Field(min_length=1, max_length=2000)
     retry: bool = False
+    provider: Literal["piper", "elevenlabs"] = "piper"
     voice_id: str | None = VOICE
 
     @field_validator('voice_id')
@@ -40,13 +43,15 @@ class AudioRequest(Model):
 
     @model_validator(mode="after")
     def nonblank(self):
+        if self.provider == "piper" and len(self.text) > 200:
+            raise ValueError("Piper accepts at most 200 characters per option on this server")
         if not self.text.strip():
             raise ValueError("Option text must not be blank")
         return self
 
 
-def audio_path(identifier):
-    return storage_directory() / "option-audio" / (str(UUID(str(identifier))) + ".mp3")
+def audio_path(identifier, extension="mp3"):
+    return storage_directory() / "option-audio" / (str(UUID(str(identifier))) + "." + extension)
 
 
 def result(row):
@@ -81,13 +86,20 @@ def generate_audio(raw: Annotated[object, Depends(read_json)]):
     if not slots.acquire(blocking=False):
         raise HTTPException(429, "Audio generation is busy. Try again shortly.")
     try:
+        if request.provider == "piper":
+            with piper_service.generation_slot():
+                return generate(request)
         return generate(request)
     finally:
         slots.release()
 
 
 def generate(request):
-    fingerprint = hashlib.sha256(((request.voice_id or "") + "\0" + MODEL + "\0" + request.text).encode()).hexdigest()
+    voice = PIPER_VOICE if request.provider == 'piper' else request.voice_id or ''
+    model = 'piper:' + PIPER_VOICE + '@' + PIPER_VERSION if request.provider == 'piper' else MODEL
+    extension = 'wav' if request.provider == 'piper' else 'mp3'
+    media_type = 'audio/wav' if request.provider == 'piper' else 'audio/mpeg'
+    fingerprint = hashlib.sha256((voice + "\0" + model + "\0" + request.text).encode()).hexdigest()
     # A transaction-level lock also works across backend processes. Commit the attempt
     # before contacting the provider so a crash cannot reset the paid-attempt counter.
     with connect() as db:
@@ -95,10 +107,10 @@ def generate(request):
         if not db.execute("SELECT pg_try_advisory_xact_lock(%s) AS locked", (lock,)).fetchone()["locked"]:
             raise HTTPException(409, "This option audio is already being processed")
         row = db.execute("SELECT *,updated_at < now()-interval '2 minutes' AS expired FROM corpus.option_audio WHERE user_id=%s AND fingerprint=%s FOR UPDATE", (user_id(), fingerprint)).fetchone()
-        if row and row["status"] == "pending" and audio_path(row["id"]).is_file():
+        if row and row["status"] == "pending" and audio_path(row["id"], row["file_extension"]).is_file():
             row = db.execute("UPDATE corpus.option_audio SET status='ready',updated_at=now() WHERE id=%s RETURNING *,false AS expired", (row["id"],)).fetchone()
         if row and row["status"] == "ready":
-            if audio_path(row["id"]).is_file():
+            if audio_path(row["id"], row["file_extension"]).is_file():
                 return result(row)
             raise HTTPException(503, "Stored audio is unavailable. Check persistent server storage.")
         if row and row["status"] == "pending" and not row["expired"]:
@@ -111,17 +123,19 @@ def generate(request):
         elif request.retry:
             raise HTTPException(422, "Generate this option before retrying")
         key = os.getenv("ELEVEN", "").strip()
-        if not key:
+        if request.provider == "piper":
+            piper_service.check_ready()
+        elif not key:
             raise HTTPException(503, "Audio generation is not configured. Set the ELEVEN Actions secret and redeploy.")
         if row:
             row = db.execute("UPDATE corpus.option_audio SET attempts=attempts+1,status='pending',updated_at=now() WHERE id=%s RETURNING *", (row["id"],)).fetchone()
         else:
-            row = db.execute("INSERT INTO corpus.option_audio(id,user_id,fingerprint,text,voice_id,model_id,status,attempts) VALUES (%s,%s,%s,%s,%s,%s,'pending',1) RETURNING *", (uuid4(), user_id(), fingerprint, request.text, request.voice_id or "", MODEL)).fetchone()
-    path = audio_path(row["id"])
+            row = db.execute("INSERT INTO corpus.option_audio(id,user_id,fingerprint,text,voice_id,model_id,provider,file_extension,media_type,status,attempts) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'pending',1) RETURNING *", (uuid4(), user_id(), fingerprint, request.text, voice, model, request.provider, extension, media_type)).fetchone()
+    path = audio_path(row["id"], row["file_extension"])
     temporary = path.with_suffix(".tmp")
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        cost, request_id, trace_id = synthesize(request.text, temporary, key, request.voice_id)
+        cost, request_id, trace_id = (piper_service.synthesize(request.text, temporary) if request.provider == "piper" else synthesize(request.text, temporary, key, request.voice_id))
         temporary.replace(path)
     except Exception:
         temporary.unlink(missing_ok=True)
@@ -137,7 +151,7 @@ def generate(request):
 @router.get("/{identifier}")
 def get_audio(identifier: UUID):
     with connect() as db:
-        row = db.execute("SELECT id FROM corpus.option_audio WHERE id=%s AND user_id=%s AND status='ready'", (identifier, user_id())).fetchone()
-    if not row or not audio_path(identifier).is_file():
+        row = db.execute("SELECT id,file_extension,media_type FROM corpus.option_audio WHERE id=%s AND user_id=%s AND status='ready'", (identifier, user_id())).fetchone()
+    if not row or not audio_path(identifier, row["file_extension"]).is_file():
         raise HTTPException(404, "Audio not found")
-    return FileResponse(audio_path(identifier), media_type="audio/mpeg")
+    return FileResponse(audio_path(identifier, row["file_extension"]), media_type=row["media_type"])
