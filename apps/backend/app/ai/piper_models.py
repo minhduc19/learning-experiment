@@ -28,24 +28,33 @@ def verified(path, size, digest):
 
 def download(directory):
     directory.mkdir(parents=True, exist_ok=True)
+    failures = []
     for name, (size, digest) in FILES.items():
         path = directory / name
         if verified(path, size, digest):
             continue
         temporary = path.with_suffix(path.suffix + '.part')
         try:
+            print('Downloading Piper voice file: ' + name, flush=True)
+            revision = None
             with urlopen(BASE_URL + name, timeout=60) as response, temporary.open('wb') as output:
+                revision = getattr(response, 'headers', {}).get('x-repo-commit')
                 received = 0
                 while chunk := response.read(1024 * 1024):
                     received += len(chunk)
                     if received > size:
-                        raise ValueError('Piper download exceeded expected file size')
+                        if received > max(size * 2, 16384):
+                            raise ValueError('Piper download exceeded bounded file size')
                     output.write(chunk)
             if not verified(temporary, size, digest):
-                raise ValueError('Piper voice download failed manifest verification: ' + name)
+                actual = hashlib.md5(temporary.read_bytes(), usedforsecurity=False).hexdigest()
+                failures.append(f'{name}: expected {size}/{digest}, received {temporary.stat().st_size}/{actual}, revision={revision}')
+                continue
             temporary.replace(path)
         finally:
             temporary.unlink(missing_ok=True)
+    if failures:
+        raise ValueError('Piper manifest mismatch: ' + '; '.join(failures))
     json.loads((directory / (VOICE + '.onnx.json')).read_text())
 
 
