@@ -6,24 +6,29 @@ from pathlib import Path
 from urllib.request import urlopen
 
 VOICE = 'zh_CN-huayan-medium'
-MODEL_VERSION = '40cdb7930ff91b81574d5f0489e076ea'
-BASE_URL = 'https://huggingface.co/rhasspy/piper-voices/resolve/main/zh/zh_CN/huayan/medium/'
-# Source: rhasspy/piper src/python_run/piper/voices.json (official voice manifest).
+MODEL_MD5 = '40cdb7930ff91b81574d5f0489e076ea'
+CONFIG_MD5 = '1fda3ec1d0d3a5a74064397ea8fe0af0'
+MODEL_VERSION = MODEL_MD5 + '-' + CONFIG_MD5
+REVISION = 'e7229f7d33a10e145e109b886d661984201ac3c4'
+BASE_URL = f'https://huggingface.co/rhasspy/piper-voices/resolve/{REVISION}/zh/zh_CN/huayan/medium/'
+# Official voice manifest for weights/card; config verified at the pinned HF revision.
 FILES = {
-    VOICE + '.onnx': (63201294, MODEL_VERSION),
-    VOICE + '.onnx.json': (6922, 'f1c77a621e220d545042a4c8c2eaae64'),
+    VOICE + '.onnx': (63201294, MODEL_MD5),
+    VOICE + '.onnx.json': (4822, CONFIG_MD5),
     'MODEL_CARD': (276, 'b23255ace0cda4c2e02134d8a70c2e03'),
 }
 
 
-def verified(path, size, digest):
-    if not path.is_file() or path.stat().st_size != size:
-        return False
+def checksum(path):
     checksum = hashlib.md5(usedforsecurity=False)
     with path.open('rb') as stream:
         for chunk in iter(lambda: stream.read(1024 * 1024), b''):
             checksum.update(chunk)
-    return checksum.hexdigest() == digest
+    return checksum.hexdigest()
+
+
+def verified(path, size, digest):
+    return path.is_file() and path.stat().st_size == size and checksum(path) == digest
 
 
 def download(directory):
@@ -47,7 +52,7 @@ def download(directory):
                             raise ValueError('Piper download exceeded bounded file size')
                     output.write(chunk)
             if not verified(temporary, size, digest):
-                actual = hashlib.md5(temporary.read_bytes(), usedforsecurity=False).hexdigest()
+                actual = checksum(temporary)
                 failures.append(f'{name}: expected {size}/{digest}, received {temporary.stat().st_size}/{actual}, revision={revision}')
                 continue
             temporary.replace(path)
@@ -56,6 +61,8 @@ def download(directory):
     if failures:
         raise ValueError('Piper manifest mismatch: ' + '; '.join(failures))
     json.loads((directory / (VOICE + '.onnx.json')).read_text())
+    print('Piper voice verified at revision ' + REVISION, flush=True)
+    print((directory / 'MODEL_CARD').read_text(), flush=True)
 
 
 if __name__ == '__main__':
