@@ -200,10 +200,13 @@ recording or fall back to a paid service when Piper fails.
 The Docker backend image includes the Piper runtime and a verified copy of
 `zh_CN-huayan-medium` (about 63 MB for the ONNX model). The separate model-download
 layer is cached independently of application source. Building requires HTTPS
-access to Hugging Face and its download redirects. Files are checked against the
-published official voice-manifest sizes and digests, downloaded atomically, and
+access to Hugging Face and its download redirects. The source revision is pinned and files are checked against checked-in sizes and
+digests, downloaded atomically, and
 the voice's `MODEL_CARD` is included in `/app/models/piper`. Piper itself is
-GPL-3.0 software; voice licensing information is retained in that model card.
+GPL-3.0 software. The Huayan model card identifies its source dataset as
+PlayVoice/HuaYan_TTS and lists its dataset license as **Unknown**. No API credits
+are required, but the card does not establish commercial-use rights for this
+voice. The model card is retained in the image for review.
 Generation makes no model download requests at runtime.
 
 For the 1-vCPU/1-GB server, the API starts an isolated, CPU-only subprocess for each
