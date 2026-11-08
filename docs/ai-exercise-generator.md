@@ -230,3 +230,29 @@ can point to a manually prepared directory containing the model, its JSON config
 and model card for local development. Missing models report an actionable error
 without consuming a generation attempt. Recordings remain in the existing
 persistent corpus volume; include them and PostgreSQL in backups.
+
+## Sentence-first generator (version 2)
+
+Open `/AI-exercise-generator-version-2` or use the version switch on either
+AI generator. Learned-character review and the prompt library, editable rows,
+AI generation, audio, lesson preview, and saving work as in the original route.
+The second count now requests **distinct unlearned segments**, rather than new
+characters. A segment is eligible unless its segment mark is Learned; Learning
+alone does not exclude it. Character marks and segment marks are separate.
+
+POST `/api/corpus/study-selection-v2?learned_count=5&segment_count=5` visits
+owned, completed stories' logical sentences by descending Learned Han-character
+occurrences, including repeated characters and all sentence fragments. Ties use
+story ID then sentence position. Within each sentence, segments follow their
+stored order; duplicates are skipped, and the search continues until the count
+is filled or the eligible corpus is exhausted. Sentences with zero Learned
+characters come last. No segment popularity or frequency enters this ordering.
+The existing corpus tokenizer defines segment boundaries.
+
+The response adds `data.segments`, each with both writing systems, the source
+sentence/fragment and its stored ID. Segment-only prompt rows leave Character
+empty. The v1 review selection remains unchanged. Counts accept 0–50 each, with
+at least one requested item overall; shortages are shown in the UI and no marks
+are changed. V2 snapshots use their own private GET `/api/corpus/study-history-v2`
+and GET `/api/corpus/study-history-v2/{id}` endpoints and the new migration
+`012_study_history_v2.sql`. Existing selection/history endpoints are unchanged.

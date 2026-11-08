@@ -48,7 +48,7 @@ onBeforeUnmount(() => clearTimeout(mismatchTimer))
 
 <template>
   <main class="activity activity-screen matching-activity">
-    <div class="activity-screen-progress">
+    <div v-if="!lessonMode" class="activity-screen-progress">
       <div class="activity-topline">
         <span class="activity-eyebrow">DAILY PRACTICE</span>
         <span>{{ matched.length }} / {{ total }}</span>
