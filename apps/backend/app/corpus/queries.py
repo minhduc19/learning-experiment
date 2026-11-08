@@ -112,8 +112,8 @@ def characters(
         if not include_non_han:
             conditions.append("c.is_han")
         if character:
-            conditions.append("c.value=%s")
-            params.append(character)
+            conditions.append("c.value=%s OR c.simplified_value=%s OR c.traditional_value=%s")
+            params.extend([character, character, character])
         if values:
             count, identifier = integer_values(values)
             operator = ">" if direction == "asc" else "<"

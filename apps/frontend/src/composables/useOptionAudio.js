@@ -1,6 +1,6 @@
 import { computed, ref, watch } from 'vue'
 import { authorizedFetch } from './useAuth.js'
-import { parseLesson } from './lessonJson.js'
+import { parseLesson, lessonOptions } from './lessonJson.js'
 
 export function useOptionAudio(text) {
   const provider = ref('piper')
@@ -8,7 +8,7 @@ export function useOptionAudio(text) {
   const busy = ref(false), states = ref(new Map()), progress = ref(''), error = ref('')
   let controller, disposed = false
   const options = computed(() => {
-    try { return parseLesson(text.value).items.flatMap(item => item.data.options) }
+    try { return lessonOptions(parseLesson(text.value)) }
     catch { return [] }
   })
   const missing = computed(() => [...new Set(options.value.filter(option => !option.audio_id).map(option => option.label))])
@@ -20,7 +20,7 @@ export function useOptionAudio(text) {
     states.value = new Map(); progress.value = ''; error.value = ''
     try {
       const document = parseLesson(text.value)
-      for (const item of document.items) for (const option of item.data.options) { delete option.audio_id; delete option.audio_text }
+      for (const option of lessonOptions(document)) { delete option.audio_id; delete option.audio_text }
       text.value = JSON.stringify(document, null, 2)
     } catch { /* No valid draft to update yet. */ }
   })
@@ -56,7 +56,7 @@ export function useOptionAudio(text) {
         states.value.set(label, result)
         if (result.status === 'ready') {
           const document = parseLesson(text.value)
-          for (const item of document.items) for (const option of item.data.options) {
+          for (const option of lessonOptions(document)) {
             if (option.label === label) { option.audio_id = result.audio_id; option.audio_text = label }
           }
           text.value = JSON.stringify(document, null, 2)

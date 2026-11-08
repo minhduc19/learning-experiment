@@ -1,3 +1,4 @@
+import { validateMixed } from './mixedLessonValidation.js'
 import { normalizeActivityPrompt, audioPromptUrl } from './activityPrompt.js'
 
 export const sampleLesson = { schemaVersion: 1, title: 'Chinese practice', items: [{ id: 'item-1', type: 'multiple-choice', data: { id: 'study', instruction: 'Fill in the blank', 'text-prompt': '我[[blank]]中文。', 'text-prompt-available': true, 'audio-prompt': null, answer: 'learn', translation: 'I study Chinese.', options: [{ id: 'learn', label: '学习', feedback: 'Correct! 学习 means study or learn.' }, { id: 'walk', label: '走路', feedback: '走路 means walk.' }] } }] }
@@ -22,7 +23,10 @@ export function parseLesson(text) {
     object(item, path, ['id', 'type', 'data']); string(item.id, path + '.id', 200)
     if (ids.has(item.id)) throw new Error(`${path}.id must be unique.`)
     ids.add(item.id)
-    if (item.type !== 'multiple-choice') throw new Error(`${path}.type is unsupported. Currently supported: multiple-choice.`)
+    if (item.type !== 'multiple-choice') {
+      validateMixed(item, question => parseLesson(JSON.stringify({schemaVersion:1,title:'Checkpoint',items:[{id:'checkpoint',type:'multiple-choice',data:question}]})).items[0].data)
+      continue
+    }
     const q = normalizeActivityPrompt(item.data)
     item.data = q
     object(q, path + '.data', ['id','instruction','text-prompt','text-prompt-available','audio-prompt','answer','translation','options','target-character','target-segment'])
@@ -51,4 +55,8 @@ export function parseLesson(text) {
     if (!options.has(q.answer)) throw new Error(`${path}.data.answer must reference an option ID.`)
   }
   return value
+}
+
+export function lessonOptions(document) {
+  return document.items.flatMap(item => item.type==='multiple-choice' ? item.data.options : item.type==='reading' ? item.data.blocks.filter(b=>b.type==='Multiple-choice').flatMap(b=>b.question.options) : [])
 }
