@@ -46,7 +46,7 @@ async function again() { restart(); syncTiles(true); await nextTick(); heading.v
 
 <template>
   <main class="activity activity-screen jumble-activity" :class="{ 'activity-has-feedback': checked }">
-    <div class="activity-screen-progress">
+    <div v-if="!lessonMode" class="activity-screen-progress">
       <div class="activity-topline"><span class="activity-eyebrow">DAILY PRACTICE</span><span>{{ complete ? total : index + 1 }} / {{ total }}</span></div>
       <progress class="activity-progress" :value="index" :max="total" aria-label="Sentences completed" />
     </div>

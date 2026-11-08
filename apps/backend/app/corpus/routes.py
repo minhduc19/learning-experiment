@@ -432,3 +432,24 @@ def generate_and_save_selection(
 ):
     """Generate vocabulary and save its History snapshot in one operation."""
     return history.generate(learned_count, new_count)
+
+
+@router.post('/study-selection-v2', status_code=201)
+def generate_selection_v2(
+    learned_count: Annotated[int, Query(ge=0, le=50)] = 5,
+    segment_count: Annotated[int, Query(ge=0, le=50)] = 5,
+):
+    from app.corpus import study_v2
+    return study_v2.generate(learned_count, segment_count)
+
+
+@router.get('/study-history-v2')
+def list_selection_v2(before: Annotated[int, Query(ge=0)] = 0):
+    from app.corpus import study_v2
+    return study_v2.listing(before)
+
+
+@router.get('/study-history-v2/{identifier}')
+def get_selection_v2(identifier: UUID):
+    from app.corpus import study_v2
+    return study_v2.retrieve(identifier)

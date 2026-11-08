@@ -150,3 +150,12 @@ migration is required: lesson documents and attempts already use JSONB.
 
 Character search at `/characters` matches original, simplified, and traditional
 forms while preserving ownership, filters, ordering, and pagination.
+
+## Shared lesson progress
+
+Sample lessons, the JSON editor's live preview (including `/lessons/new`), and
+saved lesson playback all use `MixedLessonPlayer`. Its single progress bar
+counts completed activities across all four types, starts at zero, and fills
+when the lesson finishes. Each activity hides its local progress in lesson mode;
+standalone activity routes keep their own progress. Replay resets the shared
+bar. Multiple-choice-only previews use the same sequential player.

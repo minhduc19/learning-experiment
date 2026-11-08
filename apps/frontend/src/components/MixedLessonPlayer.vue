@@ -24,9 +24,12 @@ function restart() {
 </script>
 <template>
   <div ref="container" class="mixed-lesson">
-    <header v-if="item" class="mixed-progress" role="status">{{ lesson.title }} · Activity {{ index+1 }} / {{ lesson.items.length }}</header>
+    <header class="mixed-progress activity">
+      <div role="status">{{ lesson.title }} · {{ index }} / {{ lesson.items.length }} activities completed</div>
+      <progress class="activity-progress" :value="index" :max="lesson.items.length" aria-label="Lesson progress" />
+    </header>
     <template v-if="item">
-      <MultipleChoiceActivity v-if="item.type==='multiple-choice'" :key="item.id" :items="[item.data]" @answered="selected=$event.optionId" @completed="next({option_id:selected})" />
+      <MultipleChoiceActivity v-if="item.type==='multiple-choice'" :key="item.id" :items="[item.data]" lesson-mode @answered="selected=$event.optionId" @completed="next({option_id:selected})" />
       <ReadingView v-else-if="item.type==='reading'" :key="item.id" :document="item.data" lesson-mode @completed="next({answer:$event})" />
       <Jumble v-else-if="item.type==='sentence-jumble'" :key="item.id" :items="[item.data]" lesson-mode @completed="next({answer:$event})" />
       <Matching v-else-if="item.type==='matching-pairs'" :key="item.id" :activity="item.data" lesson-mode @completed="next({answer:$event})" />
@@ -39,7 +42,9 @@ function restart() {
   </div>
 </template>
 <style scoped>
-.mixed-progress { padding:.5rem 1rem; background:#e9f3ed; color:#163b35; font-weight:600; }
-.mixed-lesson :deep(.activity-screen) { height:calc(100dvh - 42px); }
-.mixed-lesson :deep(.activity-has-feedback) { height:auto; min-height:calc(100dvh - 42px); }
+.mixed-lesson { display:flex; flex-direction:column; height:100dvh; }
+.mixed-progress { flex:none; padding:.5rem 1rem; background:#e9f3ed; color:#163b35; font-weight:600; }
+.mixed-progress .activity-progress { height:12px; margin:.5rem 0 0; }
+.mixed-lesson :deep(.activity-screen) { flex:1; min-height:0; height:auto; grid-template-rows:minmax(0,1fr) auto; }
+.mixed-lesson :deep(.activity-has-feedback) { flex:1 0 auto; grid-template-rows:minmax(min-content,1fr) auto; }
 </style>

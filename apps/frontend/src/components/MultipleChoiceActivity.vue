@@ -7,6 +7,7 @@ import { strictQuestions } from '../data/strictQuestions.js'
 import { playOptionAudio, stopOptionAudio } from '../composables/optionPlayback.js'
 
 const props = defineProps({
+  lessonMode: Boolean,
   restartHandler: { type: Function, default: null },
   completionBusy: { type: Boolean, default: false },
   assessment: { type: Boolean, default: false },
@@ -81,7 +82,7 @@ async function startAgain() {
     '--activity-text-size': textSize === null ? undefined : `${textSize / 16}rem`,
     '--activity-translation-size': translationSize === null ? undefined : `${translationSize / 16}rem`,
   }" :class="{ 'activity-screen': !embedded, 'activity-embedded': embedded, 'activity-has-feedback': checked }">
-    <div v-if="!embedded" class="activity-screen-progress">
+    <div v-if="!embedded && !lessonMode" class="activity-screen-progress">
     <div class="activity-topline">
       <span class="activity-eyebrow">{{ strict ? 'STRICT QUIZ' : 'DAILY PRACTICE' }}</span>
       <span>{{ strict ? results.length : (complete ? total : index + 1) }} / {{ total }}</span>
