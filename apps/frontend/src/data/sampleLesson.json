@@ -136,48 +136,21 @@
         "id": "apple",
         "instruction": "Build the translation",
         "sourceLanguage": "English",
-        "targetLanguage": "Spanish",
+        "targetLanguage": "Mandarin",
         "tiles": [
-          {
-            "id": "i",
-            "text": "Yo"
-          },
-          {
-            "id": "eat",
-            "text": "como"
-          },
-          {
-            "id": "an",
-            "text": "una"
-          },
-          {
-            "id": "apple",
-            "text": "manzana"
-          },
-          {
-            "id": "drink",
-            "text": "bebo"
-          },
-          {
-            "id": "a",
-            "text": "un"
-          }
+          { "id": "i", "text": "我" },
+          { "id": "eat", "text": "吃" },
+          { "id": "an", "text": "一个" },
+          { "id": "apple", "text": "苹果" },
+          { "id": "drink", "text": "喝" },
+          { "id": "cup", "text": "一杯" }
         ],
         "answers": [
-          [
-            "i",
-            "eat",
-            "an",
-            "apple"
-          ],
-          [
-            "eat",
-            "an",
-            "apple"
-          ]
+          ["i", "eat", "an", "apple"],
+          ["eat", "an", "apple"]
         ],
-        "translation": "Yo como una manzana.",
-        "explanation": "Como means ‘I eat’, so Yo is optional. Manzana is feminine and takes una.",
+        "translation": "我吃一个苹果。",
+        "explanation": "吃 means ‘to eat’. 一个 is the number ‘one’ plus the general measure word 个. In Mandarin the subject 我 can be dropped when it is clear from context, so it is optional.",
         "text-prompt": "I eat an apple.",
         "text-prompt-available": true,
         "audio-prompt": null
@@ -190,18 +163,10 @@
         "title": "Tap the Pairs",
         "instruction": "Tap the matching pairs",
         "sourceLanguage": "English",
-        "targetLanguage": "Spanish",
+        "targetLanguage": "Mandarin",
         "pairs": [
-          {
-            "id": "bread",
-            "source": "bread",
-            "target": "pan"
-          },
-          {
-            "id": "water",
-            "source": "water",
-            "target": "agua"
-          }
+          { "id": "bread", "source": "bread", "target": "面包" },
+          { "id": "water", "source": "water", "target": "水" }
         ]
       }
     }
