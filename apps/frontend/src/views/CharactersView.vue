@@ -23,7 +23,7 @@ function changeQuery(changes) {
 
 function searchCharacter() {
   if (Array.from(search.value).length > 1) {
-    searchError.value = 'Enter one character, such as 学.'
+    searchError.value = 'Enter one simplified or traditional character, such as 学 or 學.'
     return
   }
   searchError.value = ''
@@ -54,7 +54,7 @@ watch(() => [sort.value, direction.value, status.value.value, includeOther.value
 
     <section class="corpus-toolbar" aria-label="Character filters">
       <form class="corpus-search" @submit.prevent="searchCharacter">
-        <label for="character-search">Find a character</label>
+        <label for="character-search">Find a character (simplified or traditional)</label>
         <div class="corpus-search-input">
           <input id="character-search" v-model="search" placeholder="e.g. 学" autocomplete="off" :aria-invalid="Boolean(searchError)" :aria-describedby="searchError ? 'character-search-error' : undefined">
           <button class="button" type="submit">Search</button>

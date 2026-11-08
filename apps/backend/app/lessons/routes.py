@@ -17,6 +17,7 @@ from app.auth.dependencies import current_user, user_id
 from app.corpus.database import connect
 from app.corpus.routes import CorpusRoute
 from app.lessons.prompts import PromptFields
+from app.readings.schemas import ReadingDocument
 
 
 class Model(BaseModel):
@@ -66,16 +67,111 @@ class Question(PromptFields, Model):
         return self
 
 
+class Tile(Model):
+    id: str = Field(min_length=1, max_length=200)
+    text: str = Field(min_length=1, max_length=2000)
+
+
+class Jumble(PromptFields, Model):
+    id: str
+    instruction: str
+    text_prompt: str | None = Field(default=None, alias="text-prompt", max_length=20000)
+    sourceLanguage: str | None = None
+    targetLanguage: str
+    tiles: list[Tile] = Field(min_length=2, max_length=40)
+    answers: list[list[str]] = Field(min_length=1, max_length=20)
+    translation: str
+    explanation: str
+
+    @model_validator(mode="before")
+    @classmethod
+    def default_visibility(cls, value):
+        if isinstance(value, dict) and 'text-prompt-available' not in value:
+            value = {**value, 'text-prompt-available': bool(value.get('text-prompt', value.get('prompt')))}
+        return value
+
+    @model_validator(mode="after")
+    def valid_tiles(self):
+        if not all(tile.id.strip() and tile.text.strip() for tile in self.tiles):
+            raise ValueError("Tiles must contain text")
+        ids = [tile.id for tile in self.tiles]
+        if len(ids) != len(set(ids)) or any(not answer or len(answer) != len(set(answer)) or not set(answer) <= set(ids) for answer in self.answers):
+            raise ValueError("Tile IDs must be unique and accepted answers must reference each tile at most once")
+        if self.text_prompt_available and not self.text_prompt:
+            raise ValueError("An available text prompt needs text")
+        return self
+
+
+class Pair(Model):
+    id: str = Field(min_length=1, max_length=200)
+    source: str = Field(min_length=1, max_length=2000)
+    target: str = Field(min_length=1, max_length=2000)
+
+
+class Matching(Model):
+    title: str
+    instruction: str
+    sourceLanguage: str
+    targetLanguage: str
+    pairs: list[Pair] = Field(min_length=2, max_length=5)
+
+    @model_validator(mode="after")
+    def valid_pairs(self):
+        if not all(pair.id.strip() and pair.source.strip() and pair.target.strip() for pair in self.pairs):
+            raise ValueError("Pairs must contain text")
+        if len({pair.id for pair in self.pairs}) != len(self.pairs):
+            raise ValueError("Pair IDs must be unique")
+        return self
+
+
+class Reading(ReadingDocument):
+    model_config = ConfigDict(extra="forbid", strict=True)
+
+    @model_validator(mode="after")
+    def valid_blocks(self):
+        if not self.blocks or len(self.blocks)>200 or len({block.id for block in self.blocks}) != len(self.blocks):
+            raise ValueError("Reading needs 1–200 blocks with unique IDs")
+        for block in self.blocks:
+            if not block.id.strip():
+                raise ValueError("Reading block IDs must not be blank")
+            if block.type == 'Multiple-choice':
+                Question.model_validate(block.question.model_dump(by_alias=True, exclude_unset=True))
+            elif not block.segments or len({s.id for s in block.segments}) != len(block.segments):
+                raise ValueError("Reading segments need unique IDs")
+        return self
+
+
 class Item(Model):
     id: str = Field(min_length=1, max_length=200)
     type: Literal["multiple-choice"]
     data: Question
 
 
+class ReadingItem(Model):
+    id: str = Field(min_length=1, max_length=200)
+    type: Literal["reading"]
+    data: Reading
+
+
+class JumbleItem(Model):
+    id: str = Field(min_length=1, max_length=200)
+    type: Literal["sentence-jumble"]
+    data: Jumble
+
+
+class MatchingItem(Model):
+    id: str = Field(min_length=1, max_length=200)
+    type: Literal["matching-pairs"]
+    data: Matching
+
+
+LessonItem = Annotated[Item | ReadingItem | JumbleItem | MatchingItem, Field(discriminator="type")]
+
+
 class Lesson(Model):
     schemaVersion: Literal[1]
     title: str = Field(min_length=1, max_length=200)
-    items: list[Item] = Field(min_length=1, max_length=200)
+    items: list[LessonItem] = Field(min_length=1, max_length=200)
 
     @model_validator(mode="after")
     def valid_items(self):
@@ -116,8 +212,9 @@ def validate(model, raw):
 
 def validate_audio_ownership(db, document):
     for item in document.items:
-        for option in item.data.options:
-            if option.audio_id and not db.execute(
+        options = item.data.options if item.type == 'multiple-choice' else [option for block in item.data.blocks if block.type == 'Multiple-choice' for option in block.question.options] if item.type == 'reading' else []
+        for option in options:
+            if getattr(option, 'audio_id', None) and not db.execute(
                 "SELECT id FROM corpus.option_audio WHERE id=%s AND user_id=%s AND text=%s AND status='ready'",
                 (UUID(option.audio_id), user_id(), option.label),
             ).fetchone():

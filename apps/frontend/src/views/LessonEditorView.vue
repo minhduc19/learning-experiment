@@ -53,7 +53,7 @@ watch([() => route.name, () => route.params.lessonId], load, { immediate: true }
 </script>
 <template>
   <main class="page corpus-page lesson-editor"><RouterLink to="/lessons">← All lessons</RouterLink><h1>{{ creating ? 'Create a lesson' : 'Edit lesson' }}</h1>
-    <p>Paste a lesson object or a JSON array from questions.js (without the JavaScript export declaration). Items stay in array order. Currently supported: multiple-choice.</p>
+    <p>Paste a lesson object or a JSON array from questions.js (without the JavaScript export declaration). Items stay in array order. Supported: multiple choice, reading, sentence jumble, and matching pairs.</p>
     <p v-if="error" class="corpus-error" role="alert">{{ error }} <button v-if="!loaded" class="corpus-text-button" @click="load">Retry</button></p><p v-if="message" role="status">{{ message }}</p><p v-if="busy" role="status">Loading or saving lesson…</p>
     <template v-if="loaded">
       <LessonJsonWorkspace v-model="text" :busy="busy" :creating="creating" @save="save">

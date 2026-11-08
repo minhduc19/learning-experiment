@@ -5,7 +5,9 @@ import MultipleChoiceActivity from '../components/MultipleChoiceActivity.vue'
 import { useReadingProgress } from '../composables/useReadingProgress.js'
 
 // A supplied document restores the local sample without changing API-backed readings.
-const props = defineProps({ document: { type: Object, default: null } })
+const props = defineProps({ document: { type: Object, default: null }, lessonMode:Boolean })
+const emit = defineEmits(['completed'])
+const checkpointAnswers = ref({})
 const route = useRoute()
 const router = useRouter()
 const reading = ref(null)
@@ -213,9 +215,10 @@ onUnmounted(() => {
         <p v-if="displayTranslation && block.translation" class="reading-translation" :lang="reading.translationLanguage">{{ block.translation }}</p>
       </section>
       <section v-else-if="block.type === 'Multiple-choice'" class="reading-checkpoint" v-show="!readingOnly || !passed.has(block.id)" :ref="element => setBlockElement(block.id, element)" tabindex="-1" :aria-label="`Reading checkpoint ${block.id}`">
-        <MultipleChoiceActivity embedded :show-instructions="false" :items="[block.question]" :text-size="languageSize" :translation-size="translationSize" translation-label="English translation" @passed="passCheckpoint(block.id)" />
+        <MultipleChoiceActivity embedded :show-instructions="false" :items="[block.question]" :text-size="languageSize" :translation-size="translationSize" translation-label="English translation" @answered="checkpointAnswers[block.id]=$event.optionId" @passed="passCheckpoint(block.id)" />
       </section>
       </template>
+      <button v-if="lessonMode && complete" class="button" @click="emit('completed', {checkpoints: {...checkpointAnswers}})">Continue lesson</button>
       <p v-if="complete" class="reading-end">End of reading · {{ sentenceCount }} sentences</p>
       <p v-else class="reading-end">Answer this checkpoint correctly to keep reading.</p>
     </article>
