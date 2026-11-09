@@ -69,3 +69,9 @@ async def database_unavailable(request, error):
     return JSONResponse(
         status_code=503, content={"detail": "Database service unavailable"}
     )
+
+
+# Legacy paths retain API compatibility; namespaced paths work through the web proxy.
+from app.booking import router as booking_router
+app.include_router(booking_router, prefix="/api/booking")
+app.include_router(booking_router, include_in_schema=False)

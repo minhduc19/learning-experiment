@@ -1,0 +1,106 @@
+from sqlalchemy import Boolean, Column, Date, Float, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
+
+from app.booking.database import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    role = Column(String, nullable=False, default="user", server_default="user")
+
+
+class Property(Base):
+    __tablename__ = "properties"
+
+    id = Column(Integer, primary_key=True, index=True)
+    address = Column(String, unique=True, nullable=False)
+
+    bookings = relationship("Booking", back_populates="property")
+    listing_metadata = relationship("ListingMetadata", back_populates="property")
+
+
+class Cleaner(Base):
+    __tablename__ = "cleaners"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    email = Column(String, unique=True, nullable=True)
+    phone = Column(String, nullable=True)
+    rate = Column(Float, nullable=True)  # hourly rate
+
+    sessions = relationship("CleaningSession", back_populates="cleaner")
+
+
+class ListingMetadata(Base):
+    __tablename__ = "listing_metadata"
+
+    id = Column(Integer, primary_key=True, index=True)
+    listing = Column(String, unique=True, index=True, nullable=False)
+    listing_number = Column(String, nullable=True)
+    property_id = Column(Integer, ForeignKey("properties.id"), nullable=True)
+
+    property = relationship("Property", back_populates="listing_metadata")
+
+
+class Booking(Base):
+    __tablename__ = "bookings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    confirmation_code = Column(String, unique=True, index=True, nullable=False)
+    status = Column(String, nullable=False)
+    archive_status = Column(String, nullable=True)
+    guest_name = Column(String, nullable=False)
+    contact = Column(String, nullable=True)
+    adults = Column(Integer, default=0)
+    children = Column(Integer, default=0)
+    infants = Column(Integer, default=0)
+    start_date = Column(Date, nullable=False)
+    end_date = Column(Date, nullable=False)
+    nights = Column(Integer, nullable=False)
+    booked_date = Column(Date, nullable=True)
+    listing = Column(String, nullable=True)
+    listing_number = Column(String, nullable=True)
+    earnings = Column(String, nullable=True)
+    property_id = Column(Integer, ForeignKey("properties.id"), nullable=True)
+
+    property = relationship("Property", back_populates="bookings")
+    session_bookings = relationship("SessionBooking", back_populates="booking")
+
+
+class CleaningSession(Base):
+    __tablename__ = "cleaning_sessions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    cleaner_id = Column(Integer, ForeignKey("cleaners.id"), nullable=False)
+    clean_date = Column(Date, nullable=False)
+    hours = Column(Integer, nullable=False, default=0)
+    minutes = Column(Integer, nullable=False, default=0)  # 0-59
+    notes = Column(String, nullable=True)
+    fix_cost = Column(Float, nullable=False, default=0.0)
+    paid_status = Column(Boolean, nullable=False, default=False)
+
+    cleaner = relationship("Cleaner", back_populates="sessions")
+    session_bookings = relationship(
+        "SessionBooking", back_populates="session", cascade="all, delete-orphan"
+    )
+
+
+class SessionBooking(Base):
+    """Link table — one cleaning session can cover multiple bookings."""
+
+    __tablename__ = "session_bookings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    session_id = Column(
+        Integer, ForeignKey("cleaning_sessions.id", ondelete="CASCADE"), nullable=False
+    )
+    confirmation_code = Column(
+        String, ForeignKey("bookings.confirmation_code"), nullable=False
+    )
+
+    session = relationship("CleaningSession", back_populates="session_bookings")
+    booking = relationship("Booking", back_populates="session_bookings")
