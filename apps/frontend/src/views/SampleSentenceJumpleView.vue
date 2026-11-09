@@ -2,7 +2,10 @@
 import { nextTick, ref, watch } from 'vue'
 import Draggable from 'vuedraggable'
 import AudioPrompt from '../components/AudioPrompt.vue'
-import items from '../data/sentenceJumble.json'
+import sampleItems from '../data/sentenceJumble.json'
+const props = defineProps({items:{type:Array,default:()=>sampleItems},lessonMode:Boolean})
+const items = props.items
+const emit = defineEmits(['completed'])
 import { useSentenceJumble } from '../composables/useSentenceJumble.js'
 const { index, selected, checked, correct, total, complete, question, answer, bank, choose, remove, move, check, proceed, restart } = useSentenceJumble(items)
 const heading = ref(null), feedback = ref(null)
@@ -37,13 +40,13 @@ function keyboardMove(event, id, position) {
   syncTiles()
 }
 async function checkAnswer() { if (sorting.value) return; check(); await nextTick(); feedback.value?.focus() }
-async function advance() { proceed(); await nextTick(); heading.value?.focus() }
+async function advance() { if (props.lessonMode && correct.value && index.value === total - 1) { emit('completed', {tile_ids:[...selected.value]}); return } proceed(); await nextTick(); heading.value?.focus() }
 async function again() { restart(); syncTiles(true); await nextTick(); heading.value?.focus() }
 </script>
 
 <template>
   <main class="activity activity-screen jumble-activity" :class="{ 'activity-has-feedback': checked }">
-    <div class="activity-screen-progress">
+    <div v-if="!lessonMode" class="activity-screen-progress">
       <div class="activity-topline"><span class="activity-eyebrow">DAILY PRACTICE</span><span>{{ complete ? total : index + 1 }} / {{ total }}</span></div>
       <progress class="activity-progress" :value="index" :max="total" aria-label="Sentences completed" />
     </div>

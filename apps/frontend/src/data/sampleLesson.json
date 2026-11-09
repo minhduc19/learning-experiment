@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "title": "A lesson with four activities",
+  "items": [
+    {
+      "id": "multiple-choice",
+      "type": "multiple-choice",
+      "data": {
+        "id": "xin_daoxin",
+        "instruction": "Fill in the blank",
+        "answer": "道心",
+        "translation": "This refers to the development of the Dao Mind.",
+        "options": [
+          {
+            "id": "道心",
+            "label": "道心",
+            "fill": "道心",
+            "feedback": "Exactly! ＂道心＂ (Dao Mind) refers to the enlightened or spiritual mind in traditional philosophy."
+          },
+          {
+            "id": "心中",
+            "label": "心中",
+            "feedback": "＂心中＂ means \"in the heart/mind,\" which doesn't fit the philosophical context of this phrase."
+          },
+          {
+            "id": "放心",
+            "label": "放心",
+            "feedback": "＂放心＂ means to set one's mind at ease or relax. The correct term here is ＂道心＂."
+          }
+        ],
+        "text-prompt": "谓[[blank]]开发也。",
+        "text-prompt-available": true,
+        "audio-prompt": null
+      }
+    },
+    {
+      "id": "reading",
+      "type": "reading",
+      "data": {
+        "id": "reading-001",
+        "title": "在公园散步",
+        "titleTranslation": "A walk in the park",
+        "language": "zh-Hans",
+        "translationLanguage": "en",
+        "blocks": [
+          {
+            "id": "sentence-001",
+            "type": "sentence",
+            "translation": "I like taking walks in the park.",
+            "segments": [
+              {
+                "id": "s1",
+                "text": "我",
+                "pinyin": "wǒ",
+                "details": {
+                  "translation": "I; me",
+                  "partOfSpeech": "pronoun"
+                }
+              },
+              {
+                "id": "s2",
+                "text": "喜欢",
+                "pinyin": "xǐ huān",
+                "details": {
+                  "translation": "to like; to enjoy",
+                  "partOfSpeech": "verb",
+                  "note": "Can be followed by a noun or an activity."
+                }
+              },
+              {
+                "id": "s3",
+                "text": "在公园",
+                "pinyin": "zài gōng yuán",
+                "details": {
+                  "translation": "in the park",
+                  "note": "在 introduces a location; 公园 means park."
+                }
+              },
+              {
+                "id": "s4",
+                "text": "散步",
+                "pinyin": "sàn bù",
+                "details": {
+                  "translation": "to take a walk",
+                  "partOfSpeech": "verb",
+                  "note": "Usually describes walking for leisure."
+                }
+              },
+              {
+                "id": "s5",
+                "text": "。",
+                "pinyin": null
+              }
+            ]
+          },
+          {
+            "id": "checkpoint-001",
+            "type": "Multiple-choice",
+            "question": {
+              "id": "park-verb",
+              "instruction": "Fill in the blank",
+              "answer": "walk",
+              "translation": "I like taking walks in the park.",
+              "options": [
+                {
+                  "id": "chat",
+                  "label": "聊天",
+                  "fill": "聊天",
+                  "feedback": "聊天 means to chat. The sentence you read describes taking a walk."
+                },
+                {
+                  "id": "walk",
+                  "label": "散步",
+                  "fill": "散步",
+                  "feedback": "Exactly! 散步 means to take a walk."
+                },
+                {
+                  "id": "sit",
+                  "label": "坐",
+                  "fill": "坐",
+                  "feedback": "坐 means to sit. Look for the phrase meaning to take a walk."
+                }
+              ],
+              "text-prompt": "我喜欢在公园[[blank]]。",
+              "text-prompt-available": true,
+              "audio-prompt": null
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "sentence-jumble",
+      "type": "sentence-jumble",
+      "data": {
+        "id": "apple",
+        "instruction": "Build the translation",
+        "sourceLanguage": "English",
+        "targetLanguage": "Mandarin",
+        "tiles": [
+          { "id": "i", "text": "我" },
+          { "id": "eat", "text": "吃" },
+          { "id": "an", "text": "一个" },
+          { "id": "apple", "text": "苹果" },
+          { "id": "drink", "text": "喝" },
+          { "id": "cup", "text": "一杯" }
+        ],
+        "answers": [
+          ["i", "eat", "an", "apple"],
+          ["eat", "an", "apple"]
+        ],
+        "translation": "我吃一个苹果。",
+        "explanation": "吃 means ‘to eat’. 一个 is the number ‘one’ plus the general measure word 个. In Mandarin the subject 我 can be dropped when it is clear from context, so it is optional.",
+        "text-prompt": "I eat an apple.",
+        "text-prompt-available": true,
+        "audio-prompt": null
+      }
+    },
+    {
+      "id": "matching-pairs",
+      "type": "matching-pairs",
+      "data": {
+        "title": "Tap the Pairs",
+        "instruction": "Tap the matching pairs",
+        "sourceLanguage": "English",
+        "targetLanguage": "Mandarin",
+        "pairs": [
+          { "id": "bread", "source": "bread", "target": "面包" },
+          { "id": "water", "source": "water", "target": "水" }
+        ]
+      }
+    }
+  ]
+}

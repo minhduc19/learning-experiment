@@ -6,12 +6,12 @@ The Ideas directory includes the named routes automatically. Paste a JSON lesson
 object or a JSON array from questions.js, omitting the JavaScript export statement.
 Arrays are wrapped into a titled lesson with stable placement IDs in their
 original order. The editor displays validation errors, disables invalid saves,
-and renders valid items immediately using the actual multiple-choice activity.
+and renders valid items using the shared activity components.
 Editing JSON resets preview answers so the preview always reflects current data.
 
 The canonical document has `schemaVersion: 1`, `title`, and an ordered `items`
-array. Each item has a unique placement `id`, `type: "multiple-choice"`, and `data`
-containing the existing question fields. Question IDs may repeat across separate
+array. Each item has a unique placement `id`, a supported activity `type`, and a
+`data` object matching that type. Question IDs may repeat across separate
 placements. Items never sort by ID or type. Future types need a validator and
 preview renderer before being accepted; unsupported types are rejected explicitly.
 See `lesson-storage-proposal.md` for the format example and design background.
@@ -115,3 +115,47 @@ personal progress tables, not shared vocabulary definitions, and creates private
 `corpus.lesson_attempts` snapshots/results. Marks and points remain independent;
 changing Learned/Learning flags preserves points. Existing data starts at zero.
 Normal deployment applies the migration without resetting any corpus data.
+
+## Mixed activity lessons
+
+`/sample-lesson` is a public four-activity example backed by
+`apps/frontend/src/data/sampleLesson.json`. Each ordered item has one of these
+`type` values and a `data` object matching the corresponding sample activity:
+
+- `multiple-choice`: a question with options and an answer ID.
+- `reading`: a reading document with sentence blocks and optional `Multiple-choice` checkpoints.
+- `sentence-jumble`: prompt fields, tiles with stable IDs, and accepted arrays of tile IDs.
+- `matching-pairs`: instructions, language labels, and 2–5 source/target pairs with unique IDs.
+
+The lesson editor validates all four types and previews mixed lessons with the
+same shared sequential player used by `/sample-lesson` and
+`/lessons/:lessonId/play`. Sample activity routes continue to work independently.
+Lesson titles in `/lessons` open playback; the separate Edit button opens the
+existing JSON editor.
+
+Each activity advances after successful completion. Reading requires its
+checkpoints to be answered correctly, followed by Continue lesson; reading with
+no checkpoints has a manual Continue lesson action. Existing multiple-choice
+practice targets and idempotent practice scoring remain intact. Non-targeted
+activities contribute to the lesson score without inventing corpus practice
+targets.
+
+The completion API accepts `{item_id, option_id}` for multiple choice and
+`{item_id, answer}` for the other types. Answer objects contain `tile_ids`,
+`pair_ids`, or a `checkpoints` mapping from reading block ID to option ID. The
+backend grades against the immutable attempt snapshot, rejects unknown or
+missing IDs, and does not trust a client-provided completed flag. Existing
+multiple-choice-only lessons and their payloads remain compatible. No new
+migration is required: lesson documents and attempts already use JSONB.
+
+Character search at `/characters` matches original, simplified, and traditional
+forms while preserving ownership, filters, ordering, and pagination.
+
+## Shared lesson progress
+
+Sample lessons, the JSON editor's live preview (including `/lessons/new`), and
+saved lesson playback all use `MixedLessonPlayer`. Its single progress bar
+counts completed activities across all four types, starts at zero, and fills
+when the lesson finishes. Each activity hides its local progress in lesson mode;
+standalone activity routes keep their own progress. Replay resets the shared
+bar. Multiple-choice-only previews use the same sequential player.

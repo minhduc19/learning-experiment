@@ -1,6 +1,9 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
-import activity from '../data/matchingPairs.json'
+import sampleActivity from '../data/matchingPairs.json'
+const props = defineProps({ activity: {type:Object,default:()=>sampleActivity}, lessonMode:Boolean })
+const activity = props.activity
+const emit = defineEmits(['completed'])
 import { useMatchingPairs } from '../composables/useMatchingPairs.js'
 
 const { columns, selected, matched, mismatch, complete, choose, clearMismatch, restart, total } = useMatchingPairs(activity.pairs)
@@ -26,6 +29,7 @@ function tap(card) {
 }
 
 async function finish() {
+  if (props.lessonMode) { emit('completed', {pair_ids:[...matched.value]}); return }
   showSummary.value = true
   await nextTick()
   heading.value?.focus()
@@ -44,7 +48,7 @@ onBeforeUnmount(() => clearTimeout(mismatchTimer))
 
 <template>
   <main class="activity activity-screen matching-activity">
-    <div class="activity-screen-progress">
+    <div v-if="!lessonMode" class="activity-screen-progress">
       <div class="activity-topline">
         <span class="activity-eyebrow">DAILY PRACTICE</span>
         <span>{{ matched.length }} / {{ total }}</span>

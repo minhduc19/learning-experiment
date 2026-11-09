@@ -9,7 +9,7 @@ export function studyExportRows(selection, script = 'simplified') {
   const rows = [], seen = new Set()
   const variant = (entry, suffix, source) => entry?.[`${script}_${suffix}`] ?? entry?.[source] ?? ''
   function add(character, segment, sentence) {
-    const row = [variant(character, 'value', 'value'), character.id,
+    const row = [variant(character, 'value', 'value'), character?.id,
       variant(segment, 'text', 'text'), segment?.id,
       variant(sentence, 'text', 'raw_text'), sentence?.id]
     const key = JSON.stringify(row)
@@ -26,6 +26,7 @@ export function studyExportRows(selection, script = 'simplified') {
     if (!segments.length) add(character, undefined, sentence)
     for (const segment of segments) add(character, segment, sentence)
   }
+  for (const segment of selection?.segments ?? []) add(undefined, segment, segment.sentence)
   return rows
 }
 

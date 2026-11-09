@@ -88,20 +88,13 @@ def finish(identifier, raw):
         ):
             raise HTTPException(422, "Provide an answers array")
         answers = raw["answers"]
-        if len(answers) != len(items) or any(
-            not isinstance(answer, dict) or set(answer) != {"item_id", "option_id"}
-            for answer in answers
-        ):
+        if len(answers) != len(items):
             raise HTTPException(422, "Submit one answer for every lesson item")
         by_id = {}
         for answer in answers:
-            if (
-                not isinstance(answer["item_id"], str)
-                or not isinstance(answer["option_id"], str)
-                or answer["item_id"] in by_id
-            ):
+            if not isinstance(answer, dict) or set(answer) not in ({"item_id", "option_id"}, {"item_id", "answer"}) or not isinstance(answer.get("item_id"), str) or answer["item_id"] in by_id:
                 raise HTTPException(422, "Invalid or duplicate item IDs")
-            by_id[answer["item_id"]] = answer["option_id"]
+            by_id[answer["item_id"]] = answer
         if set(by_id) != {item["id"] for item in items}:
             raise HTTPException(422, "Answer item IDs do not match the lesson")
         counts = {"character": Counter(), "segment": Counter()}
@@ -109,10 +102,14 @@ def finish(identifier, raw):
         correct = 0
         for item in items:
             question = item["data"]
-            selected = by_id[item["id"]]
-            if selected not in {option["id"] for option in question["options"]}:
-                raise HTTPException(422, "Unknown answer option")
-            right = selected == question["answer"]
+            submitted = by_id[item["id"]]
+            if item['type'] == 'multiple-choice':
+                selected = submitted.get('option_id')
+                if not isinstance(selected,str) or selected not in {option['id'] for option in question['options']}:
+                    raise HTTPException(422, "Unknown answer option")
+                right = selected == question['answer']
+            else:
+                right = grade_activity(item, submitted.get('answer'))
             correct += int(right)
             for kind, target in attempt["targets"][item["id"]].items():
                 if target and target.get("id") and right:
@@ -181,3 +178,29 @@ def with_pinyin(result):
                 lazy_pinyin(target["original"], style=Style.TONE)
             )
     return result
+
+
+def grade_activity(item, answer):
+    if not isinstance(answer, dict):
+        raise HTTPException(422, 'Missing activity answer')
+    data = item['data']
+    if item['type'] == 'sentence-jumble':
+        ids = answer.get('tile_ids')
+        if set(answer) != {'tile_ids'} or not isinstance(ids,list) or not all(isinstance(i,str) for i in ids) or len(ids)!=len(set(ids)) or not set(ids)<= {t['id'] for t in data['tiles']}:
+            raise HTTPException(422, 'Invalid tile answer')
+        return ids in data['answers']
+    if item['type'] == 'matching-pairs':
+        ids = answer.get('pair_ids')
+        if set(answer) != {'pair_ids'} or not isinstance(ids,list) or not all(isinstance(i,str) for i in ids) or len(ids)!=len(set(ids)) or not set(ids)<= {p['id'] for p in data['pairs']}:
+            raise HTTPException(422, 'Invalid pair answer')
+        return set(ids) == {p['id'] for p in data['pairs']}
+    if item['type'] == 'reading':
+        checkpoints = answer.get('checkpoints')
+        expected = {b['id']:b['question'] for b in data['blocks'] if b['type']=='Multiple-choice'}
+        if set(answer) != {'checkpoints'} or not isinstance(checkpoints,dict) or set(checkpoints)!=set(expected):
+            raise HTTPException(422, 'Submit every reading checkpoint')
+        for identifier, q in expected.items():
+            if not isinstance(checkpoints[identifier],str) or checkpoints[identifier] not in {o['id'] for o in q['options']}:
+                raise HTTPException(422, 'Invalid reading checkpoint option')
+        return all(checkpoints[i]==q['answer'] for i,q in expected.items())
+    raise HTTPException(422, 'Unsupported activity')

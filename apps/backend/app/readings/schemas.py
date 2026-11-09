@@ -49,6 +49,15 @@ class QuestionOption(BaseModel):
     label: str
     fill: str | None = None
     feedback: str = ""
+    audio_id: str | None = Field(default=None, pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+    audio_text: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def current_audio(self):
+        if (self.audio_id is not None or self.audio_text is not None) and self.audio_text != self.label:
+            self.audio_id = None
+            self.audio_text = None
+        return self
 
 
 class MultipleChoiceQuestion(PromptFields):

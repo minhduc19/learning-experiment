@@ -41,3 +41,10 @@ test('editable vocabulary rows preserve field text, escape it once, and serializ
   assert.equal(serializeVocabularyPrompt([]), 'Character|segment|sentence|sentence-id')
   assert.equal(JSON.stringify(selection), original)
 })
+
+test('version 2 segment rows retain source IDs and both writing systems without a target character', () => {
+  const segment = { id: 2, text: '出来', traditional_text: '出來', simplified_text: '出来', sentence: { id: 9, raw_text: '他出来。', traditional_text: '他出來。', simplified_text: '他出来。' } }
+  const selection = { learned: [], new: [], segments: [segment, segment] }
+  assert.equal(buildVocabularyPrompt(selection), 'Character|segment|sentence|sentence-id\n|出來|他出來。|9')
+  assert.equal(buildVocabularyPrompt(selection, 'simplified'), 'Character|segment|sentence|sentence-id\n|出来|他出来。|9')
+})
