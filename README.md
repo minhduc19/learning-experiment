@@ -437,3 +437,7 @@ Production sessions require HTTPS. Keep secure cookies enabled and configure
 unassigned and hidden until an operator explicitly claims it for an account.
 See [authentication and ownership](docs/authentication.md) for configuration,
 API details, and the legacy-data assignment command.
+
+## Booking management
+
+Open `/private-booking-management` for the booking tools directory. See [storage, compatibility endpoints and restore instructions](docs/booking-management.md).

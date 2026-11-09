@@ -30,10 +30,12 @@ services:
     restart: unless-stopped
   backend:
     volumes:
+      - booking_data:/app/data/booking
       - reading_data:/app/data/readings
       - corpus_data:/app/data/corpus
     environment:
       <<: *backend-environment
+      BOOKING_SQLITE_PATH: /app/data/booking/app.db
       DEEPSEEK: ${DEEPSEEK:-}
       ELEVEN: ${ELEVEN:-}
     depends_on:
@@ -86,6 +88,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  booking_data:
   corpus_data:
   reading_data:
   postgres_data:

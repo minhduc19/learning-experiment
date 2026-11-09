@@ -17,7 +17,7 @@ RUN --mount=type=secret,id=proxy_ca \
     if [ -f /run/secrets/proxy_ca ]; then export SSL_CERT_FILE=/run/secrets/proxy_ca; fi; \
     python /tmp/piper_models.py --directory /app/models/piper
 COPY --chown=10001:10001 apps/backend/app ./app
-RUN mkdir -p /app/data/readings /app/data/corpus && chown -R 10001:10001 /app/data
+RUN mkdir -p /app/data/booking /app/data/readings /app/data/corpus && chown -R 10001:10001 /app/data
 ENV READING_DATA_DIR=/app/data/readings CORPUS_DATA_DIR=/app/data/corpus
 USER 10001:10001
 EXPOSE 8000

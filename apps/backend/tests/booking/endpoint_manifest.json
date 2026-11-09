@@ -1,0 +1,66 @@
+{
+  "/api/booking/users/": [
+    "post",
+    "get"
+  ],
+  "/api/booking/users/{user_id}": [
+    "get",
+    "patch",
+    "delete"
+  ],
+  "/api/booking/listing-metadata/": [
+    "post",
+    "get"
+  ],
+  "/api/booking/listing-metadata/{metadata_id}": [
+    "get",
+    "patch",
+    "delete"
+  ],
+  "/api/booking/documents/merge-download": [
+    "post"
+  ],
+  "/api/booking/database/download": [
+    "get"
+  ],
+  "/api/booking/database/upload": [
+    "post"
+  ],
+  "/api/booking/cleaning-sessions/": [
+    "post",
+    "delete",
+    "get"
+  ],
+  "/api/booking/cleaning-sessions/{session_id}": [
+    "patch",
+    "get",
+    "delete"
+  ],
+  "/api/booking/cleaning-sessions/{session_id}/add-booking/{confirmation_code}": [
+    "post"
+  ],
+  "/api/booking/cleaners/": [
+    "post",
+    "get"
+  ],
+  "/api/booking/cleaners/{cleaner_id}": [
+    "get"
+  ],
+  "/api/booking/cleaners/{cleaner_id}/sessions": [
+    "get"
+  ],
+  "/api/booking/bookings/": [
+    "post",
+    "get"
+  ],
+  "/api/booking/bookings/checkout/": [
+    "get"
+  ],
+  "/api/booking/bookings/{confirmation_code}": [
+    "get",
+    "delete"
+  ],
+  "/api/booking/bookings/bulk-upload/": [
+    "post"
+  ]
+}
