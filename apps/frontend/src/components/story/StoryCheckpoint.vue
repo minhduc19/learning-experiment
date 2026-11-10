@@ -59,14 +59,14 @@ function drop(to) { if (dragged.value !== null) move(dragged.value, to); dragged
 .checkpoint { padding: 1.1rem 0 1.25rem; border-top: 0; }
 .checkpoint-label { text-transform: uppercase; letter-spacing: .12em; font-size: .65rem; color: var(--story-accent); margin: 0 0 .35rem; font-weight: 700; }
 h2 { font-size: 1.05rem; line-height: 1.5; margin: 0 0 1rem; }
-.options { display: grid; gap: .5rem; }.options.compact { display: flex; flex-wrap: wrap; }
-.choice, .blank { color: inherit; background: transparent; border: 1px solid var(--story-border); border-radius: .7rem; padding: .3rem .8rem; text-align: left; cursor: pointer; min-height: 44px; }
+.options { display: grid; grid-template-columns: minmax(0, 1fr); gap: .5rem; }.options.compact { display: flex; flex-wrap: wrap; }
+.choice, .blank { color: inherit; background: transparent; border: 1px solid var(--story-border); border-radius: .7rem; padding: .3rem .8rem; text-align: left; cursor: pointer; min-height: 44px; max-width: 100%; min-width: 0; }
 .choice:hover, .blank:hover { border-color: var(--story-accent); }.choice.selected { background: #a8cf6a1a; border-color: var(--story-accent); color: var(--story-accent); }
 .blank { border-style: dashed; margin: .2rem; min-width: 4rem; color: var(--story-accent); }
 .sentence-blanks { margin-bottom: .8rem; }.micro-hint { font-size: .75rem; color: #a1b5bc; }
 .event-list { padding: 0; list-style: none; display: grid; gap: .5rem; }
-.event-list li { display: flex; gap: .65rem; align-items: center; border: 1px solid var(--story-border); border-radius: .7rem; padding: .5rem; cursor: grab; }
-.event-list :deep(.story-words) { font-size: 1rem; flex: 1; }.event-number { color: #a1b5bc; font-size: .75rem; }
+.event-list li { min-width: 0; display: flex; gap: .65rem; align-items: center; border: 1px solid var(--story-border); border-radius: .7rem; padding: .5rem; cursor: grab; }
+.event-list :deep(.story-words) { font-size: 1rem; flex: 1; min-width: 0; }.event-number { color: #a1b5bc; font-size: .75rem; }
 .move-buttons { display: flex; flex-direction: column; }.move-buttons button { background: transparent; color: inherit; border: 0; min-width: 44px; min-height: 32px; cursor: pointer; }.move-buttons button:disabled { opacity: .25; cursor: default; }
 .check-answer { margin-top: .85rem; border: 0; background: var(--story-accent); color: #18251a; border-radius: .6rem; padding: .65rem 1.2rem; font-weight: 700; cursor: pointer; }
 .check-answer:disabled { opacity: .4; cursor: not-allowed; }.retry-feedback { color: #f3cf91; font-size: .85rem; }.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
