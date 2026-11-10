@@ -108,7 +108,8 @@ export const routes = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes,
-  scrollBehavior: () => ({ top: 0 }),
+  // The story player scrolls to its latest content after rendering.
+  scrollBehavior: to => ['reading-exercise', 'sample-story-quiz'].includes(to.name) ? false : { top: 0 },
 })
 
 router.beforeEach(async to => {
