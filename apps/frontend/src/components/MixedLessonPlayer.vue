@@ -3,6 +3,7 @@ import { computed, nextTick, ref } from 'vue'
 import MultipleChoiceActivity from './MultipleChoiceActivity.vue'
 import ReadingView from '../views/ReadingView.vue'
 import Jumble from '../views/SampleSentenceJumpleView.vue'
+import Listening from '../views/ListenChooseWordView.vue'
 import Matching from '../views/SampleMatchingPairView.vue'
 const props = defineProps({ lesson:{type:Object,required:true}, completionBusy:Boolean, restartHandler:{type:Function,default:null} })
 const emit = defineEmits(['completed'])
@@ -32,6 +33,7 @@ function restart() {
       <MultipleChoiceActivity v-if="item.type==='multiple-choice'" :key="item.id" :items="[item.data]" lesson-mode @answered="selected=$event.optionId" @completed="next({option_id:selected})" />
       <ReadingView v-else-if="item.type==='reading'" :key="item.id" :document="item.data" lesson-mode @completed="next({answer:$event})" />
       <Jumble v-else-if="item.type==='sentence-jumble'" :key="item.id" :items="[item.data]" lesson-mode @completed="next({answer:$event})" />
+      <Listening v-else-if="item.type==='listence-choose-word'" :key="item.id" :items="[item.data]" lesson-mode @completed="next({answer:$event})" />
       <Matching v-else-if="item.type==='matching-pairs'" :key="item.id" :activity="item.data" lesson-mode @completed="next({answer:$event})" />
     </template>
     <main v-else class="activity page activity-finish">

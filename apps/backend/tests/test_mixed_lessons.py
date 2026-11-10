@@ -19,6 +19,7 @@ def answers(doc):
         value={'option_id':d['answer']} if t=='multiple-choice' else {'answer':
           {'tile_ids':d['answers'][0]} if t=='sentence-jumble' else
           {'pair_ids':[p['id'] for p in d['pairs']]} if t=='matching-pairs' else
+          {'selected_ids':d['spokenIds']} if t=='listence-choose-word' else
           {'checkpoints':{b['id']:b['question']['answer'] for b in d['blocks'] if b['type']=='Multiple-choice'}}}
         result.append({'item_id':item['id'],**value})
     return result
@@ -40,7 +41,7 @@ def test_mixed_crud_play_scoring_retry_and_ownership(client):
     assert client.post(f"/api/lessons/attempts/{attempt['id']}/complete",json={'answers':bad}).status_code==422
     finish=client.post(f"/api/lessons/attempts/{attempt['id']}/complete",json={'answers':payload})
     assert finish.status_code==200,finish.text
-    assert finish.json()['correct']==4 and finish.json()['total']==4
+    assert finish.json()['correct']==5 and finish.json()['total']==5
     assert client.post(f"/api/lessons/attempts/{attempt['id']}/complete",json={'answers':payload}).json()==finish.json()
     with TestClient(app,base_url='https://testserver') as bob:
         account(bob)
@@ -64,7 +65,7 @@ def test_character_search_matches_both_script_forms(client):
 
 def test_each_type_is_graded_from_its_saved_definition(client):
     doc=sample();saved=client.post('/api/lessons',json=doc).json()
-    for index in range(4):
+    for index in range(5):
         attempt=client.post(f"/api/lessons/{saved['id']}/attempts").json()
         payload=answers(attempt['document'])
         if index==0:
@@ -74,8 +75,25 @@ def test_each_type_is_graded_from_its_saved_definition(client):
             payload[1]['answer']['checkpoints'][b['id']]=next(o['id'] for o in b['question']['options'] if o['id']!=b['question']['answer'])
         elif index==2:
             payload[2]['answer']['tile_ids'].reverse()
-        else:
+        elif index==3:
             payload[3]['answer']['pair_ids'].pop()
+        else:
+            payload[4]['answer']['selected_ids'].pop()
         result=client.post(f"/api/lessons/attempts/{attempt['id']}/complete",json={'answers':payload})
         assert result.status_code==200,result.text
-        assert result.json()['correct']==3 and result.json()['incorrect']==1
+        assert result.json()['correct']==4 and result.json()['incorrect']==1
+
+
+def test_listening_validation_and_answer_integrity(client):
+    for change in [
+        lambda d: d['items'][4]['data']['spokenIds'].append('unknown'),
+        lambda d: d['items'][4]['data']['options'].pop(),
+        lambda d: d['items'][4]['data'].update(audio='javascript:alert(1)'),
+    ]:
+        doc = sample(); change(doc)
+        assert client.post('/api/lessons', json=doc).status_code == 422
+    saved = client.post('/api/lessons', json=sample()).json()
+    attempt = client.post(f"/api/lessons/{saved['id']}/attempts").json()
+    payload = answers(attempt['document'])
+    payload[4]['answer']['selected_ids'] = ['unknown']
+    assert client.post(f"/api/lessons/attempts/{attempt['id']}/complete", json={'answers': payload}).status_code == 422

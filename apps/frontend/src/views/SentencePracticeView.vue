@@ -1,11 +1,14 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useCorpusPage } from '../composables/useCorpusPage'
 import StoryFilter from '../components/StoryFilter.vue'
 const storyIds = ref([])
 const sentences = useCorpusPage(20)
+const appliedStories = ref(null)
+const filtersChanged = computed(() => appliedStories.value !== null && JSON.stringify(storyIds.value) !== JSON.stringify(appliedStories.value))
 function refresh() {
+  appliedStories.value = [...storyIds.value]
   const params = new URLSearchParams()
   storyIds.value.forEach(id => params.append('story_ids', id))
   sentences.reset('/api/corpus/practice-sentences?' + params)
@@ -17,17 +20,19 @@ function parts(sentence) {
     return { text, kind: mark ? mark.learned && mark.learning ? 'both' : mark.learned ? 'learned' : 'learning' : '' }
   })
 }
-watch(storyIds, refresh, { immediate: true })
+
 </script>
 <template>
   <main class="page corpus-page">
     <p class="corpus-eyebrow">YOUR VOCABULARY IN CONTEXT</p>
     <h1>Sentence practice</h1>
     <p>Sentences with the most marked characters appear first. Repeated characters count each time; revision characters count once.</p>
-    <div class="cluster"><RouterLink to="/characters">Manage learning marks</RouterLink><RouterLink to="/my-stories">My stories</RouterLink><button class="corpus-text-button" :disabled="sentences.loading" @click="refresh">Refresh ranking</button></div>
+    <div class="cluster"><RouterLink to="/characters">Manage learning marks</RouterLink><RouterLink to="/my-stories">My stories</RouterLink></div>
     <p class="practice-legend"><span class="practice-mark is-learned">Learned</span><span class="practice-mark is-learning">Learning</span><span class="practice-mark is-both">Both · revision</span></p>
     <p v-if="sentences.error" class="corpus-error" role="alert">{{ sentences.error }} Refresh the ranking if your marks or stories have changed. <button class="corpus-text-button" @click="refresh">Refresh</button></p>
-    <StoryFilter v-model="storyIds" />
+    <form @submit.prevent="refresh"><StoryFilter v-model="storyIds" /><button class="button" :disabled="sentences.loading">{{ appliedStories === null ? 'Load sentences' : 'Apply stories and refresh' }}</button></form>
+    <p v-if="appliedStories === null" role="status">Choose stories above, then load sentences. Leave all unchecked to search every story.</p>
+    <p v-else-if="filtersChanged" role="status">Story selection changed. Apply it to update the sentences below.</p>
     <ol class="corpus-sentences">
       <li v-for="sentence in sentences.items" :key="`${sentence.story_id}:${sentence.sentence_position}`" class="corpus-sentence-card">
         <div class="corpus-sentence-meta"><RouterLink :to="`/my-stories/${sentence.story_id}`">{{ sentence.story_title }}</RouterLink><span>Sentence {{ sentence.sentence_position + 1 }}</span></div>

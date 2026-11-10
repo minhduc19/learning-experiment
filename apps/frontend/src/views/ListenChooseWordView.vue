@@ -2,25 +2,30 @@
 import { computed, nextTick, ref } from 'vue'
 import data from '../data/listenChooseWord.json'
 import { shuffle } from '../composables/shuffle.js'
+const props = defineProps({ items: { type: Array, default: () => data.exercises }, lessonMode: Boolean })
+const emit = defineEmits(['completed'])
+const items = props.items
 const labels = data.labels
 const index = ref(0), chosen = ref([]), feedback = ref(false), heading = ref(null), audioError = ref(false)
-const exercise = computed(() => data.exercises[index.value])
+const exercise = computed(() => items[index.value])
 const options = ref(shuffle(exercise.value.options))
-const complete = computed(() => index.value >= data.exercises.length)
+const complete = computed(() => index.value >= items.length)
 const correct = computed(() => exercise.value?.spokenIds.every(id => chosen.value.includes(id)))
 const spoken = computed(() => exercise.value.spokenIds.map(id => exercise.value.options.find(option => option.id === id)))
 function choose(id) { if (!chosen.value.includes(id)) chosen.value.push(id) }
 async function advance() {
   if (!feedback.value) { feedback.value = true; return }
+  const answer = { selected_ids: [...chosen.value] }
   index.value++; feedback.value = false; chosen.value = []; audioError.value = false
   if (!complete.value) options.value = shuffle(exercise.value.options)
+  if (complete.value && props.lessonMode) emit('completed', answer)
   await nextTick(); heading.value?.focus()
 }
 async function restart() { index.value = 0; chosen.value = []; feedback.value = false; options.value = shuffle(exercise.value.options); await nextTick(); heading.value?.focus() }
 </script>
 <template>
   <main class="activity activity-screen listening-activity" :class="{ 'activity-has-feedback': feedback }">
-    <div class="activity-screen-progress"><div class="activity-topline"><span class="activity-eyebrow">{{ labels.eyebrow }}</span><span>{{ Math.min(index + 1, data.exercises.length) }} / {{ data.exercises.length }}</span></div><progress class="activity-progress" :value="index" :max="data.exercises.length" :aria-label="labels.eyebrow" /></div>
+    <div v-if="!lessonMode" class="activity-screen-progress"><div class="activity-topline"><span class="activity-eyebrow">{{ labels.eyebrow }}</span><span>{{ Math.min(index + 1, items.length) }} / {{ items.length }}</span></div><progress class="activity-progress" :value="index" :max="items.length" :aria-label="labels.eyebrow" /></div>
     <section v-if="complete" class="activity-finish"><h1 ref="heading" tabindex="-1" class="activity-title">{{ labels.finish }}</h1><button class="button activity-action" @click="restart">{{ labels.restart }}</button></section>
     <section v-else class="activity-screen-question">
       <div class="activity-mascot" aria-hidden="true">♫</div>
