@@ -5,11 +5,26 @@ import { readingExercises } from '../data/readingExercises/index.js'
 const route = useRoute()
 const story = readingExercises.find(item => item.id === route.params.storyId) || readingExercises[0]
 import { loadSession, saveSession } from '../composables/storySession.js'
+import { readingTargetPhrases, loadLearnedPhrases } from '../utils/readingTargetPhrases.js'
 import StoryWords from '../components/story/StoryWords.vue'
 import StoryCheckpoint from '../components/story/StoryCheckpoint.vue'
 let storage
 try { storage = window.localStorage } catch {}
 const session = ref(loadSession(story, storage))
+const targetPhrases = readingTargetPhrases(story.steps)
+const phraseStorageKey = `reading-exercises-learned-phrases:${story.id}`
+const learnedPhrases = ref(loadLearnedPhrases(storage, phraseStorageKey))
+const phraseSaveError = ref('')
+function markPhraseLearned(phrase) {
+  const updated = new Set(learnedPhrases.value).add(phrase)
+  try {
+    storage.setItem(phraseStorageKey, JSON.stringify([...updated]))
+    learnedPhrases.value = updated
+    phraseSaveError.value = ''
+  } catch {
+    phraseSaveError.value = 'Could not save your learned phrases in this browser. Please try again.'
+  }
+}
 let savedPinyin = true
 try { savedPinyin = storage?.getItem('reading-exercises-show-pinyin') !== 'false' } catch {}
 const pinyin = ref(savedPinyin), settings = ref(false), definition = ref(null), storageError = ref(false), audioMessage = ref(''), playing = ref(null), endHeading = ref(null), continueAction = ref(null)
@@ -107,7 +122,16 @@ onBeforeUnmount(() => {
         <div v-else-if="session.answers[step.id]" class="solved-checkpoint" role="status"><span class="success-mark">✓</span><div><p class="checkpoint-caption">{{ step.label }} · Complete</p><p>{{ step.explanation }}</p></div></div>
         <StoryCheckpoint v-else :step="step" :pinyin="pinyin" @passed="passed(step, $event)" @mistake="session.mistakes++" />
       </section>
-      <section v-if="complete" ref="endHeading" class="story-summary" tabindex="-1"><span class="end-mark" aria-hidden="true">✦</span><p class="story-kicker">THE END</p><h2>Story complete!</h2><p>You followed the story and completed {{ solved }} of {{ quizCount }} checkpoints.</p><p>{{ session.mistakes === 0 ? 'Every answer correct on the first try.' : `${session.mistakes} ${session.mistakes === 1 ? 'retry' : 'retries'} — you kept learning along the way.` }}</p><button class="primary-action" @click="restart">Read again</button><RouterLink :to="{ name: 'reading-exercises' }">Explore activities →</RouterLink></section>
+      <section v-if="complete" ref="endHeading" class="story-summary" tabindex="-1"><span class="end-mark" aria-hidden="true">✦</span><p class="story-kicker">THE END</p><h2>Story complete!</h2><p>You followed the story and completed {{ solved }} of {{ quizCount }} checkpoints.</p><p>{{ session.mistakes === 0 ? 'Every answer correct on the first try.' : `${session.mistakes} ${session.mistakes === 1 ? 'retry' : 'retries'} — you kept learning along the way.` }}</p><section v-if="targetPhrases.length" class="target-phrases" aria-labelledby="target-phrases-heading">
+        <h3 id="target-phrases-heading">Target phrases</h3>
+        <p>Review what you practiced. Learned status is saved in this browser.</p>
+        <ul><li v-for="phrase in targetPhrases" :key="phrase">
+          <span lang="zh">{{ phrase }}</span>
+          <button class="learn-phrase" :disabled="learnedPhrases.has(phrase)" :aria-label="`${learnedPhrases.has(phrase) ? 'Learned' : 'Mark as learned'}: ${phrase}`" @click="markPhraseLearned(phrase)">{{ learnedPhrases.has(phrase) ? '✓ Learned' : 'Mark as learned' }}</button>
+        </li></ul>
+        <p v-if="phraseSaveError" role="alert">{{ phraseSaveError }}</p>
+        <p role="status">{{ targetPhrases.filter(phrase => learnedPhrases.has(phrase)).length }} / {{ targetPhrases.length }} phrases learned</p>
+      </section><button class="primary-action" @click="restart">Read again</button><RouterLink :to="{ name: 'reading-exercises' }">Explore activities →</RouterLink></section>
     </div>
     <aside v-if="definition" class="word-definition" aria-label="Word meaning"><div><strong lang="zh">{{ definition.text }}</strong><span><template v-if="pinyin">{{ definition.pinyin }} · </template>{{ definition.meaning }}</span></div><button aria-label="Close word meaning" @click="definition = null">×</button></aside>
     <aside v-if="audioMessage && !definition" class="word-definition" role="status"><span>{{ audioMessage }}</span><button aria-label="Dismiss audio message" @click="audioMessage = ''">×</button></aside>
@@ -137,4 +161,12 @@ progress { display: block; width: 100%; height: .45rem; border: 0; border-radius
 .story-line:not(.dialogue) { padding-left: 3.05rem; }
 .story-line :deep(.story-words) { font-size: 1.35rem; line-height: 2.2; }
 @media (max-width: 420px) { .story-line:not(.dialogue) { padding-left: 2.875rem; } }
+.target-phrases { text-align: left; margin: 2rem 0; padding-block: 1rem; border-block: 1px solid var(--story-border); }
+.target-phrases h3 { margin-top: 0; }
+.target-phrases p { font-size: .85rem; }
+.target-phrases ul { list-style: none; padding: 0; }
+.target-phrases li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; padding: .75rem 0; }
+.target-phrases li > span { min-width: 0; overflow-wrap: anywhere; font-size: 1.2rem; }
+.learn-phrase { min-height: 44px; padding: .6rem .8rem; border: 1px solid var(--story-accent); border-radius: .65rem; background: transparent; color: var(--story-accent); cursor: pointer; }
+.learn-phrase:disabled { border-color: var(--story-border); color: #b5c6cb; cursor: default; }
 </style>

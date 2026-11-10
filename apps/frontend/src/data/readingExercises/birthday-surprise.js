@@ -33,6 +33,7 @@ export const story = {
     },
     {
       "id": "quiz-0",
+      "target-phrase": "一碗面",
       "type": "choice",
       "label": "Follow the story",
       "prompt": "What does Lin want to make?",
@@ -90,6 +91,7 @@ export const story = {
     },
     {
       "id": "quiz-1",
+      "target-phrase": "洗菜",
       "type": "choice",
       "label": "Follow the story",
       "prompt": "How will Ming help?",
@@ -147,6 +149,7 @@ export const story = {
     },
     {
       "id": "quiz-2",
+      "target-phrase": "生日快乐",
       "type": "prediction",
       "label": "Follow the story",
       "prompt": "What should they say to Mum?",
@@ -187,6 +190,7 @@ export const story = {
     },
     {
       "id": "sequence",
+      "target-phrase": "一起说生日快乐",
       "type": "order",
       "label": "The whole story",
       "prompt": "Put the events in story order.",
