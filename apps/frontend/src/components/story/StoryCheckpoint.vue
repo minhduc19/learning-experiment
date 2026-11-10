@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import Draggable from 'vuedraggable'
 import StoryWords from './StoryWords.vue'
 import { isCorrect } from '../../composables/storySession.js'
@@ -9,6 +9,58 @@ const selected = ref([]), order = ref(props.step.options.map(o => o.id)), feedba
 const getOption = id => props.step.options.find(o => o.id === id)
 const canCheck = computed(() => !sorting.value && (props.step.type === 'order' || selected.value.filter(Boolean).length === props.step.answer.length))
 defineExpose({ canCheck, check })
+const eventList = ref(null)
+let hintObserver, motionPreference, hintPlayed = false, hintAnimations = []
+function stopDragHint() {
+  hintPlayed = true
+  hintObserver?.disconnect()
+  hintAnimations.forEach(animation => animation.cancel())
+  hintAnimations = []
+}
+function showDragHint() {
+  if (hintPlayed || motionPreference?.matches) return
+  const [first, second] = eventList.value?.$el.children || []
+  if (!first || !second) return
+  hintPlayed = true
+  const firstBox = first.getBoundingClientRect(), secondBox = second.getBoundingClientRect()
+  const gap = secondBox.top - firstBox.bottom
+  // Preview the swap visually; the learner's answer and DOM order stay intact.
+  hintAnimations = [first, second].map((box, index) => {
+    const offset = index === 0 ? secondBox.height + gap : -(firstBox.height + gap)
+    const resting = { transform: 'translate(0, 0)', boxShadow: '0 0 0 transparent' }
+    const lifted = {
+      transform: `translate(${index === 0 ? 6 : -6}px, ${offset}px)`,
+      borderColor: 'var(--story-accent)',
+      backgroundColor: 'var(--story-bg)',
+      zIndex: index === 0 ? 2 : 1,
+      boxShadow: '0 6px 18px #0004',
+    }
+    return box.animate([
+      { ...resting, offset: 0 },
+      { ...resting, offset: .15 },
+      { ...lifted, offset: .45 },
+      { ...lifted, offset: .6 },
+      { ...resting, offset: .9 },
+      { ...resting, offset: 1 },
+    ], { duration: 2000, easing: 'ease-in-out' })
+  })
+  Promise.all(hintAnimations.map(animation => animation.finished)).then(stopDragHint, () => {})
+}
+onMounted(() => {
+  if (props.step.type !== 'order') return
+  motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)')
+  motionPreference.addEventListener('change', stopDragHint)
+  if (motionPreference.matches || !window.IntersectionObserver) return
+  hintObserver = new IntersectionObserver(([entry]) => {
+    if (entry.intersectionRatio >= .9) showDragHint()
+    else if (hintPlayed) stopDragHint()
+  }, { threshold: [0, .9], rootMargin: '0px 0px -100px 0px' })
+  hintObserver.observe(eventList.value.$el)
+})
+onBeforeUnmount(() => {
+  stopDragHint()
+  motionPreference?.removeEventListener('change', stopDragHint)
+})
 function select(id) {
   feedback.value = ''
   if (props.step.type !== 'blanks') selected.value = [id]
@@ -17,6 +69,7 @@ function select(id) {
 }
 function check() {
   if (!canCheck.value) return
+  stopDragHint()
   const answer = props.step.type === 'order' ? [...order.value] : [...selected.value]
   if (isCorrect(props.step, answer)) emit('passed', answer)
   else { feedback.value = props.step.hint; emit('mistake') }
@@ -51,7 +104,8 @@ function keyboardMove(event, index) {
     </div>
     <template v-if="step.type === 'order'">
       <p :id="`order-help-${step.id}`" class="micro-hint">Drag and drop the boxes to reorder. Keyboard: focus a box and press Alt + Up/Down.</p>
-      <Draggable v-model="order" tag="ol" class="event-list" :item-key="id => id"
+      <Draggable ref="eventList" v-model="order" tag="ol" class="event-list" :item-key="id => id"
+        @pointerdown.capture="stopDragHint" @focusin="stopDragHint" @keydown.capture="stopDragHint"
         :animation="180" :force-fallback="true" :fallback-tolerance="5"
         :delay="150" :delay-on-touch-only="true" :touch-start-threshold="5"
         ghost-class="event-placeholder" drag-class="event-dragging"
