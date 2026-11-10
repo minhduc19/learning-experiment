@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import Draggable from 'vuedraggable'
 import StoryWords from './StoryWords.vue'
 import { isCorrect } from '../../composables/storySession.js'
-const props = defineProps({ step: Object, pinyin: Boolean })
+const props = defineProps({ step: Object, pinyin: Boolean, showInstructions: Boolean })
 const emit = defineEmits(['passed', 'mistake'])
 const selected = ref([]), order = ref(props.step.options.map(o => o.id)), feedback = ref(''), sorting = ref(false), moveMessage = ref('')
 const getOption = id => props.step.options.find(o => o.id === id)
@@ -94,7 +94,7 @@ function keyboardMove(event, index) {
 <template>
   <section class="checkpoint" :aria-labelledby="`prompt-${step.id}`">
     <p class="checkpoint-label">{{ step.label }}</p>
-    <h2 :id="`prompt-${step.id}`" tabindex="-1">{{ step.prompt }}</h2>
+    <h2 :id="`prompt-${step.id}`" :class="{ 'sr-only': !showInstructions }" tabindex="-1">{{ step.prompt }}</h2>
     <div v-if="step.type === 'blanks'" class="sentence-blanks">
       <StoryWords :words="step.before" :pinyin="pinyin" />
       <button class="blank" :aria-label="selected[0] ? 'Clear first blank' : 'First blank, choose a word below'" @click="selected[0] = null; feedback = ''"><StoryWords v-if="selected[0]" :words="getOption(selected[0]).words" :pinyin="pinyin" /><span v-else>1 ___</span></button>
@@ -103,7 +103,7 @@ function keyboardMove(event, index) {
       <StoryWords :words="step.after" :pinyin="pinyin" />
     </div>
     <template v-if="step.type === 'order'">
-      <p :id="`order-help-${step.id}`" class="micro-hint">Drag and drop the boxes to reorder. Keyboard: focus a box and press Alt + Up/Down.</p>
+      <p :id="`order-help-${step.id}`" class="micro-hint" :class="{ 'sr-only': !showInstructions }">Drag and drop the boxes to reorder. Keyboard: focus a box and press Alt + Up/Down.</p>
       <Draggable ref="eventList" v-model="order" tag="ol" class="event-list" :item-key="id => id"
         @pointerdown.capture="stopDragHint" @focusin="stopDragHint" @keydown.capture="stopDragHint"
         :animation="180" :force-fallback="true" :fallback-tolerance="5"
