@@ -22,3 +22,14 @@ test('invalid mixed lesson data cannot be saved or previewed', () => {
     d=>d.items[1].data.blocks[0].type='unknown',
   ]) { const document=structuredClone(sample);change(document);assert.throws(()=>parseLesson(JSON.stringify(document))) }
 })
+
+
+test('sample schema parses from plain JSON and a complete AI JSON code fence', () => {
+  const json = JSON.stringify(sample)
+  const expected = parseLesson(json)
+  assert.deepEqual(parseLesson('```json\n' + json + '\n```'), expected)
+  assert.deepEqual(parseLesson('```\n' + json + '\n```'), expected)
+  assert.throws(() => parseLesson('Here is your lesson:\n' + json))
+  const invalid = structuredClone(sample); invalid.items[0].type = 'unsupported'
+  assert.throws(() => parseLesson('```json\n' + JSON.stringify(invalid) + '\n```'))
+})
