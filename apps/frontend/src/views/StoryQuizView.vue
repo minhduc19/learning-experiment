@@ -1,5 +1,5 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowReactive, watch } from 'vue'
 import { RouterLink, useRoute } from 'vue-router'
 import { readingExercises } from '../data/readingExercises/index.js'
 const route = useRoute()
@@ -35,6 +35,17 @@ const active = computed(() => story.steps[session.value.index])
 const complete = computed(() => session.value.index === story.steps.length)
 const visible = computed(() => story.steps.slice(0, Math.min(session.value.index + 1, story.steps.length)))
 const canContinue = computed(() => active.value?.type === 'read' || !!session.value.answers[active.value?.id])
+const checkpoints = shallowReactive({})
+const needsAnswer = computed(() => !!active.value?.answer && !canContinue.value)
+const actionEnabled = computed(() => canContinue.value || (needsAnswer.value && !!checkpoints[active.value.id]?.canCheck))
+function setCheckpoint(id, instance) {
+  if (instance) checkpoints[id] = instance
+  else delete checkpoints[id]
+}
+function primaryAction() {
+  if (needsAnswer.value) checkpoints[active.value.id]?.check()
+  else advance()
+}
 const quizCount = story.steps.filter(s => s.answer).length
 const solved = computed(() => Object.keys(session.value.answers).length)
 watch(session, value => { storageError.value = !saveSession(story, value, storage) }, { deep: true })
@@ -120,7 +131,7 @@ onBeforeUnmount(() => {
           </article>
         </template>
         <div v-else-if="session.answers[step.id]" class="solved-checkpoint" role="status"><span class="success-mark">✓</span><div><p class="checkpoint-caption">{{ step.label }} · Complete</p><p>{{ step.explanation }}</p></div></div>
-        <StoryCheckpoint v-else :step="step" :pinyin="pinyin" @passed="passed(step, $event)" @mistake="session.mistakes++" />
+        <StoryCheckpoint v-else :ref="instance => setCheckpoint(step.id, instance)" :step="step" :pinyin="pinyin" @passed="passed(step, $event)" @mistake="session.mistakes++" />
       </section>
       <section v-if="complete" ref="endHeading" class="story-summary" tabindex="-1"><span class="end-mark" aria-hidden="true">✦</span><p class="story-kicker">THE END</p><h2>Story complete!</h2><p>You followed the story and completed {{ solved }} of {{ quizCount }} checkpoints.</p><p>{{ session.mistakes === 0 ? 'Every answer correct on the first try.' : `${session.mistakes} ${session.mistakes === 1 ? 'retry' : 'retries'} — you kept learning along the way.` }}</p><section v-if="targetPhrases.length" class="target-phrases" aria-labelledby="target-phrases-heading">
         <h3 id="target-phrases-heading">Target phrases</h3>
@@ -135,7 +146,7 @@ onBeforeUnmount(() => {
     </div>
     <aside v-if="definition" class="word-definition" aria-label="Word meaning"><div><strong lang="zh">{{ definition.text }}</strong><span><template v-if="pinyin">{{ definition.pinyin }} · </template>{{ definition.meaning }}</span></div><button aria-label="Close word meaning" @click="definition = null">×</button></aside>
     <aside v-if="audioMessage && !definition" class="word-definition" role="status"><span>{{ audioMessage }}</span><button aria-label="Dismiss audio message" @click="audioMessage = ''">×</button></aside>
-    <footer v-if="!complete" class="story-bottom"><div class="bottom-inner"><span class="bottom-status">{{ active?.type === 'read' ? 'Read at your own pace' : canContinue ? '✓ Nicely done' : 'A quick story check' }}</span><button ref="continueAction" class="primary-action" :disabled="!canContinue" @click="advance">{{ session.index === story.steps.length - 1 ? 'Finish story' : 'Continue' }} <span aria-hidden="true">→</span></button></div></footer>
+    <footer v-if="!complete" class="story-bottom"><div class="bottom-inner"><span class="bottom-status">{{ active?.type === 'read' ? 'Read at your own pace' : canContinue ? '✓ Nicely done' : 'A quick story check' }}</span><button ref="continueAction" class="primary-action" :disabled="!actionEnabled" @click="primaryAction">{{ needsAnswer ? 'Check answer' : session.index === story.steps.length - 1 ? 'Finish story' : 'Continue' }} <span v-if="!needsAnswer" aria-hidden="true">→</span></button></div></footer>
   </main>
 </template>
 <style scoped>
