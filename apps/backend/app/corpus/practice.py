@@ -1,4 +1,3 @@
-from app.corpus.story_filter import story_predicate
 """Rank logical sentences by the owner's marked Han character occurrences."""
 
 from uuid import UUID
@@ -7,6 +6,7 @@ from fastapi import HTTPException
 
 from app.auth.dependencies import user_id
 from app.corpus.database import connect
+from app.corpus.story_filter import story_predicate
 from app.corpus.queries import decode_cursor, integer_values, page
 
 

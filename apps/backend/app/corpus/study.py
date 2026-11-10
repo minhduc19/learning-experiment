@@ -1,10 +1,10 @@
-from app.corpus.story_filter import story_predicate
 """Read-only study selection using the practice sentence ranking CTE."""
 
 from fastapi import HTTPException
 
 from app.auth.dependencies import user_id
 from app.corpus.database import connect
+from app.corpus.story_filter import story_predicate
 from app.corpus.practice import ranking_cte
 from app.corpus.script_forms import hydrate_forms
 

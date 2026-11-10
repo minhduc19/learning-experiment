@@ -1,4 +1,3 @@
-from app.corpus.story_filter import story_predicate
 """Unlearned segments in Learned-character sentence order, independent of popularity."""
 
 from uuid import uuid4
@@ -9,6 +8,7 @@ from psycopg.types.json import Jsonb
 
 from app.auth.dependencies import user_id
 from app.corpus.database import connect
+from app.corpus.story_filter import story_predicate
 from app.corpus.practice import ranking_cte
 from app.corpus.script_forms import hydrate_forms
 from app.corpus.study import select_study
@@ -53,7 +53,7 @@ def generate(learned_count, segment_count, story_ids=None):
             segment.pop('available_count')
             segment.pop('choice')
         data = {
-            **base, 'version': 2, 'segments': segments,
+            **base, 'version': 2, 'segments': segments, 'story_ids': list(story_ids or []),
             'requested': {'learned': learned_count, 'new': 0, 'segments': segment_count},
             'available': {**base['available'], 'segments': available},
         }
