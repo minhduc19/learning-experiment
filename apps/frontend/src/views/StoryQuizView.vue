@@ -31,6 +31,12 @@ const pinyin = ref(savedPinyin), settings = ref(false), definition = ref(null), 
 watch(pinyin, value => {
   try { storage?.setItem('reading-exercises-show-pinyin', String(value)) } catch {}
 })
+let savedInstructions = false
+try { savedInstructions = storage?.getItem('reading-exercises-show-instructions') === 'true' } catch {}
+const showInstructions = ref(savedInstructions)
+watch(showInstructions, value => {
+  try { storage?.setItem('reading-exercises-show-instructions', String(value)) } catch {}
+})
 const active = computed(() => story.steps[session.value.index])
 const complete = computed(() => session.value.index === story.steps.length)
 const visible = computed(() => story.steps.slice(0, Math.min(session.value.index + 1, story.steps.length)))
@@ -117,7 +123,7 @@ onBeforeUnmount(() => {
       <div class="progress-wrap"><div class="progress-meta"><span>STORY · BEGINNER</span><span>{{ Math.round(session.index / story.steps.length * 100) }}%</span></div><progress :value="session.index" :max="story.steps.length" aria-label="Story progress" /></div>
       <button class="settings-button" :aria-expanded="settings" aria-controls="story-settings" aria-label="Story settings" @click="settings = !settings">⚙︎</button>
     </div>
-    <div v-if="settings" id="story-settings" class="story-settings"><label><input v-model="pinyin" type="checkbox"> Show pinyin</label><p>Tap underlined story words for meanings. Audio uses your device’s Chinese voice.</p><button @click="restart(); settings = false">Restart story</button></div>
+    <div v-if="settings" id="story-settings" class="story-settings"><label><input v-model="pinyin" type="checkbox"> Show pinyin</label><label><input v-model="showInstructions" type="checkbox"> Show instructions</label><p v-if="showInstructions">Tap underlined story words for meanings. Audio uses your device’s Chinese voice.</p><button @click="restart(); settings = false">Restart story</button></div>
     </header>
     <div class="story-feed">
       <section class="story-cover" aria-labelledby="story-title"><span class="cover-art" aria-hidden="true">☂<span>茶</span></span><p class="story-kicker">{{ story.tagline || 'A SMALL ACT OF KINDNESS' }}</p><p v-if="pinyin" class="title-pinyin">{{ story.pinyin }}</p><h1 id="story-title">{{ story.title }}</h1><p class="story-subtitle">{{ story.translation }}</p><span class="story-meta">{{ quizCount }} checkpoints · Read & listen</span></section>
@@ -131,7 +137,7 @@ onBeforeUnmount(() => {
           </article>
         </template>
         <div v-else-if="session.answers[step.id]" class="solved-checkpoint" role="status"><span class="success-mark">✓</span><div><p class="checkpoint-caption">{{ step.label }} · Complete</p><p>{{ step.explanation }}</p></div></div>
-        <StoryCheckpoint v-else :ref="instance => setCheckpoint(step.id, instance)" :step="step" :pinyin="pinyin" @passed="passed(step, $event)" @mistake="session.mistakes++" />
+        <StoryCheckpoint v-else :ref="instance => setCheckpoint(step.id, instance)" :step="step" :pinyin="pinyin" :show-instructions="showInstructions" @passed="passed(step, $event)" @mistake="session.mistakes++" />
       </section>
       <section v-if="complete" ref="endHeading" class="story-summary" tabindex="-1"><span class="end-mark" aria-hidden="true">✦</span><p class="story-kicker">THE END</p><h2>Story complete!</h2><p>You followed the story and completed {{ solved }} of {{ quizCount }} checkpoints.</p><p>{{ session.mistakes === 0 ? 'Every answer correct on the first try.' : `${session.mistakes} ${session.mistakes === 1 ? 'retry' : 'retries'} — you kept learning along the way.` }}</p><section v-if="targetPhrases.length" class="target-phrases" aria-labelledby="target-phrases-heading">
         <h3 id="target-phrases-heading">Target phrases</h3>
