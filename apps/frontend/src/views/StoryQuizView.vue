@@ -61,12 +61,24 @@ let pendingAutoplay = false
 function stopAudio() { audioGeneration++; pendingAutoplay = false; if ('speechSynthesis' in window) window.speechSynthesis.cancel(); playing.value = null }
 function dismissDefinition(event) { if (!event.target.closest('.word-definition, .word-help')) definition.value = null }
 function dismissOnEscape(event) { if (event.key === 'Escape') definition.value = null }
-async function focusCurrent(scroll = true) {
+const storyFeed = ref(null)
+const showScrollToBottom = ref(false)
+let feedObserver
+function updateScrollPosition() {
+  showScrollToBottom.value = document.documentElement.scrollHeight - window.scrollY - window.innerHeight > 48
+}
+function scrollToBottom() {
+  window.scrollTo({
+    top: document.documentElement.scrollHeight,
+    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
+  })
+}
+async function focusCurrent() {
   await nextTick()
   const target = complete.value ? endHeading.value : document.getElementById(`step-${active.value.id}`)
-  if (scroll) target?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' })
   const heading = target?.querySelector('h2') || target
   heading?.focus({ preventScroll: true })
+  scrollToBottom()
 }
 async function advance() { if (!canContinue.value) return; stopAudio(); definition.value = null; session.value.index++; await focusCurrent() }
 async function restart() { const wasOpening = session.value.index === 0; stopAudio(); session.value = { index: 0, answers: {}, mistakes: 0 }; definition.value = null; await focusCurrent(); if (wasOpening) autoplay() }
@@ -105,9 +117,20 @@ onMounted(() => {
   document.addEventListener('keydown', retryAutoplay)
   if ('speechSynthesis' in window) window.speechSynthesis.addEventListener('voiceschanged', retryAutoplay)
   autoplay()
-  if (session.value.index) focusCurrent()
+  focusCurrent()
+  // Follow new passages, answer feedback, and text reflow without locking manual scrolling.
+  feedObserver = new ResizeObserver(() => {
+    if (!showScrollToBottom.value) scrollToBottom()
+    else updateScrollPosition()
+  })
+  feedObserver.observe(storyFeed.value)
+  window.addEventListener('scroll', updateScrollPosition, { passive: true })
+  window.addEventListener('resize', updateScrollPosition)
 })
 onBeforeUnmount(() => {
+  feedObserver?.disconnect()
+  window.removeEventListener('scroll', updateScrollPosition)
+  window.removeEventListener('resize', updateScrollPosition)
   stopAudio()
   document.removeEventListener('click', dismissDefinition)
   document.removeEventListener('keydown', dismissOnEscape)
@@ -125,7 +148,7 @@ onBeforeUnmount(() => {
     </div>
     <div v-if="settings" id="story-settings" class="story-settings"><label><input v-model="pinyin" type="checkbox"> Show pinyin</label><label><input v-model="showInstructions" type="checkbox"> Show instructions</label><p v-if="showInstructions">Tap underlined story words for meanings. Audio uses your device’s Chinese voice.</p><button @click="restart(); settings = false">Restart story</button></div>
     </header>
-    <div class="story-feed">
+    <div ref="storyFeed" class="story-feed">
       <section class="story-cover" aria-labelledby="story-title"><span class="cover-art" aria-hidden="true">☂<span>茶</span></span><p class="story-kicker">{{ story.tagline || 'A SMALL ACT OF KINDNESS' }}</p><p v-if="pinyin" class="title-pinyin">{{ story.pinyin }}</p><h1 id="story-title">{{ story.title }}</h1><p class="story-subtitle">{{ story.translation }}</p><span class="story-meta">{{ quizCount }} checkpoints · Read & listen</span></section>
       <p v-if="storageError" class="notice" role="status">Progress could not be saved. Keep this page open to continue your session.</p>
       <section v-for="(step, index) in visible" :id="`step-${step.id}`" :key="step.id" class="story-step" tabindex="-1" :aria-label="step.type === 'read' ? `Story passage ${index + 1}` : step.label">
@@ -152,7 +175,7 @@ onBeforeUnmount(() => {
     </div>
     <aside v-if="definition" class="word-definition" aria-label="Word meaning"><div><strong lang="zh">{{ definition.text }}</strong><span><template v-if="pinyin">{{ definition.pinyin }} · </template>{{ definition.meaning }}</span></div><button aria-label="Close word meaning" @click="definition = null">×</button></aside>
     <aside v-if="audioMessage && !definition" class="word-definition" role="status"><span>{{ audioMessage }}</span><button aria-label="Dismiss audio message" @click="audioMessage = ''">×</button></aside>
-    <footer v-if="!complete" class="story-bottom"><div class="bottom-inner"><span class="bottom-status">{{ active?.type === 'read' ? 'Read at your own pace' : canContinue ? '✓ Nicely done' : 'A quick story check' }}</span><button ref="continueAction" class="primary-action" :disabled="!actionEnabled" @click="primaryAction">{{ needsAnswer ? 'Check answer' : session.index === story.steps.length - 1 ? 'Finish story' : 'Continue' }} <span v-if="!needsAnswer" aria-hidden="true">→</span></button></div></footer>
+    <footer v-if="!complete || showScrollToBottom" class="story-bottom"><div class="bottom-inner"><button v-if="showScrollToBottom" class="scroll-to-bottom" aria-label="Scroll to bottom of story" @click="scrollToBottom"><span aria-hidden="true">↓</span></button><span v-else class="bottom-status">{{ active?.type === 'read' ? 'Read at your own pace' : canContinue ? '✓ Nicely done' : 'A quick story check' }}</span><button v-if="!complete" ref="continueAction" class="primary-action" :disabled="!actionEnabled" @click="primaryAction">{{ needsAnswer ? 'Check answer' : session.index === story.steps.length - 1 ? 'Finish story' : 'Continue' }} <span v-if="!needsAnswer" aria-hidden="true">→</span></button></div></footer>
   </main>
 </template>
 <style scoped>
@@ -167,6 +190,7 @@ progress { display: block; width: 100%; height: .45rem; border: 0; border-radius
 .story-step { scroll-margin-top: 110px; margin-bottom: 1.5rem; }.story-line { display: flex; gap: .7rem; margin-bottom: 1.5rem; align-items: flex-start; }.line-body { min-width: 0; flex: 1; }.dialogue .line-body { border: 1px solid var(--story-border); background: #192b33; border-radius: .9rem; padding: .8rem 1rem; }.avatar { flex-shrink: 0; width: 36px; height: 40px; display: grid; place-items: center; border-radius: 40% 40% 35% 35%; color: #10231c; margin-top: .5rem; font-weight: 700; }.speaker-name { display: block; font-size: .65rem; color: #a1b5bc; margin-bottom: .5rem; }.line-content { display: flow-root; }.audio-button { float: left; min-width: 32px; min-height: 44px; margin-right: .4rem; margin-top: .15rem; padding: 0; border: 0; background: none; color: #75cbee; cursor: pointer; font-size: 1rem; }
 .solved-checkpoint { display: flex; gap: .75rem; border-block: 0; padding: .85rem 0; font-size: .8rem; color: #bacbd1; }.solved-checkpoint p { margin: .2rem 0; }.checkpoint-caption { font-size: .65rem; color: var(--story-accent); }.success-mark { color: var(--story-accent); }.notice { padding: .75rem; border: 1px solid var(--story-border); border-radius: .5rem; font-size: .8rem; color: #f3cf91; }
 .story-bottom { position: fixed; bottom: 0; left: 0; right: 0; z-index: 10; background: #1b2f38f7; border-top: 1px solid var(--story-border); padding: .75rem 1.25rem calc(.75rem + env(safe-area-inset-bottom)); }.bottom-inner { max-width: 36rem; margin: auto; display: flex; align-items: center; gap: 1rem; justify-content: space-between; }.bottom-status { font-size: .75rem; color: #b5c6cb; }.primary-action { white-space: nowrap; flex-shrink: 0; background: var(--story-accent); border: 0; border-radius: .65rem; color: #18251a; padding: .8rem 1.25rem; font-weight: 750; cursor: pointer; min-height: 44px; }.primary-action:disabled { opacity: .35; cursor: not-allowed; }.primary-action span { margin-left: 1rem; }.story-summary { text-align: center; border-top: 1px solid var(--story-border); padding: 2rem 0; scroll-margin-top: 110px; }.story-summary h2 { font-size: 1.8rem; }.story-summary p { color: #b5c6cb; }.story-summary a { display: block; color: var(--story-accent); margin-top: 1.5rem; }.end-mark { color: var(--story-accent); font-size: 3rem; }
+.scroll-to-bottom { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border: 1px solid var(--story-accent); border-radius: 50%; background: transparent; color: var(--story-accent); font-size: 1.5rem; cursor: pointer; }
 .word-definition { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(90px + env(safe-area-inset-bottom)); z-index: 12; width: min(90%, 34rem); border: 1px solid #658483; background: #2b454c; box-shadow: 0 8px 20px #0004; padding: .8rem 1rem; border-radius: .75rem; display: flex; gap: 1rem; justify-content: space-between; }.word-definition strong { margin-right: .75rem; }.word-definition span { font-size: .85rem; color: #d0dfe2; }.word-definition button { color: white; background: none; border: 0; font-size: 1.3rem; cursor: pointer; min-width: 32px; }
 @media (max-width: 420px) { .story-feed { padding: 0 1rem; }.topbar-inner { gap: .5rem; padding-inline: .75rem; }.dialogue .line-body { padding: .65rem; }.story-line { gap: .5rem; }.bottom-status { max-width: 8rem; }.story-cover { padding-top: 2rem; } }
 .act-title { font-size: 1rem; color: var(--story-accent); margin: 2rem 0 1.25rem; }
