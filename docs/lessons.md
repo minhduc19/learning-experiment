@@ -118,7 +118,7 @@ Normal deployment applies the migration without resetting any corpus data.
 
 ## Mixed activity lessons
 
-`/sample-lesson` is a public four-activity example backed by
+`/sample-lesson` is a public five-activity example backed by
 `apps/frontend/src/data/sampleLesson.json`. Each ordered item has one of these
 `type` values and a `data` object matching the corresponding sample activity:
 
@@ -126,8 +126,9 @@ Normal deployment applies the migration without resetting any corpus data.
 - `reading`: a reading document with sentence blocks and optional `Multiple-choice` checkpoints.
 - `sentence-jumble`: prompt fields, tiles with stable IDs, and accepted arrays of tile IDs.
 - `matching-pairs`: instructions, language labels, and 2–5 source/target pairs with unique IDs.
+- `listence-choose-word`: `id`, `language`, `audio`, `spokenIds` (three unique IDs), `options` (five unique objects with `id`, `text`, `pinyin`, `translation`), and `explanation`. Audio accepts an HTTP(S) URL or a bundled `/audio/` WAV/MP3/OGG path. The player shuffles options, reveals immediate feedback, and submits `answer: {selected_ids: [...]}` for server grading.
 
-The lesson editor validates all four types and previews mixed lessons with the
+The lesson editor validates all five types and previews mixed lessons with the
 same shared sequential player used by `/sample-lesson` and
 `/lessons/:lessonId/play`. Sample activity routes continue to work independently.
 Lesson titles in `/lessons` open playback; the separate Edit button opens the
@@ -155,7 +156,7 @@ forms while preserving ownership, filters, ordering, and pagination.
 
 Sample lessons, the JSON editor's live preview (including `/lessons/new`), and
 saved lesson playback all use `MixedLessonPlayer`. Its single progress bar
-counts completed activities across all four types, starts at zero, and fills
+counts completed activities across all five types, starts at zero, and fills
 when the lesson finishes. Each activity hides its local progress in lesson mode;
 standalone activity routes keep their own progress. Replay resets the shared
 bar. Multiple-choice-only previews use the same sequential player.

@@ -5,7 +5,14 @@ export function validateMixed(item, validateQuestion) {
   const text = value => typeof value === 'string' && value.trim() && value.length <= 20000
   const unique = list => new Set(list).size === list.length
   const keys = (v, allowed) => { if (!v || typeof v !== 'object' || Array.isArray(v) || Object.keys(v).some(key=>!allowed.includes(key))) fail('Invalid or unsupported activity fields') }
-  if (item.type === 'sentence-jumble') {
+  if (item.type === 'listence-choose-word') {
+    keys(d, ['id','language','audio','spokenIds','options','explanation'])
+    if (!text(d.id) || !text(d.language) || !text(d.explanation) || !(audioPromptUrl(d.audio) || (typeof d.audio === 'string' && /^\/audio\/[a-zA-Z0-9/_-]+\.(wav|mp3|ogg)$/.test(d.audio)))) fail('Invalid listening prompt or audio URL')
+    if (!Array.isArray(d.options) || d.options.length !== 5) fail('Listening needs five options')
+    for (const option of d.options) { keys(option, ['id','text','pinyin','translation']); if (!['id','text','pinyin','translation'].every(key => text(option[key]))) fail('Invalid listening option') }
+    const ids = d.options.map(option => option.id)
+    if (!unique(ids) || !Array.isArray(d.spokenIds) || d.spokenIds.length !== 3 || !unique(d.spokenIds) || d.spokenIds.some(id => !ids.includes(id))) fail('Listening needs three distinct answer IDs')
+  } else if (item.type === 'sentence-jumble') {
     keys(d,['id','instruction','text-prompt','text-prompt-available','audio-prompt','prompt','sourceLanguage','targetLanguage','tiles','answers','translation','explanation'])
     item.data = normalizeActivityPrompt(d)
     const q=item.data

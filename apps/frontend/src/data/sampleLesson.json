@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "title": "A lesson with four activities",
+  "title": "A lesson with five activities",
   "items": [
     {
       "id": "multiple-choice",
@@ -168,6 +168,53 @@
           { "id": "bread", "source": "bread", "target": "面包" },
           { "id": "water", "source": "water", "target": "水" }
         ]
+      }
+    },
+    {
+      "id": "listening",
+      "type": "listence-choose-word",
+      "data": {
+        "id": "everyday",
+        "language": "zh-CN",
+        "audio": "/audio/listening/everyday.wav",
+        "spokenIds": [
+          "water",
+          "tea",
+          "rice"
+        ],
+        "options": [
+          {
+            "id": "water",
+            "text": "水",
+            "pinyin": "shuǐ",
+            "translation": "water"
+          },
+          {
+            "id": "tea",
+            "text": "茶",
+            "pinyin": "chá",
+            "translation": "tea"
+          },
+          {
+            "id": "rice",
+            "text": "米饭",
+            "pinyin": "mǐ fàn",
+            "translation": "cooked rice"
+          },
+          {
+            "id": "book",
+            "text": "书",
+            "pinyin": "shū",
+            "translation": "book"
+          },
+          {
+            "id": "cat",
+            "text": "猫",
+            "pinyin": "māo",
+            "translation": "cat"
+          }
+        ],
+        "explanation": "The audio names the three matching words in sequence. The other two words are distractors."
       }
     }
   ]

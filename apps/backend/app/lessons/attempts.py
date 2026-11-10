@@ -184,6 +184,11 @@ def grade_activity(item, answer):
     if not isinstance(answer, dict):
         raise HTTPException(422, 'Missing activity answer')
     data = item['data']
+    if item['type'] == 'listence-choose-word':
+        ids = answer.get('selected_ids')
+        if set(answer) != {'selected_ids'} or not isinstance(ids, list) or not all(isinstance(i, str) for i in ids) or len(ids) != len(set(ids)) or not set(ids) <= {o['id'] for o in data['options']}:
+            raise HTTPException(422, 'Invalid listening answer')
+        return set(ids) == set(data['spokenIds'])
     if item['type'] == 'sentence-jumble':
         ids = answer.get('tile_ids')
         if set(answer) != {'tile_ids'} or not isinstance(ids,list) or not all(isinstance(i,str) for i in ids) or len(ids)!=len(set(ids)) or not set(ids)<= {t['id'] for t in data['tiles']}:

@@ -165,7 +165,45 @@ class MatchingItem(Model):
     data: Matching
 
 
-LessonItem = Annotated[Item | ReadingItem | JumbleItem | MatchingItem, Field(discriminator="type")]
+class ListeningOption(Model):
+    id: str = Field(min_length=1, max_length=200)
+    text: str = Field(min_length=1, max_length=2000)
+    pinyin: str = Field(min_length=1, max_length=2000)
+    translation: str = Field(min_length=1, max_length=2000)
+
+
+class Listening(Model):
+    id: str = Field(min_length=1, max_length=200)
+    language: str = Field(min_length=1, max_length=100)
+    audio: str = Field(min_length=1, max_length=4000)
+    spokenIds: list[str] = Field(min_length=3, max_length=3)
+    options: list[ListeningOption] = Field(min_length=5, max_length=5)
+    explanation: str = Field(min_length=1, max_length=20000)
+
+    @model_validator(mode="after")
+    def valid_listening(self):
+        import re
+        from urllib.parse import urlsplit
+        url = urlsplit(self.audio)
+        local = re.fullmatch(r"/audio/[a-zA-Z0-9/_-]+\.(wav|mp3|ogg)", self.audio)
+        remote = url.scheme in ('http', 'https') and url.hostname and not url.username and not url.password and not any(c.isspace() for c in self.audio)
+        if not (local or remote):
+            raise ValueError("Listening audio must be an HTTP(S) URL or a bundled /audio/ file")
+        ids = [option.id for option in self.options]
+        if len(set(ids)) != 5 or len(set(self.spokenIds)) != 3 or not set(self.spokenIds) <= set(ids):
+            raise ValueError("Listening needs five unique options and three distinct answer IDs")
+        if not all(value.strip() for value in [self.id, self.language, self.explanation] + [value for option in self.options for value in (option.id, option.text, option.pinyin, option.translation)]):
+            raise ValueError("Listening fields must not be blank")
+        return self
+
+
+class ListeningItem(Model):
+    id: str = Field(min_length=1, max_length=200)
+    type: Literal["listence-choose-word"]
+    data: Listening
+
+
+LessonItem = Annotated[Item | ReadingItem | JumbleItem | MatchingItem | ListeningItem, Field(discriminator="type")]
 
 
 class Lesson(Model):
