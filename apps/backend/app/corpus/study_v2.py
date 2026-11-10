@@ -37,6 +37,11 @@ def generate(learned_count, segment_count, story_ids=None):
                 LEFT JOIN ranked r ON r.story_id=s.story_id AND r.sentence_position=s.sentence_position
                 LEFT JOIN corpus.user_segment_progress p ON p.segment_id=v.id AND p.user_id=%s
                 WHERE NOT coalesce(p.learned,false)
+                  AND EXISTS (
+                    SELECT 1 FROM corpus.segment_characters sc
+                    JOIN corpus.characters c ON c.id=sc.character_id AND c.is_han
+                    WHERE sc.segment_id=v.id
+                  )
             ) SELECT *,count(*) OVER() AS available_count FROM candidates WHERE choice=1
             ORDER BY learned_sentence_count DESC,story_id,sentence_position,fragment_position,segment_position,id
             LIMIT %s""",

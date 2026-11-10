@@ -60,3 +60,31 @@ def test_v2_validation_empty_corpus_and_owner_isolation(client):
         assert other.post('/api/corpus/study-selection-v2?learned_count=0&segment_count=5').json()['data']['segments'] == []
     with TestClient(app) as anonymous:
         assert anonymous.post('/api/corpus/study-selection-v2').status_code == 401
+
+
+def test_v2_excludes_every_segment_without_han_before_limit_and_counts(client):
+    from app.corpus.text import is_han
+
+    imported(client, '123 ABC \t\n，。！？🙂★—学校。中文。𠀀。')
+    # Simulate legacy word flags: punctuation and whitespace must still be excluded.
+    with connect() as db:
+        db.execute("UPDATE corpus.segments SET is_word=true")
+        excluded = {row['text'] for row in db.execute('SELECT text FROM corpus.segments').fetchall() if not any(is_han(c) for c in row['text'])}
+    assert {'123', 'ABC'} <= excluded
+    response = client.post('/api/corpus/study-selection-v2?learned_count=0&segment_count=50')
+    assert response.status_code == 201, response.text
+    data = response.json()['data']
+    texts = [row['text'] for row in data['segments']]
+    assert set(texts) == {'学校', '中文', '𠀀'}
+    assert not set(texts) & excluded
+    assert data['available']['segments'] == 3
+    limited = client.post('/api/corpus/study-selection-v2?learned_count=0&segment_count=1').json()['data']
+    assert limited['segments'][0]['text'] == '学校'
+    assert limited['available']['segments'] == 3
+
+
+def test_v2_non_character_only_story_supplies_no_segments(client):
+    imported(client, '123 ABC \n\t!?，★🙂')
+    data = client.post('/api/corpus/study-selection-v2?learned_count=0&segment_count=50').json()['data']
+    assert data['segments'] == []
+    assert data['available']['segments'] == 0
