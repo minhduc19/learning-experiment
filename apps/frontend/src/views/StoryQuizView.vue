@@ -4,6 +4,8 @@ import { RouterLink, useRoute } from 'vue-router'
 import { readingExercises } from '../data/readingExercises/index.js'
 const route = useRoute()
 const story = readingExercises.find(item => item.id === route.params.storyId) || readingExercises[0]
+const speakerPalette = ['#9dd9c5', '#c4b5e8', '#eab99b', '#9fcbea', '#e4b0c4', '#d7cf96']
+const speakerColors = Object.fromEntries(Object.keys(story.characters).map((id, index) => [id, speakerPalette[index % speakerPalette.length]]))
 import { loadSession, saveSession } from '../composables/storySession.js'
 import { readingTargetPhrases, loadLearnedPhrases } from '../utils/readingTargetPhrases.js'
 import StoryWords from '../components/story/StoryWords.vue'
@@ -36,6 +38,21 @@ try { savedInstructions = storage?.getItem('reading-exercises-show-instructions'
 const showInstructions = ref(savedInstructions)
 watch(showInstructions, value => {
   try { storage?.setItem('reading-exercises-show-instructions', String(value)) } catch {}
+})
+const fontSizes = [
+  { label: 'Small', value: '1.15rem' },
+  { label: 'Medium', value: '1.35rem' },
+  { label: 'Large', value: '1.6rem' },
+  { label: 'Extra large', value: '1.85rem' },
+]
+let savedFontSize = '1.35rem'
+try {
+  const saved = storage?.getItem('reading-exercises-font-size')
+  if (fontSizes.some(size => size.value === saved)) savedFontSize = saved
+} catch {}
+const fontSize = ref(savedFontSize)
+watch(fontSize, value => {
+  try { storage?.setItem('reading-exercises-font-size', value) } catch {}
 })
 const active = computed(() => story.steps[session.value.index])
 const complete = computed(() => session.value.index === story.steps.length)
@@ -140,13 +157,13 @@ onBeforeUnmount(() => {
 })
 </script>
 <template>
-  <main class="story-player" :class="{ 'without-pinyin': !pinyin }">
+  <main class="story-player" :class="{ 'without-pinyin': !pinyin }" :style="{ '--story-font-size': fontSize }">
     <header class="story-topbar"><div class="topbar-inner">
       <RouterLink :to="{ name: 'reading-exercises' }" class="exit" aria-label="Exit story">×</RouterLink>
       <div class="progress-wrap"><div class="progress-meta"><span>STORY · BEGINNER</span><span>{{ Math.round(session.index / story.steps.length * 100) }}%</span></div><progress :value="session.index" :max="story.steps.length" aria-label="Story progress" /></div>
       <button class="settings-button" :aria-expanded="settings" aria-controls="story-settings" aria-label="Story settings" @click="settings = !settings">⚙︎</button>
     </div>
-    <div v-if="settings" id="story-settings" class="story-settings"><label><input v-model="pinyin" type="checkbox"> Show pinyin</label><label><input v-model="showInstructions" type="checkbox"> Show instructions</label><p v-if="showInstructions">Tap underlined story words for meanings. Audio uses your device’s Chinese voice.</p><button @click="restart(); settings = false">Restart story</button></div>
+    <div v-if="settings" id="story-settings" class="story-settings"><label><input v-model="pinyin" type="checkbox"> Show pinyin</label><label><input v-model="showInstructions" type="checkbox"> Show instructions</label><div class="font-size-setting"><label for="story-font-size">Font size</label><select id="story-font-size" v-model="fontSize"><option v-for="size in fontSizes" :key="size.value" :value="size.value">{{ size.label }}</option></select></div><p v-if="showInstructions">Tap underlined story words for meanings. Audio uses your device’s Chinese voice.</p><button @click="restart(); settings = false">Restart story</button></div>
     </header>
     <div ref="storyFeed" class="story-feed">
       <section class="story-cover" aria-labelledby="story-title"><span class="cover-art" aria-hidden="true">☂<span>茶</span></span><p class="story-kicker">{{ story.tagline || 'A SMALL ACT OF KINDNESS' }}</p><p v-if="pinyin" class="title-pinyin">{{ story.pinyin }}</p><h1 id="story-title">{{ story.title }}</h1><p class="story-subtitle">{{ story.translation }}</p><span class="story-meta">{{ quizCount }} checkpoints · Read & listen</span></section>
@@ -154,7 +171,7 @@ onBeforeUnmount(() => {
       <section v-for="(step, index) in visible" :id="`step-${step.id}`" :key="step.id" class="story-step" tabindex="-1" :aria-label="step.type === 'read' ? `Story passage ${index + 1}` : step.label">
         <template v-if="step.type === 'read'">
           <h2 v-if="step.title" class="act-title">{{ step.title }}</h2>
-          <article v-for="line in step.lines" :key="line.id" class="story-line" :class="{ dialogue: line.speaker }">
+          <article v-for="line in step.lines" :key="line.id" class="story-line" :class="{ dialogue: line.speaker }" :style="line.speaker ? { '--speaker-color': speakerColors[line.speaker] } : undefined">
             <span v-if="line.speaker" class="avatar"  aria-hidden="true">{{ story.characters[line.speaker].avatar }}</span>
             <div class="line-body"><span v-if="line.speaker" class="speaker-name">{{ story.characters[line.speaker].name }}</span><div class="line-content"><button class="audio-button" :aria-label="`Listen to ${line.speaker ? story.characters[line.speaker].name : 'narrator'}: ${line.words.map(w => w.text).join('')}`" :aria-pressed="playing === line.id" @click="playing === line.id ? stopAudio() : speak(line)">{{ playing === line.id ? '■' : '▶︎' }}</button><StoryWords :words="line.words" :pinyin="pinyin" interactive @define="definition = $event" /></div></div>
           </article>
@@ -187,7 +204,7 @@ progress { display: block; width: 100%; height: .45rem; border: 0; border-radius
 .story-settings { max-width: 39rem; margin: 1rem auto; padding: 1rem 1.5rem; background: #20343d; border-radius: .75rem; font-size: .85rem; }.story-settings label { display: flex; align-items: center; gap: .65rem; min-height: 44px; cursor: pointer; }.story-settings input { width: 20px; height: 20px; accent-color: var(--story-accent); }.story-settings p { color: #a1b5bc; }.story-settings button { background: transparent; color: var(--story-accent); border: 1px solid var(--story-border); padding: .5rem; border-radius: .5rem; cursor: pointer; }
 .story-feed { max-width: 39rem; margin: auto; padding: 0 1.5rem; }.story-cover { text-align: center; padding: 2.5rem 0 2rem; }.cover-art { width: 88px; height: 88px; background: #314e4c; border: 1px solid #56746a; border-radius: 1.5rem; display: inline-flex; align-items: center; justify-content: center; font-size: 2.5rem; color: #b5db7d; position: relative; transform: rotate(-5deg); }.cover-art span { font-size: .9rem; position: absolute; right: 12px; bottom: 8px; color: #d5e8cb; }
 .story-kicker { font-size: .6rem; letter-spacing: .17em; color: var(--story-accent); margin-top: 1.5rem; }.title-pinyin { color: #a1b5bc; font-size: .85rem; margin: 1rem 0 .25rem; }h1 { font-size: clamp(1.8rem, 6vw, 2.5rem); margin: .25rem 0; letter-spacing: .04em; }.story-subtitle { color: #a1b5bc; margin: .5rem 0; font-size: .9rem; }.story-meta { font-size: .7rem; color: #a1b5bc; }
-.story-step { scroll-margin-top: 110px; margin-bottom: 1.5rem; }.story-line { display: flex; gap: .7rem; margin-bottom: 1.5rem; align-items: flex-start; }.line-body { min-width: 0; flex: 1; }.dialogue .line-body { border: 1px solid var(--story-border); background: #192b33; border-radius: .9rem; padding: .8rem 1rem; }.avatar { flex-shrink: 0; width: 36px; height: 40px; display: grid; place-items: center; border-radius: 40% 40% 35% 35%; color: #10231c; margin-top: .5rem; font-weight: 700; }.speaker-name { display: block; font-size: .65rem; color: #a1b5bc; margin-bottom: .5rem; }.line-content { display: flow-root; }.audio-button { float: left; min-width: 32px; min-height: 44px; margin-right: .4rem; margin-top: .15rem; padding: 0; border: 0; background: none; color: #75cbee; cursor: pointer; font-size: 1rem; }
+.story-step { scroll-margin-top: 110px; margin-bottom: 1rem; }.story-line { display: flex; gap: .7rem; margin-bottom: 1rem; align-items: flex-start; }.line-body { min-width: 0; flex: 1; }.dialogue .line-body { border: 1px solid var(--story-border); background: #192b33; border-radius: .9rem; padding: .8rem 1rem; }.avatar { flex-shrink: 0; width: 36px; height: 40px; display: grid; place-items: center; border-radius: 40% 40% 35% 35%; color: #10231c; margin-top: .5rem; font-weight: 700; }.speaker-name { display: block; font-size: .65rem; color: #a1b5bc; margin-bottom: .5rem; }.line-content { display: flow-root; }.audio-button { float: left; min-width: 32px; min-height: 44px; margin-right: .4rem; margin-top: .15rem; padding: 0; border: 0; background: none; color: #75cbee; cursor: pointer; font-size: 1rem; }
 .solved-checkpoint { display: flex; gap: .75rem; border-block: 0; padding: .85rem 0; font-size: .8rem; color: #bacbd1; }.solved-checkpoint p { margin: .2rem 0; }.checkpoint-caption { font-size: .65rem; color: var(--story-accent); }.success-mark { color: var(--story-accent); }.notice { padding: .75rem; border: 1px solid var(--story-border); border-radius: .5rem; font-size: .8rem; color: #f3cf91; }
 .story-bottom { position: fixed; bottom: 0; left: 0; right: 0; z-index: 10; background: #1b2f38f7; border-top: 1px solid var(--story-border); padding: .75rem 1.25rem calc(.75rem + env(safe-area-inset-bottom)); }.bottom-inner { max-width: 36rem; margin: auto; display: flex; align-items: center; gap: 1rem; justify-content: space-between; }.bottom-status { font-size: .75rem; color: #b5c6cb; }.primary-action { white-space: nowrap; flex-shrink: 0; background: var(--story-accent); border: 0; border-radius: .65rem; color: #18251a; padding: .8rem 1.25rem; font-weight: 750; cursor: pointer; min-height: 44px; }.primary-action:disabled { opacity: .35; cursor: not-allowed; }.primary-action span { margin-left: 1rem; }.story-summary { text-align: center; border-top: 1px solid var(--story-border); padding: 2rem 0; scroll-margin-top: 110px; }.story-summary h2 { font-size: 1.8rem; }.story-summary p { color: #b5c6cb; }.story-summary a { display: block; color: var(--story-accent); margin-top: 1.5rem; }.end-mark { color: var(--story-accent); font-size: 3rem; }
 .scroll-to-bottom { display: grid; place-items: center; width: 44px; height: 44px; flex-shrink: 0; border: 1px solid var(--story-accent); border-radius: 50%; background: transparent; color: var(--story-accent); font-size: 1.5rem; cursor: pointer; }
@@ -196,12 +213,14 @@ progress { display: block; width: 100%; height: .45rem; border: 0; border-radius
 .act-title { font-size: 1rem; color: var(--story-accent); margin: 2rem 0 1.25rem; }
 /* Continuous transcript: speaker identity sits above an open dialogue rail. */
 .dialogue .line-body { border: 0; background: transparent; border-radius: 0; padding: 0; }
-.dialogue .line-content { border-left: 2px solid var(--story-accent); padding-left: .7rem; }
+.dialogue .line-content { border-left: 2px solid var(--speaker-color, var(--story-accent)); padding-left: .7rem; }
 .avatar { width: 38px; height: 42px; border-radius: .55rem; background: #20343d; color: #b5c6cb; margin-top: 0; }
-.speaker-name { font-size: 1rem; font-weight: 750; color: var(--story-accent); margin-bottom: .45rem; }
+.speaker-name { font-size: 1rem; font-weight: 750; color: var(--speaker-color, var(--story-accent)); margin-bottom: .25rem; }
 .story-line:not(.dialogue) { padding-left: 3.05rem; }
-.story-line :deep(.story-words) { font-size: 1.35rem; line-height: 2.2; }
+.story-line :deep(.story-words) { font-size: var(--story-font-size); line-height: 1.85; }
 @media (max-width: 420px) { .story-line:not(.dialogue) { padding-left: 2.875rem; } }
+.story-settings select { min-height: 44px; padding: .4rem .65rem; border: 1px solid #658483; border-radius: .5rem; background: #142229; color: #e8eff0; font: inherit; }
+.story-settings .font-size-setting { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .target-phrases { text-align: left; margin: 2rem 0; padding-block: 1rem; border-block: 1px solid var(--story-border); }
 .target-phrases h3 { margin-top: 0; }
 .target-phrases p { font-size: .85rem; }
