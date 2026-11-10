@@ -1,5 +1,8 @@
-import { story as teahouse } from './teahouse.js'
-import { story as umbrella } from './lost-umbrella.js'
-import { story as birthday } from './birthday-surprise.js'
-import { story as ticketHome } from './ticket-home.js'
-export const readingExercises = [teahouse, umbrella, birthday, ticketHome]
+// Vite discovers every exercise module in this folder at build time. New files
+// only need to export `story`; no central registry update is required.
+const modules = import.meta.glob('./*.js', { eager: true })
+
+export const readingExercises = Object.values(modules)
+  .map(module => module.story)
+  .filter(Boolean)
+  .sort((a, b) => a.title.localeCompare(b.title, 'zh-CN'))
