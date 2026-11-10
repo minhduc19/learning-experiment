@@ -10,7 +10,12 @@ import StoryCheckpoint from '../components/story/StoryCheckpoint.vue'
 let storage
 try { storage = window.localStorage } catch {}
 const session = ref(loadSession(story, storage))
-const pinyin = ref(true), settings = ref(false), definition = ref(null), storageError = ref(false), audioMessage = ref(''), playing = ref(null), endHeading = ref(null), continueAction = ref(null)
+let savedPinyin = true
+try { savedPinyin = storage?.getItem('reading-exercises-show-pinyin') !== 'false' } catch {}
+const pinyin = ref(savedPinyin), settings = ref(false), definition = ref(null), storageError = ref(false), audioMessage = ref(''), playing = ref(null), endHeading = ref(null), continueAction = ref(null)
+watch(pinyin, value => {
+  try { storage?.setItem('reading-exercises-show-pinyin', String(value)) } catch {}
+})
 const active = computed(() => story.steps[session.value.index])
 const complete = computed(() => session.value.index === story.steps.length)
 const visible = computed(() => story.steps.slice(0, Math.min(session.value.index + 1, story.steps.length)))
@@ -85,8 +90,9 @@ onBeforeUnmount(() => {
       <RouterLink :to="{ name: 'reading-exercises' }" class="exit" aria-label="Exit story">×</RouterLink>
       <div class="progress-wrap"><div class="progress-meta"><span>STORY · BEGINNER</span><span>{{ Math.round(session.index / story.steps.length * 100) }}%</span></div><progress :value="session.index" :max="story.steps.length" aria-label="Story progress" /></div>
       <button class="settings-button" :aria-expanded="settings" aria-controls="story-settings" aria-label="Story settings" @click="settings = !settings">⚙︎</button>
-    </div></header>
+    </div>
     <div v-if="settings" id="story-settings" class="story-settings"><label><input v-model="pinyin" type="checkbox"> Show pinyin</label><p>Tap underlined story words for meanings. Audio uses your device’s Chinese voice.</p><button @click="restart(); settings = false">Restart story</button></div>
+    </header>
     <div class="story-feed">
       <section class="story-cover" aria-labelledby="story-title"><span class="cover-art" aria-hidden="true">☂<span>茶</span></span><p class="story-kicker">{{ story.tagline || 'A SMALL ACT OF KINDNESS' }}</p><p v-if="pinyin" class="title-pinyin">{{ story.pinyin }}</p><h1 id="story-title">{{ story.title }}</h1><p class="story-subtitle">{{ story.translation }}</p><span class="story-meta">{{ quizCount }} checkpoints · Read & listen</span></section>
       <p v-if="storageError" class="notice" role="status">Progress could not be saved. Keep this page open to continue your session.</p>
@@ -103,7 +109,7 @@ onBeforeUnmount(() => {
       </section>
       <section v-if="complete" ref="endHeading" class="story-summary" tabindex="-1"><span class="end-mark" aria-hidden="true">✦</span><p class="story-kicker">THE END</p><h2>Story complete!</h2><p>You followed the story and completed {{ solved }} of {{ quizCount }} checkpoints.</p><p>{{ session.mistakes === 0 ? 'Every answer correct on the first try.' : `${session.mistakes} ${session.mistakes === 1 ? 'retry' : 'retries'} — you kept learning along the way.` }}</p><button class="primary-action" @click="restart">Read again</button><RouterLink :to="{ name: 'reading-exercises' }">Explore activities →</RouterLink></section>
     </div>
-    <aside v-if="definition" class="word-definition" aria-label="Word meaning"><div><strong lang="zh">{{ definition.text }}</strong><span>{{ definition.pinyin }} · {{ definition.meaning }}</span></div><button aria-label="Close word meaning" @click="definition = null">×</button></aside>
+    <aside v-if="definition" class="word-definition" aria-label="Word meaning"><div><strong lang="zh">{{ definition.text }}</strong><span><template v-if="pinyin">{{ definition.pinyin }} · </template>{{ definition.meaning }}</span></div><button aria-label="Close word meaning" @click="definition = null">×</button></aside>
     <aside v-if="audioMessage && !definition" class="word-definition" role="status"><span>{{ audioMessage }}</span><button aria-label="Dismiss audio message" @click="audioMessage = ''">×</button></aside>
     <footer v-if="!complete" class="story-bottom"><div class="bottom-inner"><span class="bottom-status">{{ active?.type === 'read' ? 'Read at your own pace' : canContinue ? '✓ Nicely done' : 'A quick story check' }}</span><button ref="continueAction" class="primary-action" :disabled="!canContinue" @click="advance">{{ session.index === story.steps.length - 1 ? 'Finish story' : 'Continue' }} <span aria-hidden="true">→</span></button></div></footer>
   </main>
@@ -114,7 +120,7 @@ onBeforeUnmount(() => {
 .story-topbar { position: sticky; top: 0; z-index: 10; background: #142229f5; border-bottom: 1px solid var(--story-border); backdrop-filter: blur(8px); }.topbar-inner { max-width: 43rem; display: flex; align-items: center; gap: 1.25rem; padding: 1rem 1.25rem; margin: auto; }
 .exit, .settings-button { background: transparent; border: 0; color: #b5c6cb; text-decoration: none; font-size: 1.6rem; cursor: pointer; min-width: 44px; text-align: center; }.progress-wrap { flex: 1; }.progress-meta { display: flex; justify-content: space-between; font-size: .6rem; letter-spacing: .12em; color: #a1b5bc; margin-bottom: .45rem; }
 progress { display: block; width: 100%; height: .45rem; border: 0; border-radius: 1rem; overflow: hidden; background: #344a53; accent-color: var(--story-accent); }progress::-webkit-progress-bar { background: #344a53; }progress::-webkit-progress-value { background: var(--story-accent); border-radius: 1rem; }progress::-moz-progress-bar { background: var(--story-accent); }
-.story-settings { max-width: 39rem; margin: 1rem auto; padding: 1rem 1.5rem; background: #20343d; border-radius: .75rem; font-size: .85rem; }.story-settings p { color: #a1b5bc; }.story-settings button { background: transparent; color: var(--story-accent); border: 1px solid var(--story-border); padding: .5rem; border-radius: .5rem; cursor: pointer; }
+.story-settings { max-width: 39rem; margin: 1rem auto; padding: 1rem 1.5rem; background: #20343d; border-radius: .75rem; font-size: .85rem; }.story-settings label { display: flex; align-items: center; gap: .65rem; min-height: 44px; cursor: pointer; }.story-settings input { width: 20px; height: 20px; accent-color: var(--story-accent); }.story-settings p { color: #a1b5bc; }.story-settings button { background: transparent; color: var(--story-accent); border: 1px solid var(--story-border); padding: .5rem; border-radius: .5rem; cursor: pointer; }
 .story-feed { max-width: 39rem; margin: auto; padding: 0 1.5rem; }.story-cover { text-align: center; padding: 2.5rem 0 2rem; }.cover-art { width: 88px; height: 88px; background: #314e4c; border: 1px solid #56746a; border-radius: 1.5rem; display: inline-flex; align-items: center; justify-content: center; font-size: 2.5rem; color: #b5db7d; position: relative; transform: rotate(-5deg); }.cover-art span { font-size: .9rem; position: absolute; right: 12px; bottom: 8px; color: #d5e8cb; }
 .story-kicker { font-size: .6rem; letter-spacing: .17em; color: var(--story-accent); margin-top: 1.5rem; }.title-pinyin { color: #a1b5bc; font-size: .85rem; margin: 1rem 0 .25rem; }h1 { font-size: clamp(1.8rem, 6vw, 2.5rem); margin: .25rem 0; letter-spacing: .04em; }.story-subtitle { color: #a1b5bc; margin: .5rem 0; font-size: .9rem; }.story-meta { font-size: .7rem; color: #a1b5bc; }
 .story-step { scroll-margin-top: 110px; margin-bottom: 1.5rem; }.story-line { display: flex; gap: .7rem; margin-bottom: 1.5rem; align-items: flex-start; }.line-body { min-width: 0; flex: 1; }.dialogue .line-body { border: 1px solid var(--story-border); background: #192b33; border-radius: .9rem; padding: .8rem 1rem; }.avatar { flex-shrink: 0; width: 36px; height: 40px; display: grid; place-items: center; border-radius: 40% 40% 35% 35%; color: #10231c; margin-top: .5rem; font-weight: 700; }.speaker-name { display: block; font-size: .65rem; color: #a1b5bc; margin-bottom: .5rem; }.line-content { display: flow-root; }.audio-button { float: left; min-width: 32px; min-height: 44px; margin-right: .4rem; margin-top: .15rem; padding: 0; border: 0; background: none; color: #75cbee; cursor: pointer; font-size: 1rem; }
