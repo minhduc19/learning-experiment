@@ -7,7 +7,8 @@ const props = defineProps({ step: Object, pinyin: Boolean })
 const emit = defineEmits(['passed', 'mistake'])
 const selected = ref([]), order = ref(props.step.options.map(o => o.id)), feedback = ref(''), sorting = ref(false), moveMessage = ref('')
 const getOption = id => props.step.options.find(o => o.id === id)
-const ready = computed(() => props.step.type === 'order' || selected.value.filter(Boolean).length === props.step.answer.length)
+const canCheck = computed(() => !sorting.value && (props.step.type === 'order' || selected.value.filter(Boolean).length === props.step.answer.length))
+defineExpose({ canCheck, check })
 function select(id) {
   feedback.value = ''
   if (props.step.type !== 'blanks') selected.value = [id]
@@ -15,7 +16,7 @@ function select(id) {
   else { const slot = selected.value.findIndex(v => !v); if (slot >= 0) selected.value[slot] = id; else if (selected.value.length < props.step.answer.length) selected.value.push(id) }
 }
 function check() {
-  if (!ready.value || sorting.value) return
+  if (!canCheck.value) return
   const answer = props.step.type === 'order' ? [...order.value] : [...selected.value]
   if (isCorrect(props.step, answer)) emit('passed', answer)
   else { feedback.value = props.step.hint; emit('mistake') }
@@ -69,7 +70,6 @@ function keyboardMove(event, index) {
       <button v-for="option in step.options" :key="option.id" class="choice" :class="{ selected: selected.includes(option.id) }" :aria-pressed="selected.includes(option.id)" @click="select(option.id)"><StoryWords :words="option.words" :pinyin="pinyin" /></button>
     </div>
     <p v-if="feedback" class="retry-feedback" role="status">Not quite. {{ feedback }}</p>
-    <button class="check-answer" :disabled="!ready || sorting" @click="check">Check answer</button>
   </section>
 </template>
 <style scoped>
@@ -89,6 +89,5 @@ h2 { font-size: 1.05rem; line-height: 1.5; margin: 0 0 1rem; }
 .event-list li:focus-visible { outline: 2px solid var(--story-accent); outline-offset: 3px; }
 .event-list .event-placeholder { opacity: .3; border-style: dashed; border-color: var(--story-accent); }
 .event-list .event-dragging { cursor: grabbing; background: var(--story-bg, #14252c); border-color: var(--story-accent); }
-.check-answer { margin-top: .85rem; border: 0; background: var(--story-accent); color: #18251a; border-radius: .6rem; padding: .65rem 1.2rem; font-weight: 700; cursor: pointer; }
-.check-answer:disabled { opacity: .4; cursor: not-allowed; }.retry-feedback { color: #f3cf91; font-size: .85rem; }.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.retry-feedback { color: #f3cf91; font-size: .85rem; }.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 </style>
