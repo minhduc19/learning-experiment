@@ -56,7 +56,7 @@ function drop(to) { if (dragged.value !== null) move(dragged.value, to); dragged
   </section>
 </template>
 <style scoped>
-.checkpoint { padding: 1.1rem 0 1.25rem; border-top: 1px solid var(--story-border); }
+.checkpoint { padding: 1.1rem 0 1.25rem; border-top: 0; }
 .checkpoint-label { text-transform: uppercase; letter-spacing: .12em; font-size: .65rem; color: var(--story-accent); margin: 0 0 .35rem; font-weight: 700; }
 h2 { font-size: 1.05rem; line-height: 1.5; margin: 0 0 1rem; }
 .options { display: grid; gap: .5rem; }.options.compact { display: flex; flex-wrap: wrap; }
