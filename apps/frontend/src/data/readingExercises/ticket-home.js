@@ -383,6 +383,7 @@ export const story = {
     },
     {
       "id": "home",
+      "target-phrase": "奶奶",
       "type": "choice",
       "label": "Story checkpoint",
       "prompt": "Who is Xiao Li going home to see?",
@@ -759,6 +760,7 @@ export const story = {
     },
     {
       "id": "wallet",
+      "target-phrase": "车票也在钱包里",
       "type": "choice",
       "label": "Story checkpoint",
       "prompt": "Why is losing the wallet so urgent?",
@@ -1263,6 +1265,7 @@ export const story = {
     },
     {
       "id": "cafe",
+      "target-phrase": "咖啡店",
       "type": "choice",
       "label": "Story checkpoint",
       "prompt": "Where did Xiao Li last use his wallet?",
@@ -1623,6 +1626,7 @@ export const story = {
     },
     {
       "id": "anxious",
+      "target-phrase": "着急",
       "type": "word",
       "label": "Story checkpoint",
       "prompt": "Which word means “anxious”?",
@@ -2138,6 +2142,7 @@ export const story = {
     },
     {
       "id": "kindness",
+      "target-phrase": "回来找",
       "type": "choice",
       "label": "Story checkpoint",
       "prompt": "Why did the elderly man wait?",
@@ -2588,6 +2593,7 @@ export const story = {
     },
     {
       "id": "ending",
+      "target-phrase": "很高兴",
       "type": "choice",
       "label": "Story checkpoint",
       "prompt": "How does Xiao Li feel on the train?",
@@ -2656,6 +2662,7 @@ export const story = {
     },
     {
       "id": "timeline",
+      "target-phrase": "老人把钱包给小李",
       "type": "order",
       "label": "Story checkpoint",
       "prompt": "Put the events in story order.",

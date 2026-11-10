@@ -33,6 +33,7 @@ export const story = {
     },
     {
       "id": "quiz-0",
+      "target-phrase": "蓝色雨伞",
       "type": "choice",
       "label": "Follow the story",
       "prompt": "What is Lin looking for?",
@@ -90,6 +91,7 @@ export const story = {
     },
     {
       "id": "quiz-1",
+      "target-phrase": "门后",
       "type": "choice",
       "label": "Follow the story",
       "prompt": "Where does Ming find the umbrella?",
@@ -147,6 +149,7 @@ export const story = {
     },
     {
       "id": "quiz-2",
+      "target-phrase": "一起回家",
       "type": "prediction",
       "label": "Follow the story",
       "prompt": "What will the friends probably do next?",
@@ -187,6 +190,7 @@ export const story = {
     },
     {
       "id": "sequence",
+      "target-phrase": "一起走吧",
       "type": "order",
       "label": "The whole story",
       "prompt": "Put the events in story order.",
