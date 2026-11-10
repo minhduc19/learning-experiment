@@ -11,7 +11,8 @@ client = corpus_client_fixture
 def test_saved_snapshot_is_private_and_retrieval_does_not_search(client, monkeypatch):
     calls = []
 
-    def generate(learned, new):
+    def generate(learned, new, story_ids=None):
+        assert story_ids is None
         calls.append(1)
         return {
             "learned": [],

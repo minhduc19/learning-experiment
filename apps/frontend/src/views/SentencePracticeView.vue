@@ -1,9 +1,15 @@
 <script setup>
-import { onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { useCorpusPage } from '../composables/useCorpusPage'
+import StoryFilter from '../components/StoryFilter.vue'
+const storyIds = ref([])
 const sentences = useCorpusPage(20)
-function refresh() { sentences.reset('/api/corpus/practice-sentences') }
+function refresh() {
+  const params = new URLSearchParams()
+  storyIds.value.forEach(id => params.append('story_ids', id))
+  sentences.reset('/api/corpus/practice-sentences?' + params)
+}
 function parts(sentence) {
   const marks = new Map(sentence.marks.map(mark => [mark.offset, mark]))
   return Array.from(sentence.raw_text, (text, offset) => {
@@ -11,7 +17,7 @@ function parts(sentence) {
     return { text, kind: mark ? mark.learned && mark.learning ? 'both' : mark.learned ? 'learned' : 'learning' : '' }
   })
 }
-onMounted(refresh)
+watch(storyIds, refresh, { immediate: true })
 </script>
 <template>
   <main class="page corpus-page">
@@ -21,6 +27,7 @@ onMounted(refresh)
     <div class="cluster"><RouterLink to="/characters">Manage learning marks</RouterLink><RouterLink to="/my-stories">My stories</RouterLink><button class="corpus-text-button" :disabled="sentences.loading" @click="refresh">Refresh ranking</button></div>
     <p class="practice-legend"><span class="practice-mark is-learned">Learned</span><span class="practice-mark is-learning">Learning</span><span class="practice-mark is-both">Both · revision</span></p>
     <p v-if="sentences.error" class="corpus-error" role="alert">{{ sentences.error }} Refresh the ranking if your marks or stories have changed. <button class="corpus-text-button" @click="refresh">Refresh</button></p>
+    <StoryFilter v-model="storyIds" />
     <ol class="corpus-sentences">
       <li v-for="sentence in sentences.items" :key="`${sentence.story_id}:${sentence.sentence_position}`" class="corpus-sentence-card">
         <div class="corpus-sentence-meta"><RouterLink :to="`/my-stories/${sentence.story_id}`">{{ sentence.story_title }}</RouterLink><span>Sentence {{ sentence.sentence_position + 1 }}</span></div>

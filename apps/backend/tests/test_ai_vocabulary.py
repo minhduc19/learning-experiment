@@ -14,7 +14,8 @@ def test_vocabulary_endpoint_generates_and_saves_once(client, monkeypatch):
         "available": {"learned": 0, "new": 0},
     }
 
-    def select(learned, new):
+    def select(learned, new, story_ids=None):
+        assert story_ids is None
         calls.append((learned, new))
         return data
 

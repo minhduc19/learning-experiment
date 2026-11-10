@@ -75,6 +75,7 @@ Cursor = Annotated[str | None, Query(max_length=2048)]
 
 @router.get("/study-selection")
 def study_selection(
+    story_ids: Annotated[list[UUID] | None, Query(max_length=100)] = None,
     learned_count: Annotated[int, Query(ge=0, le=50)] = 5,
     new_count: Annotated[int, Query(ge=0, le=50)] = 5,
 ):
@@ -84,11 +85,12 @@ def study_selection(
     Candidates within each ranked sentence sort by owned corpus frequency.
     Generates suggestions without changing marks. Each count is capped at 50.
     """
-    return study.select_study(learned_count, new_count)
+    return study.select_study(learned_count, new_count, story_ids)
 
 
 @router.get("/practice-sentences")
 def practice_sentences(
+    story_ids: Annotated[list[UUID] | None, Query(max_length=100)] = None,
     cursor: Cursor = None, limit: Annotated[int, Query(ge=1, le=50)] = 20
 ):
     """Rank owned logical sentences by marked Han occurrences; return bounded original-text excerpts.
@@ -96,7 +98,7 @@ def practice_sentences(
     Both flags count once in matched_count. The three breakdown counts are disjoint.
     Refresh pagination after changing marks or importing stories.
     """
-    return practice.practice_sentences(cursor, limit)
+    return practice.practice_sentences(cursor, limit, story_ids)
 
 
 @router.get("/limits")
@@ -256,6 +258,7 @@ def story_detail(story_id: UUID):
 
 @router.get("/characters", response_model=Page[Character])
 def characters(
+    story_ids: Annotated[list[UUID] | None, Query(max_length=100)] = None,
     sort: Literal["occurrence_count", "distinct_segment_count"] = "occurrence_count",
     direction: Literal["asc", "desc"] = "desc",
     status: Literal[
@@ -280,7 +283,7 @@ def characters(
     when publishing new stories, which can change ranking values.
     """
     return queries.characters(
-        sort, story_id, include_non_han, cursor, limit, character, direction, status
+        sort, story_id, include_non_han, cursor, limit, character, direction, status, story_ids
     )
 
 
@@ -385,10 +388,11 @@ def export_story(
 
 @router.post("/study-history", status_code=201)
 def save_study_selection(
+    story_ids: Annotated[list[UUID] | None, Query(max_length=100)] = None,
     learned_count: Annotated[int, Query(ge=0, le=50)] = 5,
     new_count: Annotated[int, Query(ge=0, le=50)] = 5,
 ):
-    return history.generate(learned_count, new_count)
+    return history.generate(learned_count, new_count, story_ids)
 
 
 @router.get("/study-history")
@@ -427,20 +431,22 @@ def segment_detail(segment_id: int):
 
 @router.post("/study-selection", status_code=201)
 def generate_and_save_selection(
+    story_ids: Annotated[list[UUID] | None, Query(max_length=100)] = None,
     learned_count: Annotated[int, Query(ge=0, le=50)] = 5,
     new_count: Annotated[int, Query(ge=0, le=50)] = 5,
 ):
     """Generate vocabulary and save its History snapshot in one operation."""
-    return history.generate(learned_count, new_count)
+    return history.generate(learned_count, new_count, story_ids)
 
 
 @router.post('/study-selection-v2', status_code=201)
 def generate_selection_v2(
+    story_ids: Annotated[list[UUID] | None, Query(max_length=100)] = None,
     learned_count: Annotated[int, Query(ge=0, le=50)] = 5,
     segment_count: Annotated[int, Query(ge=0, le=50)] = 5,
 ):
     from app.corpus import study_v2
-    return study_v2.generate(learned_count, segment_count)
+    return study_v2.generate(learned_count, segment_count, story_ids)
 
 
 @router.get('/study-history-v2')

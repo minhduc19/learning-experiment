@@ -5,6 +5,8 @@ import { authorizedFetch } from '../composables/useAuth'
 import StudySentence from '../components/StudySentence.vue'
 import AiExerciseFlow from '../components/AiExerciseFlow.vue'
 import { buildStudyExport, copyStudyText } from '../composables/studyExport'
+import StoryFilter from '../components/StoryFilter.vue'
+const storyIds = ref([])
 const props = defineProps({ aiMode: Boolean, version2: Boolean })
 const historyPath = props.version2 ? '/api/corpus/study-history-v2' : '/api/corpus/study-history'
 const aiBusy = ref(false)
@@ -57,7 +59,9 @@ async function generate() {
   }
   controller = new AbortController(); loading.value = true; error.value = ''
   try {
-    const response = await authorizedFetch((props.version2 ? '/api/corpus/study-selection-v2?' : props.aiMode ? '/api/corpus/study-selection?' : '/api/corpus/study-history?') + new URLSearchParams({ learned_count: learnedCount.value, [props.version2 ? 'segment_count' : 'new_count']: newCount.value }), { method: 'POST', signal: controller.signal })
+    const params = new URLSearchParams({ learned_count: learnedCount.value, [props.version2 ? 'segment_count' : 'new_count']: newCount.value })
+    storyIds.value.forEach(id => params.append('story_ids', id))
+    const response = await authorizedFetch((props.version2 ? '/api/corpus/study-selection-v2?' : props.aiMode ? '/api/corpus/study-selection?' : '/api/corpus/study-history?') + params, { method: 'POST', signal: controller.signal })
     if (!response.ok) throw new Error('Could not generate your selection. Please try again.')
     const saved = await response.json()
     result.value = saved.data; savedAt.value = saved.created_at
@@ -79,6 +83,7 @@ onUnmounted(() => controller?.abort())
       <button v-if="nextHistory" class="button" :disabled="historyBusy || aiBusy" @click="loadHistory(true)">Load more history</button>
     </details>
     <p v-if="savedAt" class="corpus-muted">Saved selection: {{ new Date(savedAt).toLocaleString() }}</p>
+    <StoryFilter v-model="storyIds" :disabled="loading || aiBusy" />
     <form class="corpus-toolbar study-form" @submit.prevent="generate">
       <div><label for="study-learned">Learned characters to review</label><input :disabled="loading || aiBusy" id="study-learned" v-model.number="learnedCount" type="number" min="0" max="50" step="1" required aria-describedby="study-learned-help"><p id="study-learned-help" class="corpus-filter-description">A random sample of Learned characters, including revision. Each includes up to three popular word segments and a sentence for each.</p></div>
       <div><label for="study-new">{{ version2 ? 'Unlearned segments to fetch' : 'Characters to learn' }}</label><input :disabled="loading || aiBusy" id="study-new" v-model.number="newCount" type="number" min="0" max="50" step="1" required aria-describedby="study-new-help"><p v-if="version2" id="study-new-help" class="corpus-filter-description">Take distinct segments not marked Learned from sentences with the most Learned character appearances, in sentence order. Segment popularity is not used.</p><p v-else id="study-new-help" class="corpus-filter-description">Start with sentences containing the most Learned character appearances, then choose their unfamiliar characters by corpus frequency. Learning-only characters are eligible. Sentences with no learned characters come last.</p></div>

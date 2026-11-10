@@ -9,8 +9,8 @@ from app.corpus.database import connect
 from app.corpus.study import select_study
 
 
-def generate(learned_count, new_count):
-    data = select_study(learned_count, new_count)
+def generate(learned_count, new_count, story_ids=None):
+    data = select_study(learned_count, new_count, story_ids)
     with connect() as db:
         row = db.execute(
             "INSERT INTO corpus.study_history(id,user_id,learned_count,new_count,data) VALUES (%s,%s,%s,%s,%s) RETURNING id,created_at",

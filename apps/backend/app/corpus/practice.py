@@ -6,10 +6,11 @@ from fastapi import HTTPException
 
 from app.auth.dependencies import user_id
 from app.corpus.database import connect
+from app.corpus.story_filter import story_predicate
 from app.corpus.queries import decode_cursor, integer_values, page
 
 
-def practice_sentences(cursor=None, limit=20):
+def practice_sentences(cursor=None, limit=20, story_ids=None):
     owner = user_id()
     with connect() as db:
         # A changed set of marks invalidates old ranking cursors.
@@ -18,7 +19,7 @@ def practice_sentences(cursor=None, limit=20):
             ',' ORDER BY character_id),'')) AS value FROM corpus.user_character_progress WHERE user_id=%s""",
             (owner,),
         ).fetchone()["value"]
-        scope = f"{owner}:{revision}"
+        scope = f"{owner}:{revision}:{sorted(map(str, story_ids or []))}"
         values = decode_cursor(cursor, "practice", scope, 3)
         after_count, after_story, after_position = 9223372036854775807, UUID(int=0), -1
         if values:
@@ -28,7 +29,7 @@ def practice_sentences(cursor=None, limit=20):
             except (ValueError, TypeError, AttributeError):
                 raise HTTPException(422, "Invalid practice cursor") from None
         rows = db.execute(
-            ranking_cte()
+            ranking_cte(story_ids)
             + """, selected AS MATERIALIZED (
                 SELECT * FROM ranked
                 WHERE matched_count<%s OR (matched_count=%s AND (story_id,sentence_position)>(%s,%s))
@@ -78,7 +79,7 @@ def practice_sentences(cursor=None, limit=20):
     )
 
 
-def ranking_cte():
+def ranking_cte(story_ids=None):
     """Shared logical sentence ranking; third parameter includes learning-only hits."""
     return """WITH hits AS (
                 SELECT s.story_id,s.sentence_position,s.position,
@@ -89,7 +90,7 @@ def ranking_cte():
                 JOIN corpus.character_occurrences co ON co.character_id=p.character_id
                 JOIN corpus.segment_occurrences o ON o.id=co.segment_occurrence_id
                 JOIN corpus.sentences s ON s.id=o.sentence_id
-                JOIN corpus.stories d ON d.id=s.story_id AND d.status='completed' AND d.user_id=%s
+                JOIN corpus.stories d ON d.id=s.story_id AND d.status='completed'""" + story_predicate(story_ids) + """ AND d.user_id=%s
                 WHERE p.user_id=%s AND (p.learned OR p.learning) AND (%s OR p.learned)
             ), fragment_hits AS (
                 SELECT story_id,sentence_position,position,count(*)::bigint AS matched_count,

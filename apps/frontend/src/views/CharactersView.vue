@@ -5,6 +5,8 @@ import { characterLabel, formatCount, useCorpusPage } from '../composables/useCo
 import CharacterProgressControls from '../components/CharacterProgressControls.vue'
 import { learningStatuses, sortDescription } from '../data/characterFilters'
 
+import StoryFilter from '../components/StoryFilter.vue'
+const storyIds = computed(() => [route.query.story_ids || []].flat())
 const route = useRoute()
 const router = useRouter()
 const characters = useCorpusPage(48)
@@ -15,7 +17,7 @@ const direction = computed(() => route.query.direction === 'asc' ? 'asc' : 'desc
 const status = computed(() => learningStatuses.find(option => option.value === route.query.status) || learningStatuses[0])
 const description = computed(() => sortDescription(sort.value, direction.value))
 const includeOther = computed(() => route.query.all === '1')
-const filtered = computed(() => Boolean(route.query.character) || includeOther.value || status.value.value !== 'all')
+const filtered = computed(() => storyIds.value.length || Boolean(route.query.character) || includeOther.value || status.value.value !== 'all')
 
 function changeQuery(changes) {
   router.replace({ query: { ...route.query, ...changes } })
@@ -33,10 +35,11 @@ function searchCharacter() {
 function reload() {
   const params = new URLSearchParams({ sort: sort.value, direction: direction.value, status: status.value.value, include_non_han: String(includeOther.value) })
   if (typeof route.query.character === 'string') params.set('character', route.query.character)
+  storyIds.value.forEach(id => params.append('story_ids', id))
   characters.reset(`/api/corpus/characters?${params}`)
 }
 
-watch(() => [sort.value, direction.value, status.value.value, includeOther.value, route.query.character], () => {
+watch(() => [sort.value, direction.value, status.value.value, includeOther.value, route.query.character, storyIds.value], () => {
   search.value = typeof route.query.character === 'string' ? route.query.character : ''
   searchError.value = ''
   reload()
@@ -52,6 +55,7 @@ watch(() => [sort.value, direction.value, status.value.value, includeOther.value
       <div class="cluster"><RouterLink class="button" to="/corpus-upload">Upload a story</RouterLink><RouterLink to="/my-stories">My stories</RouterLink><RouterLink to="/sentence-practice">Sentence practice</RouterLink><RouterLink to="/study-selection">Build a study selection</RouterLink></div>
     </header>
 
+    <StoryFilter :model-value="storyIds" @update:model-value="changeQuery({ story_ids: $event })" />
     <section class="corpus-toolbar" aria-label="Character filters">
       <form class="corpus-search" @submit.prevent="searchCharacter">
         <label for="character-search">Find a character (simplified or traditional)</label>

@@ -1,0 +1,103 @@
+{
+  "labels": {
+    "eyebrow": "LISTENING PRACTICE",
+    "title": "Select {count} words you hear.",
+    "hint": "Play the audio, then tap the words you hear in any order.",
+    "correct": "Correct",
+    "incorrect": "Not in the audio",
+    "continue": "Continue",
+    "feedback": "Here is what you heard",
+    "finish": "Listening complete!",
+    "restart": "Practice again",
+    "play": "Play audio",
+    "audioError": "Audio could not play. Please try again."
+  },
+  "exercises": [
+    {
+      "id": "everyday",
+      "language": "zh-CN",
+      "audio": "/audio/listening/everyday.wav",
+      "spokenIds": [
+        "water",
+        "tea",
+        "rice"
+      ],
+      "options": [
+        {
+          "id": "water",
+          "text": "水",
+          "pinyin": "shuǐ",
+          "translation": "water"
+        },
+        {
+          "id": "tea",
+          "text": "茶",
+          "pinyin": "chá",
+          "translation": "tea"
+        },
+        {
+          "id": "rice",
+          "text": "米饭",
+          "pinyin": "mǐ fàn",
+          "translation": "cooked rice"
+        },
+        {
+          "id": "book",
+          "text": "书",
+          "pinyin": "shū",
+          "translation": "book"
+        },
+        {
+          "id": "cat",
+          "text": "猫",
+          "pinyin": "māo",
+          "translation": "cat"
+        }
+      ],
+      "explanation": "The audio names the three matching words in sequence. The other two words are distractors."
+    },
+    {
+      "id": "people",
+      "language": "zh-CN",
+      "audio": "/audio/listening/people.wav",
+      "spokenIds": [
+        "mom",
+        "dad",
+        "friend"
+      ],
+      "options": [
+        {
+          "id": "mom",
+          "text": "妈妈",
+          "pinyin": "mā ma",
+          "translation": "mother"
+        },
+        {
+          "id": "dad",
+          "text": "爸爸",
+          "pinyin": "bà ba",
+          "translation": "father"
+        },
+        {
+          "id": "friend",
+          "text": "朋友",
+          "pinyin": "péng you",
+          "translation": "friend"
+        },
+        {
+          "id": "teacher",
+          "text": "老师",
+          "pinyin": "lǎo shī",
+          "translation": "teacher"
+        },
+        {
+          "id": "student",
+          "text": "学生",
+          "pinyin": "xué sheng",
+          "translation": "student"
+        }
+      ],
+      "explanation": "The audio names the three matching words in sequence. The other two words are distractors."
+    }
+  ]
+}
