@@ -7,6 +7,7 @@ import AiExerciseFlow from '../components/AiExerciseFlow.vue'
 import { buildStudyExport, copyStudyText } from '../composables/studyExport'
 import StoryFilter from '../components/StoryFilter.vue'
 const storyIds = ref([])
+const emptySelection = { learned: [], new: [], segments: [] }
 const props = defineProps({ aiMode: Boolean, version2: Boolean })
 const historyPath = props.version2 ? '/api/corpus/study-history-v2' : '/api/corpus/study-history'
 const aiBusy = ref(false)
@@ -98,7 +99,7 @@ onUnmounted(() => controller?.abort())
       <p role="status">Selected {{ result.learned.length }} of {{ result.requested.learned }} learned characters and {{ result.new.length }} of {{ result.requested.new }} characters to learn.</p>
       <p v-if="result.learned.length < result.requested.learned || result.new.length < result.requested.new" class="corpus-resume-note">Your corpus cannot supply the full requested counts. Mark more characters as Learned or upload more stories to expand the selection.</p>
     </template>
-    <AiExerciseFlow v-if="aiMode && result" :selection="result" :source-busy="loading" @busy="aiBusy=$event" />
+    <AiExerciseFlow v-if="aiMode && (result || version2)" :selection="result || emptySelection" :allow-import="version2" :source-busy="loading" @busy="aiBusy=$event" />
     <template v-if="result && !aiMode">
       <section class="corpus-sentence-card" aria-label="Copy selection">
         <h2>Copy selection</h2><p>Copy both groups as pipe-separated text with a header. IDs identify the stored character, segment, and sentence records; they stay the same in either writing system.</p>

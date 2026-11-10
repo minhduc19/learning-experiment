@@ -5,8 +5,12 @@ export const sampleLesson = { schemaVersion: 1, title: 'Chinese practice', items
 
 export function parseLesson(text) {
   if (new TextEncoder().encode(text).length > 1048576) throw new Error('Lesson JSON must be at most 1 MiB.')
+  // AI replies may wrap the complete JSON document in a Markdown code fence.
+  // Strip only an enclosing fence; preserve strict schema validation and reject prose.
+  const fenced = text.trim().match(/^```(?:json)?\s*\n([\s\S]*?)\n```$/i)
+  const source = fenced ? fenced[1] : text
   let value
-  try { value = JSON.parse(text) } catch (error) { throw new Error('Invalid JSON: ' + error.message) }
+  try { value = JSON.parse(source) } catch (error) { throw new Error('Invalid JSON: ' + error.message) }
   if (Array.isArray(value)) value = { schemaVersion: 1, title: 'Imported lesson', items: value.map((data, index) => ({ id: `item-${index + 1}`, type: 'multiple-choice', data })) }
   const object = (v, path, keys) => {
     if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error(`${path} must be an object.`)

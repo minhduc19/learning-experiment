@@ -7,8 +7,9 @@ import VocabularyPromptEditor from './VocabularyPromptEditor.vue'
 import { parseLesson } from '../composables/lessonJson'
 import SystemPromptLibrary from './SystemPromptLibrary.vue'
 import LessonJsonWorkspace from './LessonJsonWorkspace.vue'
+import mixedSampleLesson from '../data/sampleLesson.json'
 import { useOptionAudio } from '../composables/useOptionAudio.js'
-const props = defineProps({ selection: { type: Object, required: true }, sourceBusy: Boolean })
+const props = defineProps({ selection: { type: Object, required: true }, sourceBusy: Boolean, allowImport: Boolean })
 const emit = defineEmits(['busy'])
 const router = useRouter()
 const script = ref('traditional'), rows = ref([]), generatedPrompt = ref('')
@@ -60,6 +61,12 @@ async function createLesson() {
   } catch(failure) { if (!controller.signal.aborted) error.value=failure.message }
   finally {saving.value=false}
 }
+function loadSample() {
+  if (blocked.value) return
+  if (text.value && !window.confirm('Replace the current lesson draft with the sample lesson?')) return
+  text.value = JSON.stringify(mixedSampleLesson, null, 2)
+  error.value = ''; warning.value = ''
+}
 function leaving() { return !dirty.value || window.confirm('Leave without saving the AI lesson draft or prompt edits? Copy your text first if you want to keep it.') }
 onBeforeRouteLeave(leaving)
 function unload(event) { if (dirty.value) {event.preventDefault();event.returnValue=''} }
@@ -84,7 +91,7 @@ onUnmounted(()=>{disposeAudio();controller?.abort();window.removeEventListener('
     <p v-if="error" class="corpus-error" role="alert">{{ error }}</p><p v-if="warning" class="corpus-resume-note" role="status">{{ warning }}</p>
 
   </section>
-  <section v-if="text" class="corpus-sentence-card" aria-label="Generated lesson"><h2>Review generated exercises</h2><p>Edit the JSON and test the questions. Nothing is saved until you choose Create lesson.</p><LessonJsonWorkspace v-model="text" :busy="blocked" creating @save="createLesson">
+  <section v-if="text || allowImport" class="corpus-sentence-card" aria-label="Lesson JSON and preview"><h2>Lesson JSON and preview</h2><p>Paste a lesson object with schemaVersion, title, and ordered items, using the same schema as the sample lesson. Multiple choice, reading, sentence jumble, matching pairs, and listening are supported. Valid JSON loads an interactive preview automatically. Nothing is saved until you choose Create lesson.</p><button v-if="allowImport" type="button" class="corpus-text-button" :disabled="blocked" @click="loadSample">Load sample lesson JSON</button><LessonJsonWorkspace v-model="text" :busy="blocked" creating @save="createLesson">
     <template #actions>
       <button class="button" :disabled="blocked || !canGenerateAudio" @click="generateAudio(false)">{{ audioBusy ? 'Generating option audio…' : 'Generate option audio' }}</button>
       <button v-if="canRetryAudio" class="button" :disabled="blocked" @click="generateAudio(true)">Retry failed audio once</button>
