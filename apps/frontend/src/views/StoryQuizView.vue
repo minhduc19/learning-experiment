@@ -1,7 +1,9 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { RouterLink } from 'vue-router'
-import { story } from '../data/storyQuiz.js'
+import { RouterLink, useRoute } from 'vue-router'
+import { readingExercises } from '../data/readingExercises/index.js'
+const route = useRoute()
+const story = readingExercises.find(item => item.id === route.params.storyId) || readingExercises[0]
 import { loadSession, saveSession } from '../composables/storySession.js'
 import StoryWords from '../components/story/StoryWords.vue'
 import StoryCheckpoint from '../components/story/StoryCheckpoint.vue'
@@ -80,13 +82,13 @@ onBeforeUnmount(() => {
 <template>
   <main class="story-player" :class="{ 'without-pinyin': !pinyin }">
     <header class="story-topbar"><div class="topbar-inner">
-      <RouterLink :to="{ name: 'ideas' }" class="exit" aria-label="Exit story">×</RouterLink>
+      <RouterLink :to="{ name: 'reading-exercises' }" class="exit" aria-label="Exit story">×</RouterLink>
       <div class="progress-wrap"><div class="progress-meta"><span>STORY · BEGINNER</span><span>{{ Math.round(session.index / story.steps.length * 100) }}%</span></div><progress :value="session.index" :max="story.steps.length" aria-label="Story progress" /></div>
       <button class="settings-button" :aria-expanded="settings" aria-controls="story-settings" aria-label="Story settings" @click="settings = !settings">⚙︎</button>
     </div></header>
     <div v-if="settings" id="story-settings" class="story-settings"><label><input v-model="pinyin" type="checkbox"> Show pinyin</label><p>Tap underlined story words for meanings. Audio uses your device’s Chinese voice.</p><button @click="restart(); settings = false">Restart story</button></div>
     <div class="story-feed">
-      <section class="story-cover" aria-labelledby="story-title"><span class="cover-art" aria-hidden="true">☂<span>茶</span></span><p class="story-kicker">A SMALL ACT OF KINDNESS</p><p v-if="pinyin" class="title-pinyin">{{ story.pinyin }}</p><h1 id="story-title">{{ story.title }}</h1><p class="story-subtitle">{{ story.translation }}</p><span class="story-meta">5 checkpoints · Read & listen</span></section>
+      <section class="story-cover" aria-labelledby="story-title"><span class="cover-art" aria-hidden="true">☂<span>茶</span></span><p class="story-kicker">A SMALL ACT OF KINDNESS</p><p v-if="pinyin" class="title-pinyin">{{ story.pinyin }}</p><h1 id="story-title">{{ story.title }}</h1><p class="story-subtitle">{{ story.translation }}</p><span class="story-meta">{{ quizCount }} checkpoints · Read & listen</span></section>
       <p v-if="storageError" class="notice" role="status">Progress could not be saved. Keep this page open to continue your session.</p>
       <section v-for="(step, index) in visible" :id="`step-${step.id}`" :key="step.id" class="story-step" tabindex="-1" :aria-label="step.type === 'read' ? `Story passage ${index + 1}` : step.label">
         <template v-if="step.type === 'read'">
@@ -98,7 +100,7 @@ onBeforeUnmount(() => {
         <div v-else-if="session.answers[step.id]" class="solved-checkpoint" role="status"><span class="success-mark">✓</span><div><p class="checkpoint-caption">{{ step.label }} · Complete</p><p>{{ step.explanation }}</p></div></div>
         <StoryCheckpoint v-else :step="step" :pinyin="pinyin" @passed="passed(step, $event)" @mistake="session.mistakes++" />
       </section>
-      <section v-if="complete" ref="endHeading" class="story-summary" tabindex="-1"><span class="end-mark" aria-hidden="true">✦</span><p class="story-kicker">THE END</p><h2>A little kindness goes a long way.</h2><p>You followed the story and completed {{ solved }} of {{ quizCount }} checkpoints.</p><p>{{ session.mistakes === 0 ? 'Every answer correct on the first try.' : `${session.mistakes} ${session.mistakes === 1 ? 'retry' : 'retries'} — you kept learning along the way.` }}</p><button class="primary-action" @click="restart">Read again</button><RouterLink :to="{ name: 'ideas' }">Explore activities →</RouterLink></section>
+      <section v-if="complete" ref="endHeading" class="story-summary" tabindex="-1"><span class="end-mark" aria-hidden="true">✦</span><p class="story-kicker">THE END</p><h2>Story complete!</h2><p>You followed the story and completed {{ solved }} of {{ quizCount }} checkpoints.</p><p>{{ session.mistakes === 0 ? 'Every answer correct on the first try.' : `${session.mistakes} ${session.mistakes === 1 ? 'retry' : 'retries'} — you kept learning along the way.` }}</p><button class="primary-action" @click="restart">Read again</button><RouterLink :to="{ name: 'reading-exercises' }">Explore activities →</RouterLink></section>
     </div>
     <aside v-if="definition" class="word-definition" aria-label="Word meaning"><div><strong lang="zh">{{ definition.text }}</strong><span>{{ definition.pinyin }} · {{ definition.meaning }}</span></div><button aria-label="Close word meaning" @click="definition = null">×</button></aside>
     <aside v-if="audioMessage && !definition" class="word-definition" role="status"><span>{{ audioMessage }}</span><button aria-label="Dismiss audio message" @click="audioMessage = ''">×</button></aside>

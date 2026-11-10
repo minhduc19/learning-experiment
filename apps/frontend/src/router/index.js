@@ -3,6 +3,8 @@ import { auth, initializeAuth } from '../composables/useAuth'
 
 // Routes with a title appear in the Ideas directory automatically.
 export const routes = [
+  { path: '/reading-exercises', name: 'reading-exercises', component: () => import('../views/ReadingExercisesView.vue'), meta: { title: 'Sample reading exercises' } },
+  { path: '/reading-exercises/:storyId', name: 'reading-exercise', component: () => import('../views/StoryQuizView.vue'), meta: { fullscreen: true } },
   { path: '/sample-story-quiz', name: 'sample-story-quiz', component: () => import('../views/StoryQuizView.vue'), meta: { title: 'Story with integrated quizzes', fullscreen: true } },
   { path: '/flashcards', name: 'flashcards', component: () => import('../views/FlashcardsView.vue'), meta: { title: 'Flashcards', fullscreen: true } },
   { path: '/listence-choose-word', name: 'listence-choose-word', component: () => import('../views/ListenChooseWordView.vue'), meta: { title: 'Listening: choose words', fullscreen: true } },
