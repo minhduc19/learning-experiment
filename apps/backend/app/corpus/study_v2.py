@@ -1,3 +1,4 @@
+from app.corpus.story_filter import story_predicate
 """Unlearned segments in Learned-character sentence order, independent of popularity."""
 
 from uuid import uuid4
@@ -13,18 +14,18 @@ from app.corpus.script_forms import hydrate_forms
 from app.corpus.study import select_study
 
 
-def generate(learned_count, segment_count):
+def generate(learned_count, segment_count, story_ids=None):
     if learned_count + segment_count == 0:
         raise HTTPException(422, 'Request at least one character or segment')
     owner = user_id()
-    base = select_study(learned_count, 0) if learned_count else {
+    base = select_study(learned_count, 0, story_ids) if learned_count else {
         'learned': [], 'new': [], 'available': {'learned': 0, 'new': 0},
     }
     with connect() as db:
         # Rank complete logical sentences, including all their stored fragments.
         # Keep each segment's first occurrence in that order before applying LIMIT.
         segments = db.execute(
-            ranking_cte() + """, candidates AS (
+            ranking_cte(story_ids) + """, candidates AS (
                 SELECT v.*,s.id AS sentence_id,coalesce(r.matched_count,0) AS learned_sentence_count,
                   s.story_id,s.sentence_position,s.position AS fragment_position,o.position AS segment_position,
                   row_number() OVER(PARTITION BY v.id ORDER BY coalesce(r.matched_count,0) DESC,
@@ -32,7 +33,7 @@ def generate(learned_count, segment_count):
                 FROM corpus.segment_occurrences o
                 JOIN corpus.segments v ON v.id=o.segment_id AND v.is_word
                 JOIN corpus.sentences s ON s.id=o.sentence_id
-                JOIN corpus.stories d ON d.id=s.story_id AND d.user_id=%s AND d.status='completed'
+                JOIN corpus.stories d ON d.id=s.story_id AND d.user_id=%s AND d.status='completed'""" + story_predicate(story_ids) + """
                 LEFT JOIN ranked r ON r.story_id=s.story_id AND r.sentence_position=s.sentence_position
                 LEFT JOIN corpus.user_segment_progress p ON p.segment_id=v.id AND p.user_id=%s
                 WHERE NOT coalesce(p.learned,false)

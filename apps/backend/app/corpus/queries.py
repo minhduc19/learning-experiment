@@ -1,3 +1,4 @@
+from app.corpus.story_filter import story_predicate
 import base64
 import json
 from uuid import UUID
@@ -58,10 +59,10 @@ def require_story(db, identifier):
         raise HTTPException(404, "Completed story not found")
 
 
-def statistics(owner, story_id):
+def statistics(owner, story_id, story_ids=None):
     return (
         """WITH owned AS (
-      SELECT id FROM corpus.stories WHERE user_id=%s AND status='completed' AND (%s::uuid IS NULL OR id=%s)
+      SELECT id FROM corpus.stories WHERE user_id=%s AND status='completed' AND (%s::uuid IS NULL OR id=%s)""" + story_predicate(story_ids, 'id') + """
     ), frequencies AS (
       SELECT cs.character_id,sum(cs.occurrence_count)::bigint AS occurrence_count
       FROM corpus.story_character_stats cs JOIN owned o ON o.id=cs.story_id GROUP BY cs.character_id
@@ -89,13 +90,14 @@ def characters(
     character,
     direction="desc",
     status="all",
+    story_ids=None,
 ):
     owner = user_id()
-    scope = f"{owner}:{story_id}:{include_non_han}:{character}:{direction}:{status}"
+    scope = f"{owner}:{story_id}:{include_non_han}:{character}:{direction}:{status}:{sorted(map(str, story_ids or []))}"
     values = decode_cursor(cursor, sort, scope, 2)
     with connect() as db:
         require_story(db, story_id)
-        prefix, params = statistics(owner, story_id)
+        prefix, params = statistics(owner, story_id, story_ids)
         params.append(owner)
         conditions = [
             {

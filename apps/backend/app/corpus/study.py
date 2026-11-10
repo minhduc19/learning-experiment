@@ -1,3 +1,4 @@
+from app.corpus.story_filter import story_predicate
 """Read-only study selection using the practice sentence ranking CTE."""
 
 from fastapi import HTTPException
@@ -8,7 +9,7 @@ from app.corpus.practice import ranking_cte
 from app.corpus.script_forms import hydrate_forms
 
 
-def select_study(learned_count, new_count):
+def select_study(learned_count, new_count, story_ids=None):
     if learned_count + new_count == 0:
         raise HTTPException(422, "Request at least one character")
     owner = user_id()
@@ -18,7 +19,7 @@ def select_study(learned_count, new_count):
                 """WITH frequencies AS (
               SELECT st.character_id,sum(st.occurrence_count)::bigint AS occurrence_count
               FROM corpus.story_character_stats st JOIN corpus.stories d ON d.id=st.story_id
-              WHERE d.user_id=%s AND d.status='completed' GROUP BY st.character_id
+              WHERE d.user_id=%s AND d.status='completed'""" + story_predicate(story_ids) + """ GROUP BY st.character_id
             ) SELECT c.*,f.occurrence_count,count(*) OVER() AS available_count
             FROM frequencies f JOIN corpus.characters c ON c.id=f.character_id AND c.is_han
             JOIN corpus.user_character_progress p ON p.character_id=c.id AND p.user_id=%s AND p.learned
@@ -30,11 +31,11 @@ def select_study(learned_count, new_count):
         )
         new = (
             db.execute(
-                ranking_cte()
+                ranking_cte(story_ids)
                 + """, frequencies AS (
               SELECT st.character_id,sum(st.occurrence_count)::bigint AS occurrence_count
               FROM corpus.story_character_stats st JOIN corpus.stories d ON d.id=st.story_id
-              WHERE d.user_id=%s AND d.status='completed' GROUP BY st.character_id
+              WHERE d.user_id=%s AND d.status='completed'""" + story_predicate(story_ids) + """ GROUP BY st.character_id
             ), candidates AS (
               SELECT c.*,f.occurrence_count,s.id AS sentence_id,s.story_id,s.sentence_position,
                 coalesce(r.matched_count,0)::bigint AS learned_sentence_count,
@@ -45,7 +46,7 @@ def select_study(learned_count, new_count):
               JOIN corpus.character_occurrences co ON co.character_id=c.id
               JOIN corpus.segment_occurrences o ON o.id=co.segment_occurrence_id
               JOIN corpus.sentences s ON s.id=o.sentence_id
-              JOIN corpus.stories d ON d.id=s.story_id AND d.user_id=%s AND d.status='completed'
+              JOIN corpus.stories d ON d.id=s.story_id AND d.user_id=%s AND d.status='completed'""" + story_predicate(story_ids) + """
               LEFT JOIN ranked r ON r.story_id=s.story_id AND r.sentence_position=s.sentence_position
               WHERE NOT coalesce(p.learned,false)
             ) SELECT *,count(*) OVER() AS available_count FROM candidates WHERE choice=1
@@ -65,7 +66,7 @@ def select_study(learned_count, new_count):
                     EXISTS(SELECT 1 FROM corpus.sentences parts WHERE parts.story_id=s.story_id
                       AND parts.sentence_position=s.sentence_position AND parts.id<>s.id) AS is_excerpt
                     FROM corpus.sentences s JOIN corpus.stories d ON d.id=s.story_id
-                    WHERE s.id=%s AND d.user_id=%s AND d.status='completed'""",
+                    WHERE s.id=%s AND d.user_id=%s AND d.status='completed'""" + story_predicate(story_ids) + """""",
                     (identifier, owner),
                 ).fetchone()
                 hydrate_forms(row, "raw_text")
@@ -88,7 +89,7 @@ def select_study(learned_count, new_count):
                 """SELECT v.*,sum(st.occurrence_count)::bigint AS occurrence_count
                 FROM corpus.segment_characters sc JOIN corpus.segments v ON v.id=sc.segment_id AND v.is_word
                 JOIN corpus.story_segment_stats st ON st.segment_id=v.id
-                JOIN corpus.stories d ON d.id=st.story_id AND d.user_id=%s AND d.status='completed'
+                JOIN corpus.stories d ON d.id=st.story_id AND d.user_id=%s AND d.status='completed'""" + story_predicate(story_ids) + """
                 WHERE sc.character_id=%s GROUP BY v.id ORDER BY occurrence_count DESC,v.id LIMIT 3""",
                 (owner, row["id"]),
             ).fetchall()
@@ -97,7 +98,7 @@ def select_study(learned_count, new_count):
                 hydrate_forms(segment, "text", vocabulary=True)
                 example = db.execute(
                     """SELECT s.id FROM corpus.segment_occurrences o JOIN corpus.sentences s ON s.id=o.sentence_id
-                    JOIN corpus.stories d ON d.id=s.story_id AND d.user_id=%s AND d.status='completed'
+                    JOIN corpus.stories d ON d.id=s.story_id AND d.user_id=%s AND d.status='completed'""" + story_predicate(story_ids) + """
                     WHERE o.segment_id=%s ORDER BY s.story_id,s.position,o.position LIMIT 1""",
                     (owner, segment["id"]),
                 ).fetchone()
@@ -116,7 +117,7 @@ def select_study(learned_count, new_count):
                 FROM corpus.characters c LEFT JOIN corpus.user_character_progress p
                 ON p.character_id=c.id AND p.user_id=%s WHERE c.is_han AND EXISTS(
                   SELECT 1 FROM corpus.story_character_stats st JOIN corpus.stories d ON d.id=st.story_id
-                  WHERE st.character_id=c.id AND d.user_id=%s AND d.status='completed')""",
+                  WHERE st.character_id=c.id AND d.user_id=%s AND d.status='completed'""" + story_predicate(story_ids) + """)""",
                 (owner, owner),
             ).fetchone()
             learned_available, new_available = totals["learned"], totals["new"]
@@ -125,6 +126,7 @@ def select_study(learned_count, new_count):
         return {
             "learned": learned,
             "new": new,
+            "story_ids": list(story_ids or []),
             "requested": {"learned": learned_count, "new": new_count},
             "available": {"learned": learned_available, "new": new_available},
         }
