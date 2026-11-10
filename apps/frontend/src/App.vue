@@ -16,5 +16,5 @@ watch(() => auth.user, (user, previous) => {
       <RouterLink :to="{ name: 'home' }">Home</RouterLink>
     </nav>
   </header>
-  <RouterView v-if="!route.meta.requiresAuth || auth.user" :key="auth.user?.id || 'public'" />
+  <RouterView v-if="!route.meta.requiresAuth || auth.user" :key="(auth.user?.id || 'public') + (route.params.storyId || '')" />
 </template>
