@@ -137,7 +137,7 @@ h2 { font-size: 1.05rem; line-height: 1.5; margin: 0 0 1rem; }
 .sentence-blanks { margin-bottom: .8rem; }.micro-hint { font-size: .75rem; color: #a1b5bc; }
 .event-list { padding: 0; list-style: none; display: grid; gap: .5rem; }
 .event-list li { min-width: 0; display: flex; gap: .65rem; align-items: center; border: 1px solid var(--story-border); border-radius: .7rem; padding: .5rem; cursor: grab; }
-.event-list :deep(.story-words) { font-size: 1rem; flex: 1; min-width: 0; }.event-number { color: #a1b5bc; font-size: .75rem; }
+.event-list :deep(.story-words) { font-size: var(--story-font-size, 1rem); flex: 1; min-width: 0; }.event-number { color: #a1b5bc; font-size: .75rem; }
 .drag-grip { color: #a1b5bc; font-size: 1.35rem; padding: .25rem .5rem; }
 .event-list li { min-height: 64px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .event-list li:focus-visible { outline: 2px solid var(--story-accent); outline-offset: 3px; }
