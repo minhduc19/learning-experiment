@@ -40,3 +40,38 @@ test('checkpoint grading respects blank and event order and restores a solved cu
   const future = { index: 0, answers, mistakes: 0 }
   assert.deepEqual(loadSession(story, { getItem: () => JSON.stringify(future) }).answers, {})
 })
+
+test('Continue reveals one paragraph at a time and stops at unanswered checkpoints', async () => {
+  const { visibleStorySteps, advanceStorySession } = await import('../src/composables/storySession.js')
+  const story = { id: 'paragraph-test', steps: [
+    { id: 'opening', type: 'read', lines: [{ id: 'narration' }, { id: 'dialogue' }, { id: 'reply' }] },
+    { id: 'quiz', type: 'choice', answer: ['right'] },
+    { id: 'ending', type: 'read', lines: [{ id: 'end-1' }, { id: 'end-2' }] },
+  ] }
+  let session = { index: 0, answers: {}, mistakes: 0 }
+  assert.equal(visibleStorySteps(story, session)[0].lines.length, 1)
+  session = advanceStorySession(story, session)
+  assert.equal(session.index, 0)
+  assert.equal(visibleStorySteps(story, session)[0].lines.length, 2)
+  assert.deepEqual(loadSession(story, { getItem: () => JSON.stringify(session) }), session)
+  session = advanceStorySession(story, session)
+  assert.equal(visibleStorySteps(story, session)[0].lines.length, 3)
+  session = advanceStorySession(story, session)
+  assert.equal(session.index, 1)
+  assert.equal(visibleStorySteps(story, session).length, 2)
+  assert.equal(advanceStorySession(story, session), session, 'cannot skip a quiz')
+  session.answers.quiz = ['wrong']
+  assert.equal(advanceStorySession(story, session), session)
+  session.answers.quiz = ['right']
+  session = advanceStorySession(story, session)
+  assert.equal(visibleStorySteps(story, session)[2].lines.length, 1)
+  session = advanceStorySession(story, session)
+  assert.equal(session.index, 2, 'last paragraph must be revealed before completion')
+  session = advanceStorySession(story, session)
+  assert.equal(session.index, 3)
+  assert.equal(visibleStorySteps(story, session)[2].lines.length, 2)
+  for (const paragraph of [-1, 0.5, 3, '1']) {
+    assert.deepEqual(loadSession(story, { getItem: () => JSON.stringify({ index: 0, paragraph, answers: {}, mistakes: 0 }) }), { index: 0, answers: {}, mistakes: 0 })
+  }
+  assert.deepEqual(loadSession(story, { getItem: () => JSON.stringify({ index: 0, answers: {}, mistakes: 0 }) }), { index: 0, answers: {}, mistakes: 0 })
+})
