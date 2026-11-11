@@ -200,7 +200,7 @@ onBeforeUnmount(() => {
 </template>
 <style scoped>
 .story-player { --story-bg: #142229; --story-border: #344a53; --story-accent: #b5db7d; min-height: 100dvh; color: #e8eff0; background: var(--story-bg); padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
-.story-player :deep(button:focus-visible), .story-player :deep(a:focus-visible) { outline: 2px solid #b5db7d; outline-offset: 4px; }.story-step:focus, .story-summary:focus { outline: none; }
+.story-player :deep(button:focus-visible), .story-player :deep(a:focus-visible) { outline: 2px solid #b5db7d; outline-offset: 4px; }.story-step:focus, .story-summary:focus, .story-line:focus { outline: none; }
 .story-topbar { position: sticky; top: 0; z-index: 10; background: #142229f5; border-bottom: 1px solid var(--story-border); backdrop-filter: blur(8px); }.topbar-inner { max-width: 43rem; display: flex; align-items: center; gap: 1.25rem; padding: 1rem 1.25rem; margin: auto; }
 .exit, .settings-button { background: transparent; border: 0; color: #b5c6cb; text-decoration: none; font-size: 1.6rem; cursor: pointer; min-width: 44px; text-align: center; }.progress-wrap { flex: 1; }.progress-meta { display: flex; justify-content: space-between; font-size: .6rem; letter-spacing: .12em; color: #a1b5bc; margin-bottom: .45rem; }
 progress { display: block; width: 100%; height: .45rem; border: 0; border-radius: 1rem; overflow: hidden; background: #344a53; accent-color: var(--story-accent); }progress::-webkit-progress-bar { background: #344a53; }progress::-webkit-progress-value { background: var(--story-accent); border-radius: 1rem; }progress::-moz-progress-bar { background: var(--story-accent); }
