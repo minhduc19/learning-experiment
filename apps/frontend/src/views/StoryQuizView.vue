@@ -6,7 +6,7 @@ const route = useRoute()
 const story = readingExercises.find(item => item.id === route.params.storyId) || readingExercises[0]
 const speakerPalette = ['#9dd9c5', '#c4b5e8', '#eab99b', '#9fcbea', '#e4b0c4', '#d7cf96']
 const speakerColors = Object.fromEntries(Object.keys(story.characters).map((id, index) => [id, speakerPalette[index % speakerPalette.length]]))
-import { loadSession, saveSession } from '../composables/storySession.js'
+import { loadSession, saveSession, visibleStorySteps, advanceStorySession } from '../composables/storySession.js'
 import { readingTargetPhrases, loadLearnedPhrases } from '../utils/readingTargetPhrases.js'
 import StoryWords from '../components/story/StoryWords.vue'
 import StoryCheckpoint from '../components/story/StoryCheckpoint.vue'
@@ -56,7 +56,10 @@ watch(fontSize, value => {
 })
 const active = computed(() => story.steps[session.value.index])
 const complete = computed(() => session.value.index === story.steps.length)
-const visible = computed(() => story.steps.slice(0, Math.min(session.value.index + 1, story.steps.length)))
+const activeLine = computed(() => active.value?.type === 'read' ? active.value.lines[session.value.paragraph ?? 0] : null)
+const visible = computed(() => visibleStorySteps(story, session.value))
+const isLastReveal = computed(() => session.value.index === story.steps.length - 1 &&
+  (active.value?.type !== 'read' || (session.value.paragraph ?? 0) === active.value.lines.length - 1))
 const canContinue = computed(() => active.value?.type === 'read' || !!session.value.answers[active.value?.id])
 const checkpoints = shallowReactive({})
 const needsAnswer = computed(() => !!active.value?.answer && !canContinue.value)
@@ -92,13 +95,13 @@ function scrollToBottom() {
 }
 async function focusCurrent() {
   await nextTick()
-  const target = complete.value ? endHeading.value : document.getElementById(`step-${active.value.id}`)
+  const target = complete.value ? endHeading.value : document.getElementById(activeLine.value ? `line-${activeLine.value.id}` : `step-${active.value.id}`)
   const heading = target?.querySelector('h2') || target
   heading?.focus({ preventScroll: true })
   scrollToBottom()
 }
-async function advance() { if (!canContinue.value) return; stopAudio(); definition.value = null; session.value.index++; await focusCurrent() }
-async function restart() { const wasOpening = session.value.index === 0; stopAudio(); session.value = { index: 0, answers: {}, mistakes: 0 }; definition.value = null; await focusCurrent(); if (wasOpening) autoplay() }
+async function advance() { if (!canContinue.value) return; stopAudio(); definition.value = null; session.value = advanceStorySession(story, session.value); await focusCurrent() }
+async function restart() { const wasOpening = session.value.index === 0 && !(session.value.paragraph ?? 0); stopAudio(); session.value = { index: 0, answers: {}, mistakes: 0 }; definition.value = null; await focusCurrent(); if (wasOpening) autoplay() }
 function playLines(lines, automatic = false) {
   stopAudio(); audioMessage.value = ''
   if (!lines.length) return
@@ -124,9 +127,9 @@ function playLines(lines, automatic = false) {
   play(0)
 }
 function speak(line) { playLines([line]) }
-function autoplay() { playLines(active.value?.type === 'read' ? active.value.lines.filter(line => line.speaker) : [], true) }
+function autoplay() { playLines(activeLine.value?.speaker ? [activeLine.value] : [], true) }
 function retryAutoplay() { if (pendingAutoplay) autoplay() }
-watch(() => session.value.index, autoplay, { flush: 'sync' })
+watch([() => session.value.index, () => session.value.paragraph ?? 0], autoplay)
 onMounted(() => {
   document.addEventListener('click', dismissDefinition)
   document.addEventListener('keydown', dismissOnEscape)
@@ -171,7 +174,7 @@ onBeforeUnmount(() => {
       <section v-for="(step, index) in visible" :id="`step-${step.id}`" :key="step.id" class="story-step" tabindex="-1" :aria-label="step.type === 'read' ? `Story passage ${index + 1}` : step.label">
         <template v-if="step.type === 'read'">
           <h2 v-if="step.title" class="act-title">{{ step.title }}</h2>
-          <article v-for="line in step.lines" :key="line.id" class="story-line" :class="{ dialogue: line.speaker }" :style="line.speaker ? { '--speaker-color': speakerColors[line.speaker] } : undefined">
+          <article v-for="line in step.lines" :key="line.id" :id="`line-${line.id}`" tabindex="-1" class="story-line" :class="{ dialogue: line.speaker }" :style="line.speaker ? { '--speaker-color': speakerColors[line.speaker] } : undefined">
             <span v-if="line.speaker" class="avatar"  aria-hidden="true">{{ story.characters[line.speaker].avatar }}</span>
             <div class="line-body"><span v-if="line.speaker" class="speaker-name">{{ story.characters[line.speaker].name }}</span><div class="line-content"><button class="audio-button" :aria-label="`Listen to ${line.speaker ? story.characters[line.speaker].name : 'narrator'}: ${line.words.map(w => w.text).join('')}`" :aria-pressed="playing === line.id" @click="playing === line.id ? stopAudio() : speak(line)">{{ playing === line.id ? '■' : '▶︎' }}</button><StoryWords :words="line.words" :pinyin="pinyin" interactive @define="definition = $event" /></div></div>
           </article>
@@ -192,7 +195,7 @@ onBeforeUnmount(() => {
     </div>
     <aside v-if="definition" class="word-definition" aria-label="Word meaning"><div><strong lang="zh">{{ definition.text }}</strong><span><template v-if="definition.pinyin">{{ definition.pinyin }} · </template>{{ definition.meaning }}</span></div><button aria-label="Close word meaning" @click="definition = null">×</button></aside>
     <aside v-if="audioMessage && !definition" class="word-definition" role="status"><span>{{ audioMessage }}</span><button aria-label="Dismiss audio message" @click="audioMessage = ''">×</button></aside>
-    <footer v-if="!complete || showScrollToBottom" class="story-bottom"><div class="bottom-inner"><button v-if="showScrollToBottom" class="scroll-to-bottom" aria-label="Scroll to bottom of story" @click="scrollToBottom"><span aria-hidden="true">↓</span></button><span v-else class="bottom-status">{{ active?.type === 'read' ? 'Read at your own pace' : canContinue ? '✓ Nicely done' : 'A quick story check' }}</span><button v-if="!complete" ref="continueAction" class="primary-action" :disabled="!actionEnabled" @click="primaryAction">{{ needsAnswer ? 'Check answer' : session.index === story.steps.length - 1 ? 'Finish story' : 'Continue' }} <span v-if="!needsAnswer" aria-hidden="true">→</span></button></div></footer>
+    <footer v-if="!complete || showScrollToBottom" class="story-bottom"><div class="bottom-inner"><button v-if="showScrollToBottom" class="scroll-to-bottom" aria-label="Scroll to bottom of story" @click="scrollToBottom"><span aria-hidden="true">↓</span></button><span v-else class="bottom-status">{{ active?.type === 'read' ? 'Read at your own pace' : canContinue ? '✓ Nicely done' : 'A quick story check' }}</span><button v-if="!complete" ref="continueAction" class="primary-action" :disabled="!actionEnabled" @click="primaryAction">{{ needsAnswer ? 'Check answer' : isLastReveal ? 'Finish story' : 'Continue' }} <span v-if="!needsAnswer" aria-hidden="true">→</span></button></div></footer>
   </main>
 </template>
 <style scoped>
