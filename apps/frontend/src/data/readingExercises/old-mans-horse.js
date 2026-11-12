@@ -9,6 +9,7 @@ const line = (id, speaker, value) => ({ id, speaker, words: words(value) })
 const option = (id, value) => ({ id, words: words(value) })
 
 export const story = {
+  createdAt: "2026-11-10T23:55:48Z",
   id: 'old-mans-horse-v1',
   title: '塞翁失马',
   pinyin: 'Sàiwēng shī mǎ',

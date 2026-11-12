@@ -1,4 +1,5 @@
 export const story = {
+  createdAt: "2026-11-10T21:26:42Z",
   "id": "birthday-surprise-v1",
   "title": "生日的惊喜",
   "pinyin": "Shēngrì de jīngxǐ",

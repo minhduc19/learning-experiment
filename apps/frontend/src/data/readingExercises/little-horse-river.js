@@ -8,6 +8,7 @@ const line = (id, speaker, value) => ({ id, speaker, words: words(value) })
 const option = (id, value) => ({ id, words: words(value) })
 
 export const story = {
+  createdAt: "2026-11-11T17:27:02Z",
   id: "little-horse-river-v1",
   title: "小马过河",
   pinyin: "Xiǎo mǎ guò hé",

@@ -3,6 +3,7 @@ const words = s => s.split(' / ').map(w => { const [text, pinyin, meaning] = w.s
 const line = (id, text, speaker = null) => ({ id, words: words(text), speaker })
 const option = (id, text) => ({ id, words: words(text) })
 export const story = {
+  createdAt: "2026-11-10T21:26:42Z",
   id: 'rainy-teahouse-v1', title: '雨天的小茶馆', pinyin: 'Yǔtiān de xiǎo cháguǎn', translation: 'The little teahouse in the rain',
   characters: { lin: { name: '小林 · Lin', avatar: '林', color: '#6c9a87' }, zhou: { name: '周先生 · Mr Zhou', avatar: '周', color: '#ba8f65' } },
   steps: [

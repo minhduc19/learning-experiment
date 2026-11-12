@@ -1,4 +1,5 @@
 export const story = {
+  createdAt: "2026-11-10T21:26:42Z",
   "id": "lost-umbrella-v1",
   "title": "谁的雨伞？",
   "pinyin": "Shéi de yǔsǎn?",

@@ -9,6 +9,7 @@ const line = (id, speaker, value) => ({ id, speaker, words: words(value) })
 const option = (id, value) => ({ id, words: words(value) })
 
 export const story = {
+  createdAt: "2026-11-12T21:31:13Z",
   id: "fox-tiger-v1",
   title: "狐假虎威",
   pinyin: "Hú jiǎ hǔ wēi",
