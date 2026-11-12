@@ -75,3 +75,31 @@ test('Continue reveals one paragraph at a time and stops at unanswered checkpoin
   }
   assert.deepEqual(loadSession(story, { getItem: () => JSON.stringify({ index: 0, answers: {}, mistakes: 0 }) }), { index: 0, answers: {}, mistakes: 0 })
 })
+
+test('all-paragraph mode reveals consecutive passages up to a quiz without skipping it', async () => {
+  const { revealStoryUntilQuiz, visibleStorySteps, advanceStorySession } = await import('../src/composables/storySession.js')
+  const story = { id: 'reading-modes', steps: [
+    { id: 'first', type: 'read', lines: [{ id: 'a' }, { id: 'b' }] },
+    { id: 'second', type: 'read', lines: [{ id: 'c' }] },
+    { id: 'quiz', type: 'choice', answer: ['right'] },
+    { id: 'final', type: 'read', lines: [{ id: 'd' }, { id: 'e' }] },
+  ] }
+  const original = { index: 0, paragraph: 1, answers: {}, mistakes: 2 }
+  const batch = revealStoryUntilQuiz(story, original)
+  assert.equal(batch.index, 2)
+  assert.deepEqual(visibleStorySteps(story, batch).map(step => step.id), ['first', 'second', 'quiz'])
+  assert.equal(visibleStorySteps(story, batch)[0].lines.length, 2)
+  assert.equal(advanceStorySession(story, batch), batch, 'quiz remains gated')
+  assert.equal(original.index, 0, 'does not mutate saved source progress')
+  assert.equal(batch.mistakes, 2)
+  assert.deepEqual(loadSession(story, { getItem: () => JSON.stringify(batch) }), batch)
+  batch.answers.quiz = ['right']
+  const ending = revealStoryUntilQuiz(story, advanceStorySession(story, batch))
+  assert.equal(ending.index, 3, 'revealing the ending does not mark the story complete')
+  assert.equal(ending.paragraph, 1)
+  assert.equal(visibleStorySteps(story, ending).at(-1).lines.length, 2)
+  const complete = advanceStorySession(story, ending)
+  assert.equal(complete.index, 4)
+  assert.equal(revealStoryUntilQuiz(story, complete), complete)
+  assert.equal(visibleStorySteps(story, original)[0].lines.length, 2, 'single-paragraph behavior is unchanged')
+})
