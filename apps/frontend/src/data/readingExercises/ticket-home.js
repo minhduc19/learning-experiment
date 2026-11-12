@@ -1,4 +1,5 @@
 export const story = {
+  createdAt: "2026-11-10T21:38:30Z",
   "id": "ticket-home-v1",
   "title": "回家的车票",
   "pinyin": "Huí jiā de chēpiào",
