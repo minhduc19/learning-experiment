@@ -6,13 +6,25 @@ const route = useRoute()
 const story = readingExercises.find(item => item.id === route.params.storyId) || readingExercises[0]
 const speakerPalette = ['#9dd9c5', '#c4b5e8', '#eab99b', '#9fcbea', '#e4b0c4', '#d7cf96']
 const speakerColors = Object.fromEntries(Object.keys(story.characters).map((id, index) => [id, speakerPalette[index % speakerPalette.length]]))
-import { loadSession, saveSession, visibleStorySteps, advanceStorySession } from '../composables/storySession.js'
+import { loadSession, saveSession, visibleStorySteps, advanceStorySession, revealStoryUntilQuiz } from '../composables/storySession.js'
 import { readingTargetPhrases, loadLearnedPhrases } from '../utils/readingTargetPhrases.js'
 import StoryWords from '../components/story/StoryWords.vue'
 import StoryCheckpoint from '../components/story/StoryCheckpoint.vue'
 let storage
 try { storage = window.localStorage } catch {}
-const session = ref(loadSession(story, storage))
+let savedReadingMode = 'paragraph'
+try {
+  if (storage?.getItem('reading-exercises-reading-mode') === 'until-quiz') savedReadingMode = 'until-quiz'
+} catch {}
+const readingMode = ref(savedReadingMode)
+const applyReadingMode = value => readingMode.value === 'until-quiz' ? revealStoryUntilQuiz(story, value) : value
+const session = ref(applyReadingMode(loadSession(story, storage)))
+watch(readingMode, value => {
+  stopAudio()
+  definition.value = null
+  try { storage?.setItem('reading-exercises-reading-mode', value) } catch {}
+  session.value = applyReadingMode(session.value)
+})
 const targetPhrases = readingTargetPhrases(story.steps)
 const phraseStorageKey = `reading-exercises-learned-phrases:${story.id}`
 const learnedPhrases = ref(loadLearnedPhrases(storage, phraseStorageKey))
@@ -100,8 +112,8 @@ async function focusCurrent() {
   heading?.focus({ preventScroll: true })
   scrollToBottom()
 }
-async function advance() { if (!canContinue.value) return; stopAudio(); definition.value = null; session.value = advanceStorySession(story, session.value); await focusCurrent() }
-async function restart() { const wasOpening = session.value.index === 0 && !(session.value.paragraph ?? 0); stopAudio(); session.value = { index: 0, answers: {}, mistakes: 0 }; definition.value = null; await focusCurrent(); if (wasOpening) autoplay() }
+async function advance() { if (!canContinue.value) return; stopAudio(); definition.value = null; session.value = applyReadingMode(advanceStorySession(story, session.value)); await focusCurrent() }
+async function restart() { const wasOpening = session.value.index === 0 && !(session.value.paragraph ?? 0); stopAudio(); session.value = applyReadingMode({ index: 0, answers: {}, mistakes: 0 }); definition.value = null; await focusCurrent(); if (wasOpening) autoplay() }
 function playLines(lines, automatic = false) {
   stopAudio(); audioMessage.value = ''
   if (!lines.length) return
@@ -166,7 +178,7 @@ onBeforeUnmount(() => {
       <div class="progress-wrap"><div class="progress-meta"><span>STORY · BEGINNER</span><span>{{ Math.round(session.index / story.steps.length * 100) }}%</span></div><progress :value="session.index" :max="story.steps.length" aria-label="Story progress" /></div>
       <button class="settings-button" :aria-expanded="settings" aria-controls="story-settings" aria-label="Story settings" @click="settings = !settings">⚙︎</button>
     </div>
-    <div v-if="settings" id="story-settings" class="story-settings"><label><input v-model="pinyin" type="checkbox"> Show pinyin</label><label><input v-model="showInstructions" type="checkbox"> Show instructions</label><div class="font-size-setting"><label for="story-font-size">Font size</label><select id="story-font-size" v-model="fontSize"><option v-for="size in fontSizes" :key="size.value" :value="size.value">{{ size.label }}</option></select></div><p v-if="showInstructions">Tap underlined story words for meanings. Audio uses your device’s Chinese voice.</p><button @click="restart(); settings = false">Restart story</button></div>
+    <div v-if="settings" id="story-settings" class="story-settings"><label><input v-model="pinyin" type="checkbox"> Show pinyin</label><label><input v-model="showInstructions" type="checkbox"> Show instructions</label><div class="reading-mode-setting"><label for="story-reading-mode">Reading mode</label><select id="story-reading-mode" v-model="readingMode"><option value="paragraph">One paragraph at a time</option><option value="until-quiz">All paragraphs until the next quiz</option></select></div><div class="font-size-setting"><label for="story-font-size">Font size</label><select id="story-font-size" v-model="fontSize"><option v-for="size in fontSizes" :key="size.value" :value="size.value">{{ size.label }}</option></select></div><p v-if="showInstructions">Tap underlined story words for meanings. Audio uses your device’s Chinese voice.</p><button @click="restart(); settings = false">Restart story</button></div>
     </header>
     <div ref="storyFeed" class="story-feed">
       <section class="story-cover" aria-labelledby="story-title"><span class="cover-art" aria-hidden="true">☂<span>茶</span></span><p class="story-kicker">{{ story.tagline || 'A SMALL ACT OF KINDNESS' }}</p><p v-if="pinyin" class="title-pinyin">{{ story.pinyin }}</p><h1 id="story-title">{{ story.title }}</h1><p class="story-subtitle">{{ story.translation }}</p><span class="story-meta">{{ quizCount }} checkpoints · Read & listen</span></section>
@@ -232,4 +244,6 @@ progress { display: block; width: 100%; height: .45rem; border: 0; border-radius
 .target-phrases li > span { min-width: 0; overflow-wrap: anywhere; font-size: 1.2rem; }
 .learn-phrase { min-height: 44px; padding: .6rem .8rem; border: 1px solid var(--story-accent); border-radius: .65rem; background: transparent; color: var(--story-accent); cursor: pointer; }
 .learn-phrase:disabled { border-color: var(--story-border); color: #b5c6cb; cursor: default; }
+.reading-mode-setting { display: grid; gap: .35rem; margin-block: .75rem; }
+.reading-mode-setting select { width: 100%; min-width: 0; max-width: 100%; }
 </style>

@@ -34,3 +34,14 @@ export function advanceStorySession(story, session) {
   }
   return { ...session, index: session.index + 1, paragraph: 0 }
 }
+
+// Reveal consecutive reading steps together, stopping at the next checkpoint.
+// A final reading passage still requires Finish story rather than auto-completing.
+export function revealStoryUntilQuiz(story, session) {
+  if (story.steps[session.index]?.type !== 'read') return session
+  let index = session.index
+  while (index < story.steps.length && story.steps[index].type === 'read') index++
+  if (index < story.steps.length) return { ...session, index, paragraph: 0 }
+  const last = story.steps.length - 1
+  return { ...session, index: last, paragraph: Math.max(0, story.steps[last].lines.length - 1) }
+}
