@@ -454,3 +454,30 @@ API details, and the legacy-data assignment command.
 ## Booking management
 
 Open `/private-booking-management` for the booking tools directory. See [storage, compatibility endpoints and restore instructions](docs/booking-management.md).
+
+## Python coding practice
+
+Open `/python-practice` (also linked in Ideas) for a split-screen Python exercise.
+Edit `main.py`, use **Run** for stdout and tracebacks, or **Submit answer** for
+nine visible `unittest` checks. The test and solution tabs are read only; the
+Solution button opens the reference without replacing the draft. Edit the
+exercise in `apps/frontend/src/data/pythonPractice.js`.
+
+Python 3.12 runs through Pyodide 0.27.7 in a browser worker, never on the backend.
+The initial run downloads the runtime from `cdn.jsdelivr.net`, so internet access
+is required. Stop terminates the worker; execution is limited to five seconds
+and console output to 20,000 characters. Drafts are saved in browser localStorage
+when available. Ctrl/Cmd+Enter runs; Ctrl/Cmd+Shift+Enter submits. Tab moves focus
+normally, preserving keyboard navigation. These visible checks are for practice,
+not secure grading. Interactive `input()` and installing additional packages are
+not provided.
+
+Run `node --test apps/frontend/tests/python-practice.test.js` for exercise/harness
+checks (requires `python3`). For real browser execution, with the frontend running:
+
+```sh
+UI_BASE_URL=http://localhost:5173 python apps/frontend/tests/browser/python-practice.py
+```
+
+The browser test requires Python Playwright and Chromium. Set
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE` if Chromium is not at `/usr/bin/chromium`.
