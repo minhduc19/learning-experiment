@@ -4,7 +4,23 @@ The **Deploy to droplet** workflow connects to `144.126.225.254`, clones or upda
 
 The droplet needs Bash, Git, curl, flock, Docker Engine, and the Docker Compose plugin installed. `SSH_USER` must be able to run Docker without interactive sudo. The workflow uses the dedicated checkout `~/github-actions/learning-experiment` and the Compose project name `learning-experiment`, which matches the existing deployment. It refuses to overwrite local changes in its checkout. The app remains on port 8080. Building and recreating services can briefly interrupt access; failed health checks fail the workflow but do not automatically roll back.
 
-Deployments are serialized. The workflow deploys the existing two-container configuration on main, using `docker compose -p learning-experiment up --build -d --wait`. It checks `/api/health` afterward. The single-Dockerfile PR must be accompanied by an updated deployment command if merged later.
+Deployments are serialized. Pushes to `main` deploy automatically; the manual
+**Run workflow** trigger can deploy the selected `main` commit again. The workflow
+starts PostgreSQL, runs corpus migrations, and starts the backend, corpus worker,
+and frontend with `docker compose -p learning-experiment up --build -d --wait
+--wait-timeout 180`. It checks `/api/health/db` afterward. The fixed Compose project
+name reuses the named database and file-storage volumes across deployments.
+
+## Why this uses a Droplet
+
+The [App Platform deploy button](https://docs.digitalocean.com/products/app-platform/how-to/add-deploy-do-button/)
+supports one service or static site, optionally with a development database.
+This app also needs a corpus worker and persistent local storage for SQLite
+bookings, generated readings, and corpus upload files. App Platform's temporary
+local filesystem would lose those files on replacement or redeployment. The
+README button therefore opens this repository's Droplet deployment workflow.
+It requires GitHub access to run workflows and the one-time SSH setup below;
+it does not provision infrastructure or deploy to a visitor's DigitalOcean account.
 
 In **Settings → Secrets and variables → Actions → New repository secret**, add:
 

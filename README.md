@@ -2,6 +2,19 @@
 
 FastAPI + Vue monorepo
 
+[![Deploy to DigitalOcean Droplet](https://img.shields.io/badge/Deploy-DigitalOcean%20Droplet-0080FF?logo=digitalocean&logoColor=white)](https://github.com/minhduc19/learning-experiment/actions/workflows/ssh-check.yml)
+
+To deploy to the existing Droplet, open the button above, choose **Run workflow**,
+select **main**, and run it. Requires the repository SSH secrets and Droplet setup
+described in [deployment instructions](docs/droplet-ssh.md). Pushes to `main` also
+deploy automatically. This updates the existing server; it does not create a new
+Droplet.
+
+DigitalOcean's App Platform deploy button supports one service plus a development
+database, and cannot preserve this app's local Docker volumes. The Droplet workflow
+keeps persistent booking, reading, corpus upload, and PostgreSQL data using the
+existing Compose stack.
+
 - `apps/backend`: FastAPI, Python 3.12+, uv, pytest
 - `apps/frontend`: Vue 3, JavaScript, Vite, npm workspace
 - `.github/workflows/ci.yml`: backend test and frontend production build
