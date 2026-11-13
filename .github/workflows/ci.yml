@@ -36,6 +36,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+      - name: Check visitor deployment configuration
+        run: python3 -m unittest discover -s deploy/digitalocean -v
       - run: docker compose build
       - run: docker compose up -d --wait
       - name: Smoke test the installed Mandarin Piper voice

@@ -1,0 +1,83 @@
+name: Deploy your own DigitalOcean Droplet
+
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: Domain for your app (e.g. learning.example.com); point its A record at the resulting IP
+        required: true
+        type: string
+      ssh_key_id:
+        description: ID of your public SSH key already added to DigitalOcean
+        required: true
+        type: string
+      region:
+        description: DigitalOcean region
+        default: nyc3
+        required: true
+        type: string
+      name:
+        description: Unique name for a NEW billable Droplet (each run creates one)
+        default: learning-experiment
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: visitor-droplet-create
+  cancel-in-progress: false
+
+jobs:
+  create:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      APP_DOMAIN: ${{ inputs.domain }}
+      DROPLET_NAME: ${{ inputs.name }}
+      DROPLET_REGION: ${{ inputs.region }}
+      SSH_KEY_ID: ${{ inputs.ssh_key_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate inputs and render startup script
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$DROPLET_NAME" =~ ^[a-zA-Z0-9][a-zA-Z0-9-]{0,62}$ ]]
+          [[ "$DROPLET_REGION" =~ ^[a-z]{3}[0-9]+$ ]]
+          [[ "$SSH_KEY_ID" =~ ^[0-9]+$ ]]
+          python deploy/digitalocean/render-user-data.py > "$RUNNER_TEMP/user-data.sh"
+          bash -n "$RUNNER_TEMP/user-data.sh"
+      - uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }}
+      - name: Create your Droplet
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Refuse a name collision rather than accidentally creating duplicates.
+          doctl compute droplet list --output json > "$RUNNER_TEMP/droplets.json"
+          python - <<'PY'
+          import json, os
+          with open(os.environ['RUNNER_TEMP'] + '/droplets.json') as f:
+              if any(d['name'] == os.environ['DROPLET_NAME'] for d in json.load(f)):
+                  raise SystemExit('A Droplet with this name exists. Use SSH to update it; choose a new name only to create another server.')
+          PY
+          doctl compute droplet create "$DROPLET_NAME" \
+            --region "$DROPLET_REGION" --size s-2vcpu-4gb \
+            --image ubuntu-24-04-x64 --ssh-keys "$SSH_KEY_ID" \
+            --user-data-file "$RUNNER_TEMP/user-data.sh" --wait \
+            --output json > "$RUNNER_TEMP/created.json"
+          python - <<'PY'
+          import json, os
+          with open(os.environ['RUNNER_TEMP'] + '/created.json') as f:
+              droplet = json.load(f)[0]
+          address = next(n['ip_address'] for n in droplet['networks']['v4'] if n['type'] == 'public')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as f:
+              f.write(f"## Droplet created: {droplet['id']}\n\n")
+              f.write(f"Point the **A record** for `{os.environ['APP_DOMAIN']}` to **{address}**. Remove any stale AAAA record.\n\n")
+              f.write(f"Then open https://{os.environ['APP_DOMAIN']} after startup completes (typically 10–20 minutes).\n\n")
+              f.write(f"Check startup: `ssh root@{address} 'cloud-init status --wait'`.\n\n")
+              f.write('This workflow confirms server creation, not app readiness. See the visitor deployment guide for checks and troubleshooting. The server remains billable even if startup fails; delete it in DigitalOcean when no longer needed.\n')
+          PY

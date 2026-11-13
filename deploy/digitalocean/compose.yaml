@@ -1,0 +1,29 @@
+# Apply after the root compose.yaml; only Caddy publishes public app ports.
+services:
+  db:
+    ports: !reset []
+  backend:
+    ports: !reset []
+    environment:
+      AUTH_PUBLIC_ORIGIN: https://${APP_DOMAIN:?Set APP_DOMAIN}
+      AUTH_COOKIE_SECURE: "true"
+  frontend:
+    ports: !reset []
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Set APP_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/digitalocean/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      frontend:
+        condition: service_started
+volumes:
+  caddy_data:
+  caddy_config:
