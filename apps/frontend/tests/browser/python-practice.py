@@ -9,7 +9,7 @@ from playwright.sync_api import sync_playwright, expect
 
 root = Path(__file__).resolve().parents[4]
 solution = subprocess.check_output(['node', '--input-type=module', '-e',
-    "import {solutionCode} from './apps/frontend/src/data/pythonPractice.js';process.stdout.write(solutionCode)"], cwd=root, text=True)
+    "import {solutionCode} from './apps/frontend/src/data/codingLessons/encapsulation.js';process.stdout.write(solutionCode)"], cwd=root, text=True)
 with sync_playwright() as p:
     options = {'executable_path': os.getenv('PLAYWRIGHT_CHROMIUM_EXECUTABLE', '/usr/bin/chromium'), 'args': ['--no-sandbox']}
     if os.getenv('HTTPS_PROXY'):

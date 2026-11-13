@@ -3,7 +3,9 @@ import { auth, initializeAuth } from '../composables/useAuth'
 
 // Routes with a title appear in the Ideas directory automatically.
 export const routes = [
-  { path: '/python-practice', name: 'python-practice', component: () => import('../views/PythonPracticeView.vue'), meta: { title: 'Python coding practice', fullscreen: true } },
+  { path: '/coding-lessons', name: 'coding-lessons', component: () => import('../views/CodingLessonsView.vue'), meta: { title: 'Coding lessons', fullscreen: true } },
+  { path: '/coding-lessons/:lessonId/:exerciseId?', name: 'coding-exercise', component: () => import('../views/CodingLessonView.vue'), meta: { fullscreen: true } },
+  { path: '/python-practice', name: 'python-practice', redirect: '/coding-lessons/encapsulation/bank-account', meta: { title: 'Python coding practice' } },
   { path: '/reading-exercises', name: 'reading-exercises', component: () => import('../views/ReadingExercisesView.vue'), meta: { title: 'Sample reading exercises' } },
   { path: '/reading-exercises/:storyId', name: 'reading-exercise', component: () => import('../views/StoryQuizView.vue'), meta: { fullscreen: true } },
   { path: '/sample-story-quiz', name: 'sample-story-quiz', component: () => import('../views/StoryQuizView.vue'), meta: { title: 'Story with integrated quizzes', fullscreen: true } },

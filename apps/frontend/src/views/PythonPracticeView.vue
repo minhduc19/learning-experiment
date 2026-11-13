@@ -1,9 +1,20 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { starterCode, solutionCode, testCode } from '../data/pythonPractice'
+import { codingLessons, exercisePath, draftKey, completionKey } from '../data/codingLessons'
+import { indentCode } from '../composables/codeIndentation'
 import '../styles/python-practice.css'
 
-const storageKey = 'python-practice-bank-account-v1'
+const { lesson, exercise } = defineProps({ lesson: { type: Object, required: true }, exercise: { type: Object, required: true } })
+const { starterCode, solutionCode, testCode, testCount } = exercise
+const storageKey = draftKey(lesson, exercise)
+const exerciseIndex = lesson.exercises.findIndex(item => item.id === exercise.id)
+const path = codingLessons.toSorted((a, b) => a.order - b.order).flatMap(item => item.exercises.map(task => ({ lesson: item, exercise: task })))
+const pathIndex = path.findIndex(item => item.lesson.id === lesson.id && item.exercise.id === exercise.id)
+const previous = path[pathIndex - 1]
+const next = path[pathIndex + 1]
+const complete = ref(false)
+try { complete.value = localStorage.getItem(completionKey(lesson, exercise)) === 'true' } catch {}
+let releaseTab = false
 let saved = null
 try { saved = localStorage.getItem(storageKey) } catch { /* Private browsing can disable storage. */ }
 const code = ref(saved ?? starterCode)
@@ -58,13 +69,16 @@ function keydown(event) {
     event.preventDefault()
     execute(event.shiftKey ? 'submit' : 'run')
   }
-  // Normal Tab navigation remains available; Alt+Tab inserts indentation.
-  if (event.altKey && event.key === 'Tab' && activeTab.value === 'main') {
+  if (event.key === 'Escape') { releaseTab = true; return }
+  if (event.key === 'Tab' && releaseTab) { releaseTab = false; return }
+  releaseTab = false
+  if (event.key === 'Tab' && !event.ctrlKey && !event.metaKey && activeTab.value === 'main') {
     event.preventDefault()
     const field = event.target
-    const position = field.selectionStart
-    code.value = code.value.slice(0, position) + '    ' + code.value.slice(field.selectionEnd)
-    nextTick(() => { field.selectionStart = field.selectionEnd = position + 4 })
+    const position = { top: field.scrollTop, left: field.scrollLeft }
+    const change = indentCode(code.value, field.selectionStart, field.selectionEnd, event.shiftKey)
+    code.value = change.value
+    nextTick(() => { field.setSelectionRange(change.start, change.end); field.scrollTop = position.top; field.scrollLeft = position.left })
   }
 }
 function dispose() { clearTimeout(timer); worker?.terminate(); worker = null }
@@ -88,6 +102,10 @@ function execute(nextMode) {
         timer = setTimeout(() => stop('Execution exceeded 5 seconds. Check for an infinite loop and run again.'), 5000)
       } else if (data.type === 'result') {
         output.value = data.result
+        if (nextMode === 'submit' && data.result.tests.length === testCount && !data.result.error && data.result.tests.every(test => test.status === 'passed')) {
+          complete.value = true
+          try { localStorage.setItem(completionKey(lesson, exercise), 'true') } catch { savedState.value = 'Completion could not be saved on this device' }
+        }
         phase.value = 'idle'
         dispose()
       } else {
@@ -104,6 +122,8 @@ function reset() {
   activeTab.value = 'main'
   checked.value = []
   output.value = null
+  complete.value = false
+  try { localStorage.removeItem(completionKey(lesson, exercise)) } catch {}
 }
 onBeforeUnmount(dispose)
 </script>
@@ -111,39 +131,38 @@ onBeforeUnmount(dispose)
 <template>
   <main class="python-lab">
     <header class="lab-topbar">
-      <RouterLink to="/ideas" class="lab-brand" aria-label="Back to Ideas"><span class="lab-mark">✧</span><span>CODE<span class="lab-brand-light">QUEST</span></span></RouterLink>
+      <RouterLink to="/coding-lessons" class="lab-brand" aria-label="Back to coding lessons"><span class="lab-mark">✧</span><span>CODE<span class="lab-brand-light">QUEST</span></span></RouterLink>
       <span class="lab-top-divider"></span>
       <span class="lab-course">THE PYTHON PATH <span>/</span> Object-oriented programming</span>
       <span class="lab-local"><span></span> Personal workspace</span>
     </header>
     <div class="lab-lessonbar">
-      <div><span class="lab-chapter">CHAPTER 03</span><span class="lab-chapter-name">Encapsulation</span></div>
-      <div class="lab-lesson-progress" aria-label="Lesson 6 of 8"><i v-for="n in 8" :key="n" :class="{ filled: n < 6, current: n === 6 }"></i><span>06 / 08</span></div>
-      <RouterLink to="/ideas" class="lab-exit">All exercises ↗</RouterLink>
+      <div><span class="lab-chapter">LESSON {{ String(lesson.order).padStart(2, '0') }}</span><span class="lab-chapter-name">{{ lesson.title }}</span></div>
+      <div class="lab-lesson-progress" :aria-label="`Exercise ${exerciseIndex + 1} of ${lesson.exercises.length}`"><i v-for="n in lesson.exercises.length" :key="n" :class="{ current: n === exerciseIndex + 1 }"></i><span>{{ exerciseIndex + 1 }} / {{ lesson.exercises.length }}</span></div>
+      <RouterLink to="/coding-lessons" class="lab-exit">All lessons ↗</RouterLink>
     </div>
     <div class="lab-workspace">
       <section class="lab-instructions" aria-labelledby="lesson-title">
-        <div class="lab-lesson-eyebrow"><span>✦ PRACTICE</span><span>~15 MIN</span></div>
-        <h1 id="lesson-title">Protect the<br><em>dragon’s gold.</em></h1>
-        <p class="lab-intro">Every great kingdom needs a trustworthy bank. Build a <code>BankAccount</code> that keeps its treasure safe, one method at a time.</p>
-        <div class="lab-tags"><span>Python</span><span>Classes</span><span>Encapsulation</span></div>
-        <div class="lab-section-heading"><h2>Your assignment</h2><span>{{ checked.length }} / 4</span></div>
-        <p class="lab-assignment-intro">Complete the <code>BankAccount</code> class in <strong>main.py</strong>. Mark each step as you go.</p>
-        <div class="lab-task"><label><input v-model="checked" type="checkbox" value="constructor"><span>01</span><strong>Set up the vault</strong></label><p>In <code>__init__</code>, store <code>account_number</code> as <code>self.__account_number</code> and <code>initial_balance</code> as <code>self.__balance</code>.</p></div>
-        <div class="lab-task"><label><input v-model="checked" type="checkbox" value="getters"><span>02</span><strong>Let the banker look inside</strong></label><p>Return the private values using <code>get_account_number()</code> and <code>get_balance()</code>.</p></div>
-        <div class="lab-task"><label><input v-model="checked" type="checkbox" value="deposit"><span>03</span><strong>Add to the treasure</strong></label><p><code>deposit(amount)</code> adds to the balance. For amounts ≤ 0, raise <code>ValueError("cannot deposit zero or negative funds")</code>.</p></div>
-        <div class="lab-task"><label><input v-model="checked" type="checkbox" value="withdraw"><span>04</span><strong>Withdraw wisely</strong></label><p><code>withdraw(amount)</code> subtracts from the balance. First reject amounts ≤ 0 with <code>ValueError("cannot withdraw zero or negative funds")</code>. Then reject amounts above the balance with <code>ValueError("insufficient funds")</code>.</p></div>
-        <aside class="lab-tip"><span>✧</span><div><strong>A little wisdom</strong><p>Two leading underscores make an attribute private through Python’s name mangling. Access it through a method instead.</p></div></aside>
-        <p class="lab-return-note">Both transaction methods should return <code>None</code>. Rejected transactions must leave the balance unchanged.</p>
-        <div class="lab-example"><span>EXPECTED OUTPUT · RUN</span><pre>Account: DRAGON-001
-Balance: 150.0</pre></div>
+        <div class="lab-lesson-eyebrow"><span>✦ {{ exercise.level.toUpperCase() }}</span><span>~{{ exercise.duration.toUpperCase() }}</span></div>
+        <h1 id="lesson-title">{{ exercise.title }}</h1>
+        <p class="lab-intro">{{ exercise.intro }}</p>
+        <div class="lab-tags"><span v-for="tag in lesson.tags" :key="tag">{{ tag }}</span></div>
+        <nav class="lab-exercise-list" aria-label="Exercises in this lesson"><RouterLink v-for="(item, index) in lesson.exercises" :key="item.id" :to="exercisePath(lesson, item)" :aria-current="item.id === exercise.id ? 'step' : undefined">{{ index + 1 }}. {{ item.title }}</RouterLink></nav>
+        <section v-for="concept in exercise.concepts" :key="concept.title" class="lab-concept"><h2>{{ concept.title }}</h2><p>{{ concept.text }}</p></section>
+        <div class="lab-section-heading"><h2>Your assignment</h2><span>{{ checked.length }} / {{ exercise.tasks.length }}</span></div>
+        <p class="lab-assignment-intro">Edit <strong>main.py</strong>. Mark each step as you go. Submit to check your work.</p>
+        <div v-for="(task, index) in exercise.tasks" :key="task.title" class="lab-task"><label><input v-model="checked" type="checkbox" :value="index"><span>{{ String(index + 1).padStart(2, '0') }}</span><strong>{{ task.title }}</strong></label><p>{{ task.text }}</p></div>
+        <aside class="lab-tip"><span>✧</span><div><strong>Common errors</strong><ul><li v-for="mistake in exercise.mistakes" :key="mistake">{{ mistake }}</li></ul></div></aside>
+        <section class="lab-concept"><h2>In a larger codebase</h2><p v-for="practice in exercise.practices" :key="practice">{{ practice }}</p></section>
+        <div v-if="exercise.expectedOutput" class="lab-example"><span>EXPECTED OUTPUT · RUN</span><pre>{{ exercise.expectedOutput }}</pre></div>
+        <aside class="lab-takeaway"><strong>Connect the dots</strong><p>{{ exercise.takeaway }}</p></aside>
       </section>
       <section class="lab-coding" aria-label="Python coding workspace">
         <div class="lab-editor-header"><span><i></i> WORKSPACE</span><label>Text size <select v-model="fontSize" aria-label="Editor text size"><option :value="13">13px</option><option :value="14">14px</option><option :value="16">16px</option><option :value="18">18px</option></select></label></div>
         <div class="lab-tabs" role="tablist" aria-label="Python files"><button v-for="(tab, index) in tabs" :id="`py-tab-${tab.id}`" :key="tab.id" role="tab" :aria-selected="activeTab === tab.id" :tabindex="activeTab === tab.id ? 0 : -1" aria-controls="python-editor-panel" @click="selectTab(tab.id)" @keydown="tabKey($event, index)"><span :class="tab.locked ? 'lab-lock' : 'lab-python-icon'">{{ tab.locked ? '▣' : 'Py' }}</span>{{ tab.label }}<span v-if="tab.id === 'main'" class="lab-file-dot"></span></button></div>
         <div id="python-editor-panel" class="lab-editor" role="tabpanel" :aria-labelledby="`py-tab-${activeTab}`" :style="{ '--editor-font-size': fontSize + 'px' }">
           <div class="lab-gutter" aria-hidden="true"><div :style="{ transform: `translateY(-${scroll.y}px)` }"><span v-for="line in lines" :key="line">{{ line }}</span></div></div>
-          <div class="lab-code-surface"><pre aria-hidden="true" class="lab-code-highlight" :style="{ transform: `translate(-${scroll.x}px, -${scroll.y}px)` }" v-html="highlighted"></pre><textarea ref="editor" :value="source" :readonly="activeTab !== 'main'" :aria-label="activeTab === 'main' ? 'main.py Python code editor' : `${activeTab === 'tests' ? 'main_test.py tests' : 'solution.py reference solution'} (read only)`" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" @input="code = $event.target.value" @keydown="keydown" @scroll="scroll = { x: $event.target.scrollLeft, y: $event.target.scrollTop }"></textarea></div>
+          <div class="lab-code-surface"><pre aria-hidden="true" class="lab-code-highlight" :style="{ transform: `translate(-${scroll.x}px, -${scroll.y}px)` }" v-html="highlighted"></pre><textarea ref="editor" :value="source" :readonly="activeTab !== 'main'" :aria-label="activeTab === 'main' ? 'main.py Python code editor' : `${activeTab === 'tests' ? 'main_test.py tests' : 'solution.py reference solution'} (read only)`" aria-describedby="editor-help" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off" @input="code = $event.target.value" @keydown="keydown" @scroll="scroll = { x: $event.target.scrollLeft, y: $event.target.scrollTop }"></textarea></div>
         </div>
         <div class="lab-editor-status"><span>{{ activeTab === 'main' ? savedState : 'Read only · ' + (activeTab === 'tests' ? 'These are the tests used by Submit' : 'Reference solution') }}</span><span>Python 3.12 <b>·</b> UTF-8</span></div>
         <div class="lab-actions"><button class="lab-submit" aria-label="Submit answer" :disabled="busy" @click="execute('submit')"><span>▷</span> Submit answer</button><button class="lab-run" aria-label="Run" :disabled="busy" title="Ctrl/Cmd + Enter" @click="execute('run')"><span aria-hidden="true">▷</span> Run</button><button class="lab-solution" aria-label="Solution" @click="solutionOpen = true; activeTab = 'solution'">◉ <span>Solution</span></button><button v-if="busy" class="lab-stop" @click="stop()">■ Stop</button><button class="lab-reset" :disabled="busy" aria-label="Reset to starter code" title="Reset to starter code" @click="reset">↺</button></div>
@@ -151,13 +170,15 @@ Balance: 150.0</pre></div>
           <div class="lab-results-heading"><h2 id="output-title">CONSOLE <span>/ {{ mode === 'submit' ? 'TEST RESULTS' : 'OUTPUT' }}</span></h2><span v-if="output?.tests.length" :class="allPassed ? 'lab-pass' : 'lab-fail'">{{ passed }} / {{ output.tests.length }} passed</span><span v-else class="lab-runtime-label">IN-BROWSER PYTHON</span></div>
           <div v-if="busy" class="lab-console-empty" role="status"><span class="lab-spinner"></span><strong>{{ phase === 'loading' ? 'Preparing your Python workspace…' : mode === 'submit' ? 'Checking your solution…' : 'Running your code…' }}</strong><p>{{ phase === 'loading' ? 'The first run downloads Python. This can take a moment.' : 'Execution stops automatically after 5 seconds.' }}</p></div>
           <div v-else class="lab-console-content">
-            <div class="lab-result-summary" role="status"><span :class="{ 'lab-pass': allPassed, 'lab-fail': output?.error }">{{ output ? allPassed ? '✓' : '›' : '⌘' }}</span><div><strong>{{ resultTitle }}</strong><p v-if="!output">Run your code to experiment. Submit to check all 9 tests.</p><p v-else-if="allPassed">Your bank keeps its promises. All 9 checks passed.</p><p v-else-if="output.tests.length">Open a failed check below to see what to fix, then submit again.</p></div></div>
+            <div class="lab-result-summary" role="status"><span :class="{ 'lab-pass': allPassed, 'lab-fail': output?.error }">{{ output ? allPassed ? '✓' : '›' : '⌘' }}</span><div><strong>{{ resultTitle }}</strong><p v-if="!output">Run your code to experiment. Submit to check all {{ testCount }} tests.</p><p v-else-if="allPassed">Your solution keeps its promises. All {{ testCount }} checks passed.</p><p v-else-if="output.tests.length">Open a failed check below to see what to fix, then submit again.</p></div></div>
             <pre v-if="output?.output" class="lab-stdout">{{ output.output }}{{ output.output.length >= 20000 ? '\n[Output truncated to 20,000 characters]' : '' }}</pre><pre v-if="output?.error" class="lab-traceback">{{ output.error }}</pre>
             <p v-if="output && !output.error && !output.output && !output.tests.length" class="lab-no-output">No output. Add a <code>print()</code> call to see a value here.</p>
             <details v-for="test in output?.tests || []" :key="test.name" class="lab-test"><summary><span :class="test.status === 'passed' ? 'lab-pass' : 'lab-fail'">{{ test.status === 'passed' ? '✓' : '×' }}</span>{{ test.name.replace('test_', '').replaceAll('_', ' ') }}<span class="lab-test-badge">{{ test.status }}</span></summary><p>{{ test.description }}</p><pre v-if="test.detail">{{ test.detail }}</pre></details>
           </div>
         </section>
-        <footer class="lab-footer"><span>⌨ Ctrl / ⌘ + Enter to run</span><span>Your code runs locally in your browser.</span></footer>
+        <p id="editor-help" class="lab-editor-help">Tab: indent · Shift+Tab: outdent · Esc then Tab: move focus · Ctrl/⌘+Enter: run</p>
+        <nav class="lab-exercise-navigation" aria-label="Exercise navigation"><RouterLink v-if="previous" :to="exercisePath(previous.lesson, previous.exercise)">← Previous</RouterLink><span role="status">{{ complete ? '✓ Completed on this device' : 'Exercise ' + (exerciseIndex + 1) + ' of ' + lesson.exercises.length }}</span><RouterLink v-if="next" :to="exercisePath(next.lesson, next.exercise)">{{ next.lesson.id === lesson.id ? 'Next exercise' : 'Next: ' + next.lesson.title }} →</RouterLink><RouterLink v-else to="/coding-lessons">Back to lessons →</RouterLink></nav>
+        <footer class="lab-footer"><span>Python practice</span><span>Your code runs locally in your browser.</span></footer>
       </section>
     </div>
   </main>

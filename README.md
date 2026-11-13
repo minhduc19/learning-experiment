@@ -455,29 +455,58 @@ API details, and the legacy-data assignment command.
 
 Open `/private-booking-management` for the booking tools directory. See [storage, compatibility endpoints and restore instructions](docs/booking-management.md).
 
-## Python coding practice
+## Python coding lessons
 
-Open `/python-practice` (also linked in Ideas) for a split-screen Python exercise.
-Edit `main.py`, use **Run** for stdout and tracebacks, or **Submit answer** for
-nine visible `unittest` checks. The test and solution tabs are read only; the
-Solution button opens the reference without replacing the draft. Edit the
-exercise in `apps/frontend/src/data/pythonPractice.js`.
+Open `/coding-lessons` (also linked in Ideas) to browse all Python coding lessons.
+The default order is newest first; choose oldest first or learning-path order.
+Search and tag filters are reflected in the URL. Selected tags use AND matching.
+Basic categories include OOP and DSA; DSA currently has no lessons, so its filter
+shows an empty state rather than unrelated content.
 
-Python 3.12 runs through Pyodide 0.27.7 in a browser worker, never on the backend.
-The initial run downloads the runtime from `cdn.jsdelivr.net`, so internet access
-is required. Stop terminates the worker; execution is limited to five seconds
-and console output to 20,000 characters. Drafts are saved in browser localStorage
-when available. Ctrl/Cmd+Enter runs; Ctrl/Cmd+Shift+Enter submits. Tab moves focus
-normally, preserving keyboard navigation. These visible checks are for practice,
-not secure grading. Interactive `input()` and installing additional packages are
-not provided.
+The connected path builds one bank across three lessons and nine exercises:
 
-Run `node --test apps/frontend/tests/python-practice.test.js` for exercise/harness
-checks (requires `python3`). For real browser execution, with the frontend running:
+1. **Encapsulation:** the original private BankAccount exercise.
+2. **Inheritance:** constructors and super(), interest and integer rounding,
+   failure-atomic fee overrides, then cooperative mixins and MRO.
+3. **Polymorphism:** duck typing, ABC contracts, structural Protocol plugins,
+   then a composed withdrawal service with explicit notification-failure handling.
+
+Each exercise includes concepts, exact requirements, common errors, larger-codebase
+practices, visible tests, starter code, and a read-only reference solution. Supplied
+prerequisite code keeps exercises independently runnable while the ideas build on
+each other. The original `/python-practice` URL redirects to the first exercise,
+and its saved draft is preserved. Each exercise has a separate draft and local
+completion marker. Previous/next links continue across lesson boundaries; all
+exercises can also be opened directly without completing prerequisites.
+
+Lesson data lives in `apps/frontend/src/data/codingLessons/`. Add a lesson module
+with stable IDs, an explicit `createdAt` timestamp, tags, path order, prerequisites,
+and ordered `exercises`, then register it in `index.js`. `helpers.js` constructs
+visible unittest suites from test cases. Every reference solution and every
+starter is checked by the Python harness tests. The content is bundled with the
+app; no database or lesson administration API is required.
+
+Python 3.12 executes through Pyodide 0.27.7 in a browser worker. The first run
+requires access to `cdn.jsdelivr.net`. Stop terminates the worker; execution is
+limited to five seconds and output to 20,000 characters. Ctrl/Cmd+Enter runs;
+Ctrl/Cmd+Shift+Enter submits. **Tab indents to a four-space tab stop**, selected
+lines indent together, and **Shift+Tab outdents**. Press **Escape, then Tab** to
+leave the editor using the keyboard. Read-only tabs keep normal focus navigation.
+
+These visible tests are practice checks, not secure grading. Protocol annotations
+are educational; the browser does not run mypy or Pyright. The in-memory bank
+examples are not production financial software: the lessons explain concurrency,
+idempotency, transactional storage, and durable outbox boundaries. Interactive
+input() and additional package installation are not provided.
+
+Checks (requires python3 for the execution harness):
 
 ```sh
+node --test apps/frontend/tests/python-practice.test.js
+npm run build
+UI_BASE_URL=http://localhost:5173 python apps/frontend/tests/browser/coding-lessons.py
 UI_BASE_URL=http://localhost:5173 python apps/frontend/tests/browser/python-practice.py
 ```
 
-The browser test requires Python Playwright and Chromium. Set
+Browser tests require Python Playwright and Chromium. Set
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE` if Chromium is not at `/usr/bin/chromium`.
