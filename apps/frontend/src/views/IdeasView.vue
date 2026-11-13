@@ -15,6 +15,7 @@ function toggleBookmark(path) {
 // Parameterized pages link to their record picker rather than invented IDs.
 function destination(path) {
   if (path.includes(':pathMatch')) return '/page-not-found-example'
+  if (path.startsWith('/coding-lessons/:')) return '/coding-lessons'
   if (path.startsWith('/lessons/:')) return '/lessons'
   if (path.startsWith('/my-stories/:')) return '/my-stories'
   if (path.startsWith('/characters/:') || path.startsWith('/segments/:')) return '/characters'
