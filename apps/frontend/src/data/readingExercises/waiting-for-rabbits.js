@@ -1,0 +1,88 @@
+// An elementary retelling of 守株待兔, with an extended learner ending.
+// Five recurring focus words: 兔子、等、每天、种地、办法.
+// Each lookup is a short phrase; paragraphs never share one translation.
+const words = value => value.split(' / ').map(segment => {
+  const [text, pinyin, meaning] = segment.split('|')
+  return { text, pinyin, meaning }
+})
+const line = (id, speaker, value) => ({ id, speaker, words: words(value) })
+const option = (id, value) => ({ id, words: words(value) })
+
+export const story = {
+  createdAt: '2026-11-14T00:00:00Z',
+  id: 'waiting-for-rabbits-v1',
+  title: '守株待兔',
+  pinyin: 'Shǒu zhū dài tù',
+  translation: 'Waiting by a tree stump for rabbits',
+  tagline: 'A CHINESE CLASSIC · FIVE WORDS · LUCK AND WORK',
+  characters: {
+    farmer: { name: '农夫 · Farmer', avatar: '农' },
+    wife: { name: '妻子 · Wife', avatar: '妻' },
+    neighbor: { name: '邻居 · Neighbor', avatar: '邻' },
+  },
+  steps: [
+    { id: 'field', type: 'read', title: '第一幕 · 每天种地', lines: [
+      line('home', null, `很久以前|hěn jiǔ yǐ qián|a long time ago / ， / 有一个|yǒu yí ge|there was a / 农夫|nóng fū|farmer / 。 / 他和妻子|tā hé qī zi|he and his wife / 住在|zhù zài|lived in / 小村子里|xiǎo cūn zi lǐ|a small village / 。 / 家门口|jiā mén kǒu|outside their home / 有一块地|yǒu yí kuài dì|there was a field / ， / 地边|dì biān|beside the field / 有一个|yǒu yí ge|there was a / 树桩|shù zhuāng|tree stump / 。 / 树桩|shù zhuāng|tree stump / 不高|bù gāo|was not tall / ， / 旁边|páng biān|beside it / 长着|zhǎng zhe|was growing / 很多草|hěn duō cǎo|a lot of grass / 。 / 农夫|nóng fū|farmer / 每天|měi tiān|every day / 早早起来|zǎo zǎo qǐ lái|got up early / 种地|zhòng dì|to farm / ， / 中午|zhōng wǔ|at noon / 才回家|cái huí jiā|only then came home / 吃饭|chī fàn|to eat / 。`),
+      line('tired', 'farmer', `我每天|wǒ měi tiān|every day I / 都种地|dōu zhòng dì|farm / ， / 今天|jīn tiān|today / 也要种地|yě yào zhòng dì|must farm too / 。 / 天气|tiān qì|the weather / 越来越热|yuè lái yuè rè|is getting hotter / ， / 我有点累|wǒ yǒu diǎn lèi|I am a little tired / 。 / 有没有|yǒu méi yǒu|is there / 一个办法|yí ge bàn fǎ|a way / ， / 让我|ràng wǒ|to let me / 少做一点|shǎo zuò yì diǎn|do a little less / ， / 也有饭吃|yě yǒu fàn chī|and still have food to eat / ？`),
+      line('rice', 'wife', `你先|nǐ xiān|first you / 喝点水|hē diǎn shuǐ|drink some water / ， / 等一等|děng yi děng|wait a moment / 再去|zài qù|before going again / 。 / 我们每天|wǒ men měi tiān|every day we / 吃的米|chī de mǐ|the rice we eat / ， / 都是|dōu shì|all comes from / 种地|zhòng dì|farming / 得来的|dé lái de|obtained through / 。 / 累了|lèi le|when tired / 可以休息|kě yǐ xiū xi|we can rest / ， / 可是|kě shì|but / 地里的菜|dì lǐ de cài|the vegetables in the field / 还要|hái yào|still need / 喝水呢|hē shuǐ ne|water to drink / ！`),
+    ] },
+    { id: 'rabbit', type: 'read', title: '第二幕 · 一只兔子', lines: [
+      line('accident', null, `下午|xià wǔ|in the afternoon / ， / 农夫|nóng fū|farmer / 正在种地|zhèng zài zhòng dì|was farming / 。 / 忽然|hū rán|suddenly / ， / 一只兔子|yì zhī tù zi|a rabbit / 从草里|cóng cǎo lǐ|from the grass / 跑出来|pǎo chū lái|ran out / 。 / 兔子|tù zi|rabbit / 跑得很快|pǎo de hěn kuài|ran very fast / ， / 一下子|yí xià zi|all at once / 撞到|zhuàng dào|hit / 树桩上|shù zhuāng shang|the tree stump / ， / 就不动了|jiù bú dòng le|then stopped moving / 。 / 农夫|nóng fū|farmer / 走过去|zǒu guò qù|walked over / 看了看|kàn le kan|and took a look / ， / 发现|fā xiàn|discovered / 兔子|tù zi|rabbit / 已经死了|yǐ jīng sǐ le|had died / 。 / 他放下|tā fàng xià|he put down / 手里的东西|shǒu lǐ de dōng xi|what he was holding / ， / 把兔子|bǎ tù zi|the rabbit / 带回家|dài huí jiā|took home / 。`),
+      line('luck', 'farmer', `快来看|kuài lái kàn|come and look / ！ / 这么大的|zhè me dà de|such a big / 兔子|tù zi|rabbit / ！ / 我没有追|wǒ méi yǒu zhuī|I did not chase it / ， / 也没有跑|yě méi yǒu pǎo|or run / 。 / 兔子|tù zi|rabbit / 自己来了|zì jǐ lái le|came by itself / 。 / 我找到|wǒ zhǎo dào|I have found / 好办法了|hǎo bàn fǎ le|a good way / ！ / 以后|yǐ hòu|from now on / 不用种地|bú yòng zhòng dì|no need to farm / ， / 只要等|zhǐ yào děng|only need to wait / 兔子|tù zi|for rabbits / 就好了|jiù hǎo le|and that will do / 。`),
+      line('doubt', 'wife', `今天|jīn tiān|today / 有兔子|yǒu tù zi|there was a rabbit / ， / 明天|míng tiān|tomorrow / 也一定有吗|yě yí dìng yǒu ma|will there certainly be one too / ？ / 你说|nǐ shuō|you say / 等兔子|děng tù zi|waiting for rabbits / 是好办法|shì hǎo bàn fǎ|is a good method / ， / 可是|kě shì|but / 兔子|tù zi|rabbits / 不知道|bù zhī dào|do not know / 你在等啊|nǐ zài děng a|you are waiting / 。`),
+    ] },
+    { id: 'cause', type: 'choice', label: 'Luck or a method?', 'target-phrase': '自己来了',
+      prompt: 'Why does the farmer think he can stop farming?',
+      options: [
+        option('promise', `兔子|tù zi|the rabbit / 说好|shuō hǎo|promised / 每天来|měi tiān lái|to come every day / 。`),
+        option('luck', `他以为|tā yǐ wéi|he assumes / 一次好运|yí cì hǎo yùn|one lucky event / 每天|měi tiān|every day / 都会有|dōu huì yǒu|will happen / 。`),
+        option('food', `地里|dì lǐ|in the field / 已经有|yǐ jīng yǒu|there is already / 很多米|hěn duō mǐ|a lot of rice / 。`),
+      ], answer: ['luck'], hint: 'The rabbit came once without his help. Did anyone promise another?',
+      explanation: 'He turns one lucky accident into a daily plan. His wife questions the missing link: nothing makes a rabbit come tomorrow.' },
+    { id: 'waiting', type: 'read', title: '第三幕 · 等了又等', lines: [
+      line('first-day', null, `第二天|dì èr tiān|the next day / ， / 农夫|nóng fū|farmer / 没有种地|méi yǒu zhòng dì|did not farm / 。 / 他坐在|tā zuò zài|he sat beside / 树桩旁边|shù zhuāng páng biān|the tree stump / ， / 看着草地|kàn zhe cǎo dì|watching the grass / ， / 等兔子|děng tù zi|waiting for rabbits / 。 / 早上|zǎo shang|in the morning / 没有兔子|méi yǒu tù zi|there were no rabbits / ， / 中午|zhōng wǔ|at noon / 没有兔子|méi yǒu tù zi|there were no rabbits / ， / 到了晚上|dào le wǎn shang|when evening came / ， / 还是|hái shi|there were still / 没有兔子|méi yǒu tù zi|no rabbits / 。 / 他站起来|tā zhàn qǐ lái|he stood up / ， / 看看地里|kàn kan dì lǐ|looked into the field / ， / 又坐下了|yòu zuò xià le|and sat down again / 。`),
+      line('neighbor-ask', 'neighbor', `你在这里|nǐ zài zhè lǐ|here you are / 等谁呢|děng shéi ne|waiting for whom / ？ / 大家|dà jiā|everyone / 都在种地|dōu zài zhòng dì|is farming / ， / 你怎么|nǐ zěn me|how come you / 不种地了|bù zhòng dì le|have stopped farming / ？ / 地里的草|dì lǐ de cǎo|the weeds in the field / 已经|yǐ jīng|already / 比菜高了|bǐ cài gāo le|are taller than the vegetables / 。 / 要不要|yào bu yào|would you like / 我帮你|wǒ bāng nǐ|me to help you / 一起种地|yì qǐ zhòng dì|farm together / ？`),
+      line('insist', 'farmer', `我在等|wǒ zài děng|I am waiting / 兔子|tù zi|for rabbits / 。 / 你每天|nǐ měi tiān|every day you / 忙着种地|máng zhe zhòng dì|are busy farming / ， / 我每天|wǒ měi tiān|every day I / 只要等|zhǐ yào děng|only need to wait / 。 / 这是|zhè shì|this is / 我的办法|wǒ de bàn fǎ|my method / 。 / 今天|jīn tiān|today / 没等到|méi děng dào|none came while I waited / ， / 明天|míng tiān|tomorrow / 再等|zài děng|I will wait again / 。 / 多等一天|duō děng yì tiān|wait one more day / ， / 也没有关系|yě méi yǒu guān xi|and it will not matter / 。`),
+    ] },
+    { id: 'wait-word', type: 'word', label: 'What is he doing?', 'target-phrase': '等',
+      prompt: 'Which word describes his plan: staying by the stump until a rabbit comes?',
+      options: [option('farm', `种地|zhòng dì|to farm`), option('wait', `等|děng|to wait`), option('run', `跑|pǎo|to run`)],
+      answer: ['wait'], hint: 'He stays in one place instead of working in the field.',
+      explanation: '等 means to wait. Waiting uses his time, but it does not make rabbits appear or help his vegetables grow.' },
+    { id: 'predict', type: 'prediction', label: 'Follow the consequences', 'target-phrase': '每天等兔子',
+      prompt: 'If he keeps waiting every day and leaves the field alone, what is most likely?',
+      options: [option('more', `兔子|tù zi|rabbits / 每天|měi tiān|every day / 都来|dōu lái|will all come / 。`), option('weeds', `草越来越多|cǎo yuè lái yuè duō|there will be more and more weeds / ， / 菜越来越少|cài yuè lái yuè shǎo|and fewer and fewer vegetables / 。`), option('water', `菜会自己|cài huì zì jǐ|the vegetables will by themselves / 找水喝|zhǎo shuǐ hē|find water to drink / 。`)],
+      answer: ['weeds'], hint: 'His neighbor has already noticed weeds taller than the vegetables.',
+      explanation: 'The cost of waiting is the farming he leaves undone. The next scene shows that cost at home.' },
+    { id: 'empty-bowl', type: 'read', title: '第四幕 · 饭在哪里？', lines: [
+      line('days', null, `一天过去了|yì tiān guò qù le|a day passed / ， / 又一天|yòu yì tiān|then another day / 过去了|guò qù le|passed / 。 / 农夫每天|nóng fū měi tiān|every day the farmer / 都去等|dōu qù děng|went to wait / 兔子|tù zi|for rabbits / ， / 每天晚上|měi tiān wǎn shang|every evening / 都空着手|dōu kōng zhe shǒu|always empty-handed / 回家|huí jiā|came home / 。 / 地里的草|dì lǐ de cǎo|the weeds in the field / 越来越多|yuè lái yuè duō|grew more and more / ， / 菜叶子|cài yè zi|the vegetable leaves / 越来越黄|yuè lái yuè huáng|grew yellower and yellower / 。 / 家里的米|jiā lǐ de mǐ|the rice at home / 却越来越少|què yuè lái yuè shǎo|however became less and less / 。`),
+      line('bowl', 'wife', `你看|nǐ kàn|look / ， / 今天|jīn tiān|today / 只有|zhǐ yǒu|there is only / 这一点饭|zhè yì diǎn fàn|this little bit of food / 。 / 你每天|nǐ měi tiān|every day you / 等兔子|děng tù zi|wait for rabbits / ， / 我每天|wǒ měi tiān|every day I / 等你|děng nǐ|wait for you / 回来吃饭|huí lái chī fàn|to come home to eat / 。 / 可是|kě shì|but / 我们的饭|wǒ men de fàn|our food / 不能|bù néng|cannot / 一直等下去|yì zhí děng xià qù|keep on waiting / 。 / 不种地|bù zhòng dì|without farming / ， / 下个月|xià ge yuè|next month / 吃什么呢|chī shén me ne|what will we eat / ？`),
+      line('realize', 'farmer', `我以为|wǒ yǐ wéi|I thought / 这是|zhè shì|this was / 好办法|hǎo bàn fǎ|a good method / ， / 所以|suǒ yǐ|so / 一直等|yì zhí děng|I kept waiting / 。 / 可是|kě shì|but / 我等了|wǒ děng le|I have waited / 这么多天|zhè me duō tiān|so many days / ， / 一只兔子|yì zhī tù zi|even one rabbit / 也没有|yě méi yǒu|there has not been / 。 / 以前|yǐ qián|before / 每天种地|měi tiān zhòng dì|farming every day / ， / 虽然累|suī rán lèi|although tiring / ， / 家里|jiā lǐ|at home / 还有菜吃|hái yǒu cài chī|we still had vegetables to eat / 。 / 现在|xiàn zài|now / 我明白了|wǒ míng bai le|I understand / 。`),
+    ] },
+    { id: 'lesson', type: 'choice', label: 'Name the mistake', 'target-phrase': '办法',
+      prompt: 'What makes waiting a poor 办法 for feeding the family?',
+      options: [option('short', `他等的时间|tā děng de shí jiān|the time he waited / 太短了|tài duǎn le|was too short / 。`), option('control', `等兔子|děng tù zi|waiting for rabbits / 不能保证|bù néng bǎo zhèng|cannot guarantee / 有饭吃|yǒu fàn chī|having food to eat / ， / 还耽误了|hái dān wu le|and also delayed / 种地|zhòng dì|farming / 。`), option('stump', `树桩|shù zhuāng|the stump / 太小了|tài xiǎo le|was too small / 。`)],
+      answer: ['control'], hint: 'Compare what happened to the rabbits, the vegetables, and the rice.',
+      explanation: 'His plan relies on an accident repeating while neglecting the work that supplies food. A bigger stump or a longer wait does not fix that.' },
+    { id: 'return', type: 'read', title: '第五幕 · 换一个办法', lines: [
+      line('ask-help', 'farmer', `明天|míng tiān|tomorrow / 我不等|wǒ bù děng|I will not wait / 兔子了|tù zi le|for rabbits anymore / 。 / 我要|wǒ yào|I want to / 回去种地|huí qù zhòng dì|go back to farming / 。 / 可是|kě shì|but / 草这么多|cǎo zhè me duō|there are so many weeds / ， / 我一个人|wǒ yí ge rén|I on my own / 做不完|zuò bu wán|cannot finish / 。 / 你有什么|nǐ yǒu shén me|do you have any / 好办法|hǎo bàn fǎ|good ideas / ？ / 我可以|wǒ kě yǐ|can I / 请邻居|qǐng lín jū|ask our neighbor / 帮忙吗|bāng máng ma|to help / ？`),
+      line('plan', 'wife', `当然可以|dāng rán kě yǐ|of course you can / 。 / 我们先|wǒ men xiān|first we / 把草拔掉|bǎ cǎo bá diào|pull out the weeds / ， / 再给菜|zài gěi cài|then give the vegetables / 浇水|jiāo shuǐ|water / 。 / 每天|měi tiān|every day / 做一点|zuò yì diǎn|do a little / ， / 菜会|cài huì|the vegetables will / 慢慢长大|màn màn zhǎng dà|slowly grow / 。 / 这不是|zhè bú shì|this is not / 一天的事|yì tiān de shì|a one-day task / ， / 但是|dàn shì|but / 这个办法|zhè ge bàn fǎ|this method / 比等兔子|bǐ děng tù zi|compared with waiting for rabbits / 好多了|hǎo duō le|is much better / 。`),
+      line('neighbor-help', 'neighbor', `我来帮你|wǒ lái bāng nǐ|I will help you / ！ / 你看|nǐ kàn|look / ， / 这边的菜|zhè biān de cài|the vegetables on this side / 还活着|hái huó zhe|are still alive / 。 / 我们一起|wǒ men yì qǐ|together we / 想办法|xiǎng bàn fǎ|will find a way / ， / 一起种地|yì qǐ zhòng dì|and farm together / 。 / 等菜长大|děng cài zhǎng dà|waiting for vegetables to grow / 也要时间|yě yào shí jiān|also takes time / ， / 可是|kě shì|but / 等的时候|děng de shí hou|while waiting / ， / 每天|měi tiān|every day / 都有事做|dōu yǒu shì zuò|there is work to do / 。`),
+      line('morning-work', null, `第二天早上|dì èr tiān zǎo shang|the next morning / ， / 三个人|sān ge rén|the three people / 一起来到|yì qǐ lái dào|came together to / 地里|dì lǐ|the field / 。 / 农夫拔草|nóng fū bá cǎo|the farmer pulled weeds / ， / 妻子浇水|qī zi jiāo shuǐ|his wife watered / ， / 邻居|lín jū|the neighbor / 帮他们|bāng tā men|helped them / 种新的菜|zhòng xīn de cài|plant new vegetables / 。 / 太阳出来了|tài yáng chū lái le|the sun came out / ， / 农夫的脸|nóng fū de liǎn|the farmer's face / 又红又热|yòu hóng yòu rè|was red and hot / 。 / 他没有|tā méi yǒu|he did not / 走到树桩旁|zǒu dào shù zhuāng páng|walk over to the stump / 等兔子|děng tù zi|to wait for rabbits / ， / 而是|ér shì|instead / 喝了一点水|hē le yì diǎn shuǐ|drank a little water / ， / 继续种地|jì xù zhòng dì|and continued farming / 。`),
+      line('small-change', 'farmer', `你们看|nǐ men kàn|look, everyone / ， / 这边|zhè biān|on this side / 已经没有|yǐ jīng méi yǒu|there are no longer / 那么多草了|nà me duō cǎo le|so many weeds / ！ / 今天|jīn tiān|today / 虽然|suī rán|although / 没有兔子|méi yǒu tù zi|there are no rabbits / ， / 可是|kě shì|nevertheless / 我做的事|wǒ zuò de shì|the work I have done / 看得见|kàn de jiàn|can be seen / 。 / 每天|měi tiān|every day / 做一点|zuò yì diǎn|doing a little / ， / 每天|měi tiān|every day / 就不一样|jiù bù yí yàng|things will be different / 。 / 这个办法|zhè ge bàn fǎ|this method / 要用力气|yào yòng lì qi|takes effort / ， / 但我知道|dàn wǒ zhī dào|but I know / 为什么做|wèi shén me zuò|why I do it / 。`),
+      line('later', null, `过了些日子|guò le xiē rì zi|some days later / ， / 新的菜|xīn de cài|the new vegetables / 长出了|zhǎng chū le|grew / 绿叶子|lǜ yè zi|green leaves / 。 / 农夫每天|nóng fū měi tiān|every day the farmer / 都去看看|dōu qù kàn kan|went to check / ， / 不再|bú zài|no longer / 只看|zhǐ kàn|only looking at / 树桩|shù zhuāng|the tree stump / 。 / 一天晚上|yì tiān wǎn shang|one evening / ， / 妻子|qī zi|his wife / 把自己|bǎ zì jǐ|their own / 种的菜|zhòng de cài|home-grown vegetables / 放在桌上|fàng zài zhuō shang|put on the table / 。 / 他们|tā men|they / 请邻居|qǐng lín jū|invited the neighbor / 一起吃饭|yì qǐ chī fàn|to eat together / ， / 谢谢他|xiè xie tā|thanking him / 帮忙种地|bāng máng zhòng dì|for helping farm / 。`),
+      line('thanks', 'farmer', `这顿饭|zhè dùn fàn|this meal / 没有兔子|méi yǒu tù zi|has no rabbit / ， / 我却|wǒ què|yet I / 很高兴|hěn gāo xìng|am happy / 。 / 我以前|wǒ yǐ qián|I used to / 每天等|měi tiān děng|wait every day / 好运气|hǎo yùn qi|for good luck / ， / 现在|xiàn zài|now / 每天种地|měi tiān zhòng dì|I farm every day / 。 / 谢谢你们|xiè xie nǐ men|thank you both / 没有只笑我|méi yǒu zhǐ xiào wǒ|for doing more than laughing at me / ， / 还帮我|hái bāng wǒ|and also helping me / 想办法|xiǎng bàn fǎ|find a way / 。 / 明天|míng tiān|tomorrow / 我也来|wǒ yě lái|I will come too / 帮你种地|bāng nǐ zhòng dì|to help you farm / ！`),
+      line('ending', null, `从那天起|cóng nà tiān qǐ|from that day on / ， / 农夫|nóng fū|farmer / 每天种地|měi tiān zhòng dì|farmed every day / 。 / 累的时候|lèi de shí hou|when tired / ， / 他还会|tā hái huì|he would still / 在树桩旁|zài shù zhuāng páng|beside the stump / 坐一会儿|zuò yí huìr|sit for a while / ， / 但不再|dàn bú zài|but no longer / 等兔子|děng tù zi|waited for rabbits / 。 / 妻子问他|qī zi wèn tā|his wife asked him / ： / “ / 今天|jīn tiān|today / 还等吗|hái děng ma|still waiting / ？ / ” / 他笑着说|tā xiào zhe shuō|he said with a smile / ： / “ / 不等兔子|bù děng tù zi|not waiting for rabbits / ！ / 我休息一下|wǒ xiū xi yí xià|I am resting a moment / ， / 就去种地|jiù qù zhòng dì|then going to farm / 。 / 好办法|hǎo bàn fǎ|a good method / 不能只说|bù néng zhǐ shuō|cannot just be talked about / ， / 还要每天做|hái yào měi tiān zuò|it must be practiced every day / 。 / ”`),
+    ] },
+    { id: 'sequence', type: 'order', label: 'Rebuild the cause and effect', 'target-phrase': '不再等兔子',
+      prompt: 'Put the events in order to show how the farmer changes his mind.',
+      options: [option('return', `他回去|tā huí qù|he goes back / 种地|zhòng dì|to farming / 。`), option('wait', `他每天|tā měi tiān|every day he / 等兔子|děng tù zi|waits for rabbits / 。`), option('accident', `一只兔子|yì zhī tù zi|a rabbit / 撞到树桩|zhuàng dào shù zhuāng|hits the tree stump / 。`), option('loss', `菜少了|cài shǎo le|there are fewer vegetables / ， / 米也少了|mǐ yě shǎo le|and less rice too / 。`)],
+      answer: ['accident', 'wait', 'loss', 'return'], hint: 'The lucky accident inspires his plan; the loss of food makes him reconsider.',
+      explanation: 'The story connects luck, a mistaken plan, its cost, and a change in action. He learns from the result instead of simply waiting longer.' },
+    { id: 'apply', type: 'prediction', label: 'A different kind of waiting', 'target-phrase': '每天做一点',
+      prompt: 'The vegetables need time to grow. What should the farmer do while he waits?',
+      options: [option('care', `每天|měi tiān|every day / 看看菜|kàn kan cài|check the vegetables / ， / 需要水|xū yào shuǐ|if they need water / 就浇水|jiù jiāo shuǐ|then water them / 。`), option('stop', `什么也不做|shén me yě bú zuò|do nothing at all / ， / 只等|zhǐ děng|only wait / 。`), option('rabbit', `再去|zài qù|go again / 等兔子|děng tù zi|to wait for rabbits / 。`)],
+      answer: ['care'], hint: 'The neighbor says there is work to do even while the vegetables grow.',
+      explanation: 'Some results take time. The lesson is to care for what you can influence while waiting, rather than rely on another lucky accident.' },
+  ],
+}
