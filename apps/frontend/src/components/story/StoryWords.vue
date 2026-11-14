@@ -1,9 +1,10 @@
 <script setup>
+import { sentenceForWord } from '../../utils/readingSentence.js'
 defineProps({ words: { type: Array, required: true }, pinyin: Boolean, interactive: Boolean })
 const emit = defineEmits(['define'])
 </script>
 <template>
-  <span class="story-words" lang="zh-CN"><template v-for="(word, i) in words" :key="i"><button v-if="interactive && word.meaning" class="word-help" :aria-label="`Meaning of ${word.text}`" @click="emit('define', word)"><ruby :class="{ 'phrase-ruby': word.text.length > 8 }"><span>{{ word.text }}</span><rt v-if="pinyin">{{ word.pinyin }}</rt></ruby></button><ruby v-else :class="{ 'phrase-ruby': word.text.length > 8 }"><span>{{ word.text }}</span><rt v-if="pinyin && word.pinyin">{{ word.pinyin }}</rt></ruby></template></span>
+  <span class="story-words" lang="zh-CN"><template v-for="(word, i) in words" :key="i"><button v-if="interactive && word.meaning" class="word-help" :aria-label="`Meaning of ${word.text}`" @click="emit('define', { ...word, sentence: sentenceForWord(words, i) })"><ruby :class="{ 'phrase-ruby': word.text.length > 8 }"><span>{{ word.text }}</span><rt v-if="pinyin">{{ word.pinyin }}</rt></ruby></button><ruby v-else :class="{ 'phrase-ruby': word.text.length > 8 }"><span>{{ word.text }}</span><rt v-if="pinyin && word.pinyin">{{ word.pinyin }}</rt></ruby></template></span>
 </template>
 <style scoped>
 .story-words { font-size: var(--story-font-size, 1.25rem); line-height: 1.85; overflow-wrap: anywhere; }
