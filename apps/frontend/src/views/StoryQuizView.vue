@@ -51,6 +51,18 @@ const showInstructions = ref(savedInstructions)
 watch(showInstructions, value => {
   try { storage?.setItem('reading-exercises-show-instructions', String(value)) } catch {}
 })
+let savedSentenceTranslation = false
+try { savedSentenceTranslation = storage?.getItem('reading-exercises-show-sentence-translation') === 'true' } catch {}
+const showSentenceTranslation = ref(savedSentenceTranslation)
+const sentenceTranslationOpen = ref(false)
+watch(showSentenceTranslation, value => {
+  try { storage?.setItem('reading-exercises-show-sentence-translation', String(value)) } catch {}
+  sentenceTranslationOpen.value = value && !!definition.value
+})
+function showDefinition(value) {
+  definition.value = value
+  sentenceTranslationOpen.value = showSentenceTranslation.value
+}
 const fontSizes = [
   { label: 'Small', value: '1.15rem' },
   { label: 'Medium', value: '1.35rem' },
@@ -91,7 +103,7 @@ async function passed(step, answer) { session.value.answers[step.id] = answer; a
 let audioGeneration = 0
 let pendingAutoplay = false
 function stopAudio() { audioGeneration++; pendingAutoplay = false; if ('speechSynthesis' in window) window.speechSynthesis.cancel(); playing.value = null }
-function dismissDefinition(event) { if (!event.target.closest('.word-definition, .word-help')) definition.value = null }
+function dismissDefinition(event) { if (!event.target.closest('.word-definition, .sentence-translation, .word-help')) definition.value = null }
 function dismissOnEscape(event) { if (event.key === 'Escape') definition.value = null }
 const storyFeed = ref(null)
 const showScrollToBottom = ref(false)
@@ -178,7 +190,7 @@ onBeforeUnmount(() => {
       <div class="progress-wrap"><div class="progress-meta"><span>STORY · BEGINNER</span><span>{{ Math.round(session.index / story.steps.length * 100) }}%</span></div><progress :value="session.index" :max="story.steps.length" aria-label="Story progress" /></div>
       <button class="settings-button" :aria-expanded="settings" aria-controls="story-settings" aria-label="Story settings" @click="settings = !settings">⚙︎</button>
     </div>
-    <div v-if="settings" id="story-settings" class="story-settings"><label><input v-model="pinyin" type="checkbox"> Show pinyin</label><label><input v-model="showInstructions" type="checkbox"> Show instructions</label><div class="reading-mode-setting"><label for="story-reading-mode">Reading mode</label><select id="story-reading-mode" v-model="readingMode"><option value="paragraph">One paragraph at a time</option><option value="until-quiz">All paragraphs until the next quiz</option></select></div><div class="font-size-setting"><label for="story-font-size">Font size</label><select id="story-font-size" v-model="fontSize"><option v-for="size in fontSizes" :key="size.value" :value="size.value">{{ size.label }}</option></select></div><p v-if="showInstructions">Tap underlined story words for meanings. Audio uses your device’s Chinese voice.</p><button @click="restart(); settings = false">Restart story</button></div>
+    <div v-if="settings" id="story-settings" class="story-settings"><label><input v-model="pinyin" type="checkbox"> Show pinyin</label><label><input v-model="showInstructions" type="checkbox"> Show instructions</label><label><input v-model="showSentenceTranslation" type="checkbox"> Show sentence translation on phrase tap</label><div class="reading-mode-setting"><label for="story-reading-mode">Reading mode</label><select id="story-reading-mode" v-model="readingMode"><option value="paragraph">One paragraph at a time</option><option value="until-quiz">All paragraphs until the next quiz</option></select></div><div class="font-size-setting"><label for="story-font-size">Font size</label><select id="story-font-size" v-model="fontSize"><option v-for="size in fontSizes" :key="size.value" :value="size.value">{{ size.label }}</option></select></div><p v-if="showInstructions">Tap underlined story words for meanings. Audio uses your device’s Chinese voice.</p><button @click="restart(); settings = false">Restart story</button></div>
     </header>
     <div ref="storyFeed" class="story-feed">
       <section class="story-cover" aria-labelledby="story-title"><span class="cover-art" aria-hidden="true">☂<span>茶</span></span><p class="story-kicker">{{ story.tagline || 'A SMALL ACT OF KINDNESS' }}</p><p v-if="pinyin" class="title-pinyin">{{ story.pinyin }}</p><h1 id="story-title">{{ story.title }}</h1><p class="story-subtitle">{{ story.translation }}</p><span class="story-meta">{{ quizCount }} checkpoints · Read & listen</span></section>
@@ -188,7 +200,7 @@ onBeforeUnmount(() => {
           <h2 v-if="step.title" class="act-title">{{ step.title }}</h2>
           <article v-for="line in step.lines" :key="line.id" :id="`line-${line.id}`" tabindex="-1" class="story-line" :class="{ dialogue: line.speaker }" :style="line.speaker ? { '--speaker-color': speakerColors[line.speaker] } : undefined">
             <span v-if="line.speaker" class="avatar"  aria-hidden="true">{{ story.characters[line.speaker].avatar }}</span>
-            <div class="line-body"><span v-if="line.speaker" class="speaker-name">{{ story.characters[line.speaker].name }}</span><div class="line-content"><button class="audio-button" :aria-label="`Listen to ${line.speaker ? story.characters[line.speaker].name : 'narrator'}: ${line.words.map(w => w.text).join('')}`" :aria-pressed="playing === line.id" @click="playing === line.id ? stopAudio() : speak(line)">{{ playing === line.id ? '■' : '▶︎' }}</button><StoryWords :words="line.words" :pinyin="pinyin" interactive @define="definition = $event" /></div></div>
+            <div class="line-body"><span v-if="line.speaker" class="speaker-name">{{ story.characters[line.speaker].name }}</span><div class="line-content"><button class="audio-button" :aria-label="`Listen to ${line.speaker ? story.characters[line.speaker].name : 'narrator'}: ${line.words.map(w => w.text).join('')}`" :aria-pressed="playing === line.id" @click="playing === line.id ? stopAudio() : speak(line)">{{ playing === line.id ? '■' : '▶︎' }}</button><StoryWords :words="line.words" :pinyin="pinyin" interactive @define="showDefinition" /></div></div>
           </article>
         </template>
         <div v-else-if="session.answers[step.id]" class="solved-checkpoint" role="status"><span class="success-mark">✓</span><div><p class="checkpoint-caption">{{ step.label }} · Complete</p><p>{{ step.explanation }}</p></div></div>
@@ -205,7 +217,13 @@ onBeforeUnmount(() => {
         <p role="status">{{ targetPhrases.filter(phrase => learnedPhrases.has(phrase)).length }} / {{ targetPhrases.length }} phrases learned</p>
       </section><button class="primary-action" @click="restart">Read again</button><RouterLink :to="{ name: 'reading-exercises' }">Explore activities →</RouterLink></section>
     </div>
-    <aside v-if="definition" class="word-definition" aria-label="Word meaning"><div><strong lang="zh">{{ definition.text }}</strong><span><template v-if="definition.pinyin">{{ definition.pinyin }} · </template>{{ definition.meaning }}</span></div><button aria-label="Close word meaning" @click="definition = null">×</button></aside>
+    <div v-if="definition" class="definition-panels">
+      <aside class="word-definition" role="dialog" aria-labelledby="phrase-meaning-title"><div><strong id="phrase-meaning-title" lang="zh">{{ definition.text }}</strong><span><template v-if="definition.pinyin">{{ definition.pinyin }} · </template>{{ definition.meaning }}</span></div><button aria-label="Close word meaning and sentence translation" @click="definition = null">×</button></aside>
+      <aside v-if="showSentenceTranslation && sentenceTranslationOpen" class="sentence-translation" role="dialog" aria-labelledby="sentence-translation-title">
+        <div><h2 id="sentence-translation-title">Sentence translation</h2><p lang="zh-CN">{{ definition.sentence?.text }}</p><p lang="en">{{ definition.sentence?.translation || 'Sentence translation is not available for this passage yet.' }}</p></div>
+        <button aria-label="Close sentence translation" @click="sentenceTranslationOpen = false">×</button>
+      </aside>
+    </div>
     <aside v-if="audioMessage && !definition" class="word-definition" role="status"><span>{{ audioMessage }}</span><button aria-label="Dismiss audio message" @click="audioMessage = ''">×</button></aside>
     <footer v-if="!complete || showScrollToBottom" class="story-bottom"><div class="bottom-inner"><button v-if="showScrollToBottom" class="scroll-to-bottom" aria-label="Scroll to bottom of story" @click="scrollToBottom"><span aria-hidden="true">↓</span></button><span v-else class="bottom-status">{{ active?.type === 'read' ? 'Read at your own pace' : canContinue ? '✓ Nicely done' : 'A quick story check' }}</span><button v-if="!complete" ref="continueAction" class="primary-action" :disabled="!actionEnabled" @click="primaryAction">{{ needsAnswer ? 'Check answer' : isLastReveal ? 'Finish story' : 'Continue' }} <span v-if="!needsAnswer" aria-hidden="true">→</span></button></div></footer>
   </main>
@@ -246,4 +264,10 @@ progress { display: block; width: 100%; height: .45rem; border: 0; border-radius
 .learn-phrase:disabled { border-color: var(--story-border); color: #b5c6cb; cursor: default; }
 .reading-mode-setting { display: grid; gap: .35rem; margin-block: .75rem; }
 .reading-mode-setting select { width: 100%; min-width: 0; max-width: 100%; }
+.definition-panels { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(90px + env(safe-area-inset-bottom)); z-index: 12; width: min(90%, 34rem); max-height: min(65dvh, 36rem); overflow-y: auto; display: grid; gap: .65rem; }
+.definition-panels .word-definition { position: static; transform: none; width: auto; }
+.sentence-translation { display: flex; gap: 1rem; justify-content: space-between; padding: .8rem 1rem; border: 1px solid #658483; border-radius: .75rem; background: #20343d; box-shadow: 0 8px 20px #0004; overflow-wrap: anywhere; }
+.sentence-translation h2 { margin: 0; font-size: .85rem; color: var(--story-accent); }
+.sentence-translation p { margin: .6rem 0 0; line-height: 1.6; }
+.sentence-translation button { align-self: flex-start; min-width: 44px; min-height: 44px; background: transparent; border: 0; color: white; font-size: 1.3rem; cursor: pointer; }
 </style>
