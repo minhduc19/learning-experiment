@@ -16,9 +16,9 @@ COLUMN_MAP = {
     "status": ("Status", "Type"),
     "guest_name": ("Guest name", "Guest"),
     "contact": ("Contact",),
-    "adults": ("# of adults",),
-    "children": ("# of children",),
-    "infants": ("# of infants",),
+    "adults": ("# of adults", "Adults"),
+    "children": ("# of children", "Children"),
+    "infants": ("# of infants", "Infants"),
     "start_date": ("Start date",),
     "end_date": ("End date",),
     "nights": ("# of nights", "Nights"),
@@ -50,11 +50,11 @@ def parse_date(value: str, formats: tuple[str, ...] = DEFAULT_DATE_FORMATS):
 
 def get_date_formats(rows: list[dict[str, str]]) -> tuple[str, ...]:
     """Choose a date order for a CSV from dates that are not ambiguous."""
-    date_columns = ("Date", "Booking date", "Start date", "End date")
+    date_columns = ("Date", "Arriving by date", "Booking date", "Start date", "End date")
 
     for row in rows:
         for column in date_columns:
-            value = row.get(column, "").strip()
+            value = (row.get(column) or "").strip()
             try:
                 month_or_day, day_or_month, _ = value.split("/")
                 first = int(month_or_day)
@@ -228,12 +228,20 @@ async def bulk_upload_bookings(
             return created, updated, errors
 
         contents = await file.read()
-        reader = csv.DictReader(io.StringIO(contents.decode("utf-8")))
+        reader = csv.DictReader(io.StringIO(contents.decode("utf-8-sig")))
         rows = list(reader)
         date_formats = get_date_formats(rows)
 
         for i, row in enumerate(rows, start=2):
             try:
+                confirmation_code = get_csv_value(row, "confirmation_code")
+                # Bank transfers are not bookings. Keep Co-Host payout rows,
+                # which do carry confirmation codes and stay details.
+                if not confirmation_code and (row.get("Type") or "").strip() == "Payout":
+                    continue
+                if not confirmation_code:
+                    raise ValueError("Missing confirmation code")
+
                 data = {field: get_csv_value(row, field) for field in COLUMN_MAP}
 
                 data["adults"] = int(data["adults"])
